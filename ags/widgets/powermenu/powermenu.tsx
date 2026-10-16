@@ -7,27 +7,23 @@ import inputControl from '../../lib/inputControl';
 const handleKeys = (_ctrl: any, key: number) => {
    app.get_window('powermenu')?.hide();
    switch (Gdk.keyval_to_lower(key)) {
-      case 115: // S - sleep
+      case Gdk.KEY_s: // sleep
          lockScreen();
          execAsync('systemctl suspend');
          break;
-      case 104: // H - hibernate
+      case Gdk.KEY_h:
          execAsync('systemctl hibernate');
          break;
-      case 113: // Q - power off
+      case Gdk.KEY_q: // power off
          execAsync('systemctl poweroff')
          break;
-      case 108: // L - lock
+      case Gdk.KEY_l:
          lockScreen();
          break;
-      case 114: // R - reboot
+      case Gdk.KEY_r:
          execAsync('systemctl reboot');
          break;
    };
 };
 
-export default () => inputControl('powermenu', () => <box/>,
-   undefined,
-   undefined,
-   handleKeys
-   );
+export default () => inputControl('powermenu', () => <box/>, { onKeyPressed: handleKeys });

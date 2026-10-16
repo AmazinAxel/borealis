@@ -3,8 +3,6 @@ import app from 'ags/gtk4/app'
 import { execAsync } from 'ags/process';
 import inputControl from '../lib/inputControl';
 
-const hide = () => app.get_window('emojiPicker')?.hide();
-
 let textBox: Gtk.Entry;
 
 export default () => inputControl('emojiPicker', () =>
@@ -13,15 +11,12 @@ export default () => inputControl('emojiPicker', () =>
     showEmojiIcon
     halign={Gtk.Align.CENTER}
     valign={Gtk.Align.CENTER}
-    $={(self) => { textBox = self; }}
-    onNotifyText={async (self) => {
-      if (self.text != '' && !self.text.match(/[:a-z]/)) {
-        hide();
-        await execAsync(['wl-copy', '-t', 'text/plain', self.text]);
-      };
+    $={(self) => textBox = self}
+    onNotifyText={({ text }) => {
+      if (!text || /[:a-z]/.test(text)) return;
+      app.get_window('emojiPicker')?.hide();
+      execAsync(['wl-copy', '-t', 'text/plain', text]);
     }}
-  >
-  </entry>,
-  () => { if (textBox) textBox.text = ''; },
-  false, undefined, undefined, undefined, () => textBox
+  />,
+  { onShow: () => textBox.text = '', focus: () => textBox }
 );

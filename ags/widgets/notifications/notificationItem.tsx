@@ -56,7 +56,7 @@ export const notificationItem = (n: Notifd.Notification) =>
                             hexpand
                             cursor={pointer}
                             onClicked={() => invoke(n, id)}>
-                            <label label={label.replace('Activate', 'Open') ?? ''} halign={CENTER}/>
+                            <label label={label.replace('Activate', 'Open')} halign={CENTER}/>
                         </button>
                     )}
                 </box>}

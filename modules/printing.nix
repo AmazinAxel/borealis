@@ -4,7 +4,7 @@
     printing = {
       enable = true;
       drivers = [ pkgs.hplip
-      pkgs.mfcj880dwlpr pkgs.mfcj880dwcupswrapper pkgs.mfcj470dw-cupswrapper pkgs.mfcj470dwlpr ]; # HP + Brother MFC inkjet, might not need all these TODO
+      pkgs.mfcj880dwlpr pkgs.mfcj880dwcupswrapper pkgs.mfcj470dw-cupswrapper pkgs.mfcj470dwlpr ]; # HP + Brother MFC inkjet
       allowFrom = [ "all" ];
       browsing = true;
       defaultShared = true;

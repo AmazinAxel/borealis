@@ -3,8 +3,9 @@ import { createBinding, createComputed, createState, For, onCleanup } from 'ags'
 import { Gtk } from 'ags/gtk4';
 import Wp from 'gi://AstalWp';
 import GLib from 'gi://GLib';
+import Pango from 'gi://Pango';
 import Gdk from 'gi://Gdk';
-import { currentAsideWindow } from '../../lib/asideStatusWindow';
+import { currentAsideWindow } from '../../lib/asideState';
 import { timeout } from 'ags/time';
 
 const bluetooth = BluetoothService.get_default();
@@ -23,7 +24,7 @@ const switchToBluetoothSink = (address: string) => {
     if (!audio) return;
     const wanted = address.replaceAll(':', '_');
     const take = () => {
-        const sink = audio.speakers.find(s =>
+        const sink = (audio.speakers ?? []).find(s =>
             (s.get_pw_property('node.name') ?? '').includes(wanted));
         if (!sink) return false;
         sink.isDefault = true;
@@ -137,8 +138,111 @@ const wireMenuLifecycle = () =>
         stickyClear();
     }));
 
-export default () =>
-    <box orientation={Gtk.Orientation.VERTICAL} $={wireMenuLifecycle}>
+const DeviceRow = ({ device }: { device: BluetoothService.Device }) => {
+    const connected = createBinding(device, 'connected');
+    const connecting = createBinding(device, 'connecting');
+    const battery = createBinding(device, 'batteryPercentage');
+    const paired = createBinding(device, 'paired');
+    const trusted = createBinding(device, 'trusted');
+    const alias = createBinding(device, 'alias');
+
+    const visible = createComputed((track) =>
+        hasName(track(alias), device.address)
+            && (track(paired) || track(trusted) || track(connected)
+                || track(discovering) || track(stickyKeys).has(device.address)));
+
+    let pairId = 0;
+    const stopPairWatch = () => {
+        if (pairId) device.disconnect(pairId);
+        pairId = 0;
+    };
+    onCleanup(stopPairWatch);
+
+    const connectAndSwitch = () => device.connect_device((_, res) => {
+        try {
+            device.connect_device_finish(res);
+            switchToBluetoothSink(device.address);
+        } catch {};
+    });
+
+    const refocusLater = (self: Gtk.Widget) => GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+        if (currentAsideWindow.peek() === 'bluetooth'
+            && focusDevice() === device && self.get_mapped())
+            self.grab_focus();
+        return GLib.SOURCE_REMOVE;
+    });
+
+    return <button hexpand
+        visible={visible}
+        sensitive={connecting(c => !c)}
+        cssClasses={createComputed((track) =>
+            track(connecting) ? ['connecting']
+            : track(connected) ? ['active']
+            : []
+        )}
+        onStateFlagsChanged={(self) => {
+            if (self.has_focus) focusedDevice = device; // remember
+        }}
+        onMap={refocusLater}
+        $={(self) => {
+            hook(device, 'notify::connected', () => refocusLater(self));
+            hook(device, 'notify::connecting', () => refocusLater(self));
+
+            onCleanup(() => {
+                if (focusedDevice === device) focusedDevice = null; // row gone
+            });
+        }}
+        onClicked={() => {
+            focusedDevice = device; // keep focus here
+            if (device.connected)
+                return device.disconnect_device((_, res) => { try { device.disconnect_device_finish(res); } catch {}; });
+
+            stickyAdd(device.address);
+            if (bluetooth.adapter?.discovering) bluetooth.adapter.stop_discovery();
+            if (device.paired) {
+                device.trusted = true;
+                return connectAndSwitch();
+            }
+
+            stopPairWatch();
+            const id = pairId = device.connect('notify::paired', () => {
+                if (!device.paired) return;
+                stopPairWatch();
+                device.trusted = true;
+                saveOrder(knownDevices().map(d => d.address));
+                connectAndSwitch();
+            });
+            timeout(30000, () => pairId === id && stopPairWatch());
+            device.pair();
+        }}
+    >
+        <Gtk.EventControllerKey onKeyPressed={(ctrl, key, _, state) => {
+            if (key == Gdk.KEY_BackSpace && isKnown(device) && !bluetooth.adapter?.discovering)
+                bluetooth.adapter?.remove_device(device);
+            const delta = { [Gdk.KEY_Up]: -1, [Gdk.KEY_k]: -1, [Gdk.KEY_Down]: 1, [Gdk.KEY_j]: 1 }[Gdk.keyval_to_lower(key)];
+            if (!delta || !(state & Gdk.ModifierType.SHIFT_MASK)) return false;
+            if (moveDevice(device, delta)) GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+                ctrl.get_widget()?.grab_focus();
+                return GLib.SOURCE_REMOVE;
+            });
+            return true;
+        }}/>
+        <box hexpand valign={Gtk.Align.CENTER} spacing={10}>
+            <image iconName={device.icon + '-symbolic'}/>
+            <label label={alias(nameSubstitute)} halign={Gtk.Align.START} hexpand ellipsize={Pango.EllipsizeMode.END}/>
+            <label
+                visible={createComputed((track) => track(connected) && track(battery) >= 0)}
+                label={battery((p) => Math.round(p * 100) + '%')}
+                halign={Gtk.Align.END}
+            />
+        </box>
+    </button>;
+};
+
+export default () => {
+    let listBox: Gtk.Box | null = null;
+
+    return <box orientation={Gtk.Orientation.VERTICAL} $={wireMenuLifecycle}>
         <box>
             <button
                 hexpand halign={Gtk.Align.START}
@@ -168,121 +272,21 @@ export default () =>
             </button>
         </box>
         <Gtk.Separator visible={bluetoothOn}/>
-        <Gtk.ScrolledWindow
+        <scrolledwindow
             hscrollbarPolicy={Gtk.PolicyType.NEVER}
             hexpand vexpand
             propagateNaturalWidth propagateNaturalHeight
             maxContentHeight={500}
             visible={bluetoothOn}
-            $={(self) => hook(bluetooth, 'notify::is-powered', () => {
-                if (bluetooth.isPowered && !focusDevice())
-                    self.get_first_child()?.get_first_child()?.get_first_child()?.grab_focus();
+            $={() => hook(bluetooth, 'notify::is-powered', () => {
+                if (bluetooth.isPowered && !focusDevice()) listBox?.get_first_child()?.grab_focus();
             })}
         >
-            <box orientation={Gtk.Orientation.VERTICAL}>
+            <box orientation={Gtk.Orientation.VERTICAL} $={(self) => listBox = self}>
                 <For each={visibleDevices}>
-                    {(device: BluetoothService.Device) => {
-                        const connected = createBinding(device, 'connected');
-                        const connecting = createBinding(device, 'connecting');
-                        const battery = createBinding(device, 'batteryPercentage');
-                        const paired = createBinding(device, 'paired');
-                        const trusted = createBinding(device, 'trusted');
-                        const alias = createBinding(device, 'alias');
-
-                        const visible = createComputed((track) =>
-                            hasName(track(alias), device.address)
-                                && (track(paired) || track(trusted) || track(connected)
-                                    || track(discovering) || track(stickyKeys).has(device.address)));
-
-                        let pairId = 0;
-                        const stopPairWatch = () => {
-                            if (pairId) device.disconnect(pairId);
-                            pairId = 0;
-                        };
-                        onCleanup(stopPairWatch);
-
-                        const connectAndSwitch = () => device.connect_device((_, res) => {
-                            try {
-                                device.connect_device_finish(res);
-                                switchToBluetoothSink(device.address);
-                            } catch {};
-                        });
-
-                        return <button hexpand
-                            visible={visible}
-                            sensitive={connecting(c => !c)}
-                            $={(self) => {
-                                const refocus = () => {
-                                    if (currentAsideWindow.peek() === 'bluetooth'
-                                        && focusDevice() === device && self.get_mapped())
-                                        self.grab_focus();
-                                };
-                                self.connect('state-flags-changed', () => {
-                                    if (self.has_focus) focusedDevice = device; // remember
-                                });
-
-                                const later = () => GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE,
-                                    () => { refocus(); return GLib.SOURCE_REMOVE; });
-                                self.connect('map', later);
-                                hook(device, 'notify::connected', later);
-                                hook(device, 'notify::connecting', later);
-
-                                onCleanup(() => {
-                                    if (focusedDevice === device) focusedDevice = null; // row gone
-                                });
-                            }}
-                            onClicked={() => {
-                                focusedDevice = device; // keep focus here
-                                if (device.connected)
-                                    return device.disconnect_device((_, res) => { try { device.disconnect_device_finish(res); } catch {}; });
-
-                                stickyAdd(device.address);
-                                if (bluetooth.adapter?.discovering) bluetooth.adapter.stop_discovery();
-                                if (device.paired) {
-                                    device.trusted = true;
-                                    return connectAndSwitch();
-                                }
-
-                                stopPairWatch();
-                                const id = pairId = device.connect('notify::paired', () => {
-                                    if (!device.paired) return;
-                                    stopPairWatch();
-                                    device.trusted = true;
-                                    saveOrder(knownDevices().map(d => d.address));
-                                    connectAndSwitch();
-                                });
-                                timeout(30000, () => pairId === id && stopPairWatch());
-                                device.pair();
-                            }}
-                            cssClasses={createComputed((track) =>
-                                track(connecting) ? ['connecting']
-                                : track(connected) ? ['active']
-                                : []
-                            )}
-                        >
-                            <Gtk.EventControllerKey onKeyPressed={(ctrl, key, _, state) => {
-                                if (key == 65288 && isKnown(device) && !bluetooth.adapter?.discovering)
-                                    bluetooth.adapter?.remove_device(device);
-                                const delta = { [Gdk.KEY_Up]: -1, [Gdk.KEY_k]: -1, [Gdk.KEY_Down]: 1, [Gdk.KEY_j]: 1 }[Gdk.keyval_to_lower(key)];
-                                if (!delta || !(state & Gdk.ModifierType.SHIFT_MASK)) return false;
-                                if (moveDevice(device, delta)) GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-                                    ctrl.get_widget()?.grab_focus();
-                                    return GLib.SOURCE_REMOVE;
-                                });
-                                return true;
-                            }}/>
-                            <box orientation={Gtk.Orientation.HORIZONTAL} hexpand valign={Gtk.Align.CENTER} spacing={10}>
-                                <image iconName={device.icon + '-symbolic'}/>
-                                <label label={alias(nameSubstitute)} halign={Gtk.Align.START} hexpand ellipsize={3}/>
-                                <label
-                                    visible={createComputed((track) => track(connected) && track(battery) >= 0)}
-                                    label={battery((p) => Math.round(p * 100) + '%')}
-                                    halign={Gtk.Align.END}
-                                />
-                            </box>
-                        </button>
-                    }}
+                    {(device: BluetoothService.Device) => <DeviceRow device={device}/>}
                 </For>
             </box>
-        </Gtk.ScrolledWindow>
-    </box>
+        </scrolledwindow>
+    </box>;
+};

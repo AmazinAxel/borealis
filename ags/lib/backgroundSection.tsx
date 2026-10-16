@@ -1,7 +1,7 @@
 import { Gtk } from 'ags/gtk4';
 import { wallpaperTexture, wallpaperLight } from './mediaPlayer';
 
-export default ({ header, content, height, width }: { header: any; content: any, height?: number, width: number }) =>
+export default ({ header, content, height, width }: { header: JSX.Element, content?: JSX.Element, height?: number, width: number }) =>
     <box
         heightRequest={height}
         halign={Gtk.Align.CENTER}

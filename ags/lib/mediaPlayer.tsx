@@ -14,7 +14,7 @@ export type musicAction = 'next' | 'prev';
 export const [ isPlaying, setIsPlaying ] = createState(false);
 export const [ playlist, setPlaylist ] = createState(1);
 export const [ playlistName, setPlaylistName ] = createState('');
-export const [ wallpaperTexture, setWallpaperTexture ] = createState<Gdk.Texture | null>(null);
+export const [ wallpaperTexture, setWallpaperTexture ] = createState<Gdk.Paintable>(Gdk.Paintable.new_empty(1, 1));
 export const [ wallpaperLight, setWallpaperLight ] = createState(false);
 
 // These playlists match with the folder names in ~/Music
@@ -39,9 +39,10 @@ export const playPause = () => {
 };
 
 let swaybg: AstalIO.Process | null = null;
+let current = '';
 export const randomWallpaper = async () => {
-    const files = (await execAsync(['find', '/home/alec/Projects/flake/wallpapers', '-type', 'f'])).split('\n');
-    const wallpaper = files[Math.floor(Math.random() * files.length)];
+    const files = (await execAsync(['find', '/home/alec/Projects/flake/wallpapers', '-type', 'f'])).split('\n').filter((f) => f && f !== current);
+    const wallpaper = current = files[Math.floor(Math.random() * files.length)];
     const old = swaybg;
     swaybg = AstalIO.Process.subprocessv(['swaybg', '-i', wallpaper, '-m', 'fill']);
     if (old) timeout(1000, () => old.kill());
@@ -88,7 +89,7 @@ export const Media = () =>
             const n = Math.trunc(scrollAcc)
             if (!n) return
             scrollAcc -= n
-            execAsync(`mpc volume ${n > 0 ? '+' : ''}${n}`)
+            execAsync(`mpc volume ${n > 0 ? '+' : ''}${n}`).catch(() => {})
         }}/>
         <image iconName={isPlaying.as(
             (v: boolean) => (v) ? 'media-playback-pause-symbolic' : 'media-playback-start-symbolic')

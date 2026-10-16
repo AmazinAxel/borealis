@@ -6,42 +6,11 @@ import Wp from 'gi://AstalWp';
 import Battery from 'gi://AstalBattery';
 import Gio from 'gi://Gio';
 
-const speaker = Wp.get_default()?.audio.defaultSpeaker!;
+const audio = Wp.get_default()!.audio;
 const battery = Battery.get_default();
 
-const BluetoothIcon = () =>
-  <image
-    iconName='bluetooth-active-symbolic'
-    visible={btPowered}
-  />
-
 const batPercentageBind = createBinding(battery, 'percentage');
-const batteryIconName = createBinding(battery, 'batteryIconName')
 const batLowBind = batPercentageBind((p) => Math.round(p * 100) < 99);
-const batChargingBind = createBinding(battery, 'charging');
-
-const BatteryWidget = () =>
-    <overlay
-      visible={Boolean(battery.percentage)} // Hide if on desktop
-    >
-      <image
-        cssClasses={batLowBind((low) => low ? ['batteryIcon', 'dimmed'] : ['batteryIcon'])}
-        iconName={batteryIconName}
-      />
-      <label
-        $type='overlay'
-        cssClasses={batChargingBind((c) => c ? ['batteryPercent', 'charging'] : ['batteryPercent'])}
-        visible={batLowBind}
-        label={batPercentageBind((p) => String(Math.round(p * 100)))}
-      />
-    </overlay>
-
-const volumeIconBind = createBinding(speaker, 'volumeIcon')
-const VolumeIcon = () =>
-  <image iconName={volumeIconBind}/>
-
-const StreamingModeIcon = () =>
-  <image visible={streamingMode} iconName='notifications-disabled-symbolic'/>
 
 const iwdBus = 'net.connman.iwd';
 const stationInterface = 'net.connman.iwd.Station';
@@ -83,13 +52,22 @@ systemBus.call(
   },
 );
 
-const NetworkIcon = () => <image iconName={networkIcon}/>
-
 export const Status = () =>
   <box orientation={Gtk.Orientation.VERTICAL} spacing={7} cssClasses={['statusMenu']}>
-    <VolumeIcon/>
-    <BatteryWidget/>
-    <NetworkIcon/>
-    <BluetoothIcon/>
-    <StreamingModeIcon/>
+    <image iconName={createBinding(audio, 'defaultSpeaker', 'volumeIcon')}/>
+    <overlay visible={Boolean(battery.percentage)}>
+      <image
+        cssClasses={batLowBind((low) => low ? ['batteryIcon', 'dimmed'] : ['batteryIcon'])}
+        iconName={createBinding(battery, 'batteryIconName')}
+      />
+      <label
+        $type='overlay'
+        cssClasses={createBinding(battery, 'charging')((c) => c ? ['batteryPercent', 'charging'] : ['batteryPercent'])}
+        visible={batLowBind}
+        label={batPercentageBind((p) => String(Math.round(p * 100)))}
+      />
+    </overlay>
+    <image iconName={networkIcon}/>
+    <image iconName='bluetooth-active-symbolic' visible={btPowered}/>
+    <image iconName='notifications-disabled-symbolic' visible={streamingMode}/>
   </box>

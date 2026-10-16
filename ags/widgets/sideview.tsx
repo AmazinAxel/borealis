@@ -30,7 +30,6 @@ const [ width, setWidth ] = createState(400);
 let WebKit: any;
 const loadWebKit = async () => {
   if (WebKit) return;
-  // @ts-expect-error
   WebKit = (await import("gi://WebKit?version=6.0")).default;
   WebKit.WebContext.get_default().set_cache_model(WebKit.CacheModel.DOCUMENT_VIEWER);
 };
@@ -105,7 +104,6 @@ const ensurePage = (name: PageName) => {
 
   webview.get_settings().set_user_agent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15");
 
-  // todo can remove?
   webview.connect('permission-request', (_webview: any, request: any) => {
     if (request instanceof WebKit.ClipboardPermissionRequest) {
       request.allow(); // allow media pasting!!
@@ -179,7 +177,7 @@ export const toggleSideviewSize = () => {
 };
 
 export default () => {
-  inputControl('sideviewDim', () => <box/>, undefined, false, undefined, Astal.Keymode.NONE, Astal.Layer.TOP);
+  inputControl('sideviewDim', () => <box/>, { keymode: Astal.Keymode.NONE, layer: Astal.Layer.TOP });
 
   return <window
     name="sideview"
@@ -192,7 +190,7 @@ export default () => {
     widthRequest={width}
   >
     <Gtk.EventControllerKey onKeyPressed={(_, key, __, state) => {
-      if (Gdk.keyval_to_lower(key) === 114 && (state & Gdk.ModifierType.CONTROL_MASK) && currentPage)
+      if (Gdk.keyval_to_lower(key) === Gdk.KEY_r && (state & Gdk.ModifierType.CONTROL_MASK) && currentPage)
         webviews[currentPage]?.reload(); // ctrl+R to reload page
     }}/>
     {stack}

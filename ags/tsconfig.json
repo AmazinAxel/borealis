@@ -9,6 +9,8 @@
     "module": "ES2022",
     "moduleResolution": "Bundler",
     "strict": true,
+    "skipLibCheck": true,
+    "types": [],
     "target": "ES2020"
   }
 }

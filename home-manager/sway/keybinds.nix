@@ -24,7 +24,6 @@
       exec footclient
     fi
   '';
-  # todo is there a better way to do this? nemo has no app_id
   openNemo = pkgs.writeShellScriptBin "nemo" ''
     if ${shouldFloat}; then
       exec ${pkgs.nemo-with-extensions}/bin/nemo "$@"

@@ -5,24 +5,27 @@ import app from 'ags/gtk4/app';
 import Wp from 'gi://AstalWp';
 import { brightness } from '../../lib/brightness';
 import { monitors } from '../../lib/monitors';
-import OutTransition from '../../lib/outTransition';
+import OutTransition, { createFlash } from '../../lib/outTransition';
 
-const speaker = Wp.get_default()?.audio.defaultSpeaker!;
+const audio = Wp.get_default()!.audio;
 let dontShow = true;
-let count = 0;
-export const [ icon, setIcon ] = createState('');
-export const [ val, setVal ] = createState(0);
-const [ windowVisible, setWindowVisible ] = createState(false);
-const [ reveal, setReveal ] = createState(false);
-const volumeBind = createBinding(speaker, 'volume');
-const isMuted = createBinding(speaker, 'mute');
+const [ icon, setIcon ] = createState('');
+const [ val, setVal ] = createState(0);
+const { visible, reveal, show, onHidden } = createFlash(500);
 
 timeout(2000, () => dontShow = false); // stop osd from showing when ags starts
 
+const osdChange = (iconType: string, value: number) => {
+    if (dontShow) return;
+    setIcon(iconType);
+    setVal(value);
+    show();
+};
+
 brightness.subscribe(() => osdChange('display-brightness-symbolic', brightness.peek()));
-const volumeChanged = () => osdChange(speaker.volume_icon, speaker.volume);
-volumeBind.subscribe(volumeChanged);
-isMuted.subscribe(volumeChanged);
+const volumeChanged = () => audio.defaultSpeaker && osdChange(audio.defaultSpeaker.volumeIcon, audio.defaultSpeaker.volume);
+createBinding(audio, 'defaultSpeaker', 'volume').subscribe(volumeChanged);
+createBinding(audio, 'defaultSpeaker', 'mute').subscribe(volumeChanged);
 
 export default () =>
     <For each={monitors}>
@@ -33,12 +36,12 @@ export default () =>
                 application={app}
                 layer={Astal.Layer.OVERLAY}
                 gdkmonitor={monitor}
-                visible={windowVisible}
+                visible={visible}
                 defaultHeight={1} // fix bug
                 defaultWidth={1}
                 $={(self) => onCleanup(() => self.destroy())}
             >
-                <OutTransition duration={125} reveal={reveal} onHidden={() => (count === 0) && setWindowVisible(false)} type={Gtk.RevealerTransitionType.SLIDE_UP}>
+                <OutTransition duration={125} reveal={reveal} onHidden={onHidden} type={Gtk.RevealerTransitionType.SLIDE_UP}>
                     <box cssClasses={['osd']}>
                         <image iconName={icon}/>
                         <levelbar value={val} widthRequest={400}/>
@@ -47,19 +50,3 @@ export default () =>
             </window>
         </This>}
     </For>
-
-const osdChange = (iconType: string, value: number) => {
-    if (dontShow)
-        return;
-
-    setIcon(iconType);
-    setVal(value);
-    setWindowVisible(true);
-    setReveal(true);
-
-    count++;
-    timeout(500, () => {
-        if (--count === 0)
-            setReveal(false);
-    });
-};

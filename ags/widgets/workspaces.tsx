@@ -1,30 +1,17 @@
 import { Astal, Gtk } from 'ags/gtk4';
-import { createComputed, createState, For, This, onCleanup } from "ags"
+import { createComputed, createState, For, This, onCleanup } from 'ags';
 import { createSubprocess, execAsync } from 'ags/process';
-import { timeout } from 'ags/time';
 const { TOP, LEFT } = Astal.WindowAnchor;
 import app from 'ags/gtk4/app';
 import { monitors } from '../lib/monitors';
-import OutTransition from '../lib/outTransition';
+import OutTransition, { createFlash } from '../lib/outTransition';
 
 const IDS = [...Array(9).keys()].map((i) => i + 1);
 
 const [ focused, setFocused ] = createState(0);
 const [ occupied, setOccupied ] = createState(new Set<number>());
 const [ scratchpad, setScratchpad ] = createState(0);
-const [ windowVisible, setWindowVisible ] = createState(false);
-const [ reveal, setReveal ] = createState(false);
-
-let count = 0;
-const showWorkspaces = () => {
-  setWindowVisible(true);
-  setReveal(true);
-  count++;
-  timeout(400, () => {
-    count--;
-    if (count === 0) setReveal(false);
-  });
-};
+const { visible, reveal, show, onHidden } = createFlash(400);
 
 const updateWorkspaces = () =>
   execAsync(['swaymsg', '-t', 'get_workspaces', '-r'])
@@ -50,7 +37,7 @@ const eventStream = createSubprocess('', ['swaymsg', '-t', 'subscribe', '-m', '[
 eventStream.subscribe(() => { // Show workspaces on workspace change
   updateWorkspaces();
   updateScratchpad();
-  showWorkspaces();
+  show();
 });
 updateWorkspaces();
 updateScratchpad();
@@ -64,12 +51,12 @@ export default () =>
         layer={Astal.Layer.OVERLAY}
         gdkmonitor={monitor}
         application={app}
-        visible={windowVisible}
+        visible={visible}
         $={(self) => onCleanup(() => self.destroy())}
         defaultHeight={1} // gtk layer shell glitch workaround
         defaultWidth={1}
       >
-        <OutTransition duration={150} reveal={reveal} onHidden={() => (count === 0) && setWindowVisible(false)} type={Gtk.RevealerTransitionType.SLIDE_RIGHT}>
+        <OutTransition duration={150} reveal={reveal} onHidden={onHidden} type={Gtk.RevealerTransitionType.SLIDE_RIGHT}>
           <box orientation={Gtk.Orientation.VERTICAL} cssClasses={['statusElement']}>
             {IDS.map((id) =>
               <box cssClasses={createComputed((track) => track(focused) === id

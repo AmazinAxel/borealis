@@ -7,20 +7,19 @@ import inputControl from "../../lib/inputControl";
 
 const handleKeys = (_ctrl: any, key: number) => {
     switch (Gdk.keyval_to_lower(key)) {
-        case 32: // Space - start recording
+        case Gdk.KEY_space: // start recording
             startRec();
             app.get_window('recordMenu')?.hide()
             break;
-        case 99: // C - clip & save last 30 seconds
+        case Gdk.KEY_c: // clip & save last 30 seconds
             saveClip();
             app.get_window('recordMenu')?.hide()
             break;
-        case 114: // R - toggle microphone input
+        case Gdk.KEY_r: // toggle microphone input
             setRecMic(!recMic.peek())
             break;
-        case 113: // Q - toggle quality
-            (recQuality.peek() == 'Medium') ?
-                setRecQuality('Ultra') : setRecQuality('Medium');
+        case Gdk.KEY_q: // toggle quality
+            setRecQuality(recQuality.peek() == 'Medium' ? 'Ultra' : 'Medium');
             break;
     };
 };
@@ -34,10 +33,8 @@ export default () => inputControl('recordMenu', () =>
                 <label label={recQuality}/>
             </box>
         }
-        content={<></>}/>,
-    undefined,
-    undefined,
-    handleKeys
+    />,
+    { onKeyPressed: handleKeys }
 );
 
 export const RecordingIndicator = () =>

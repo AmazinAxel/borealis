@@ -48,17 +48,17 @@ const reset = () => {
 };
 
 const save = async () => {
-    const site = siteBox?.text.trim();
-    const user = userBox?.text.trim();
-    const password = passBox?.text;
+    const site = siteBox.text.trim();
+    const user = userBox.text.trim();
+    const password = passBox.text;
     if (!site || !user || !password) return;
 
-    const body = user ? `${password}\nlogin: ${user}\n` : `${password}\n`;
+    const body = `${password}\nlogin: ${user}\n`;
     app.get_window('passSave')?.set_visible(false);
 
     try {
         await execAsync(['bash', '-c', `printf '%s' "$1" | pass insert -m -f "$2"`, 'bash', body, site]);
-    } catch (e) {
+    } catch {
         notifySend({ appName: 'Pass', title: 'Unable to save password' });
         return;
     }
@@ -74,7 +74,7 @@ const save = async () => {
         await execAsync(['bash', '-c',
             `pass git pull --rebase && { [ "$(pass git rev-list '@{u}..HEAD' --count)" -gt 0 ] && pass git push || true; }`
         ]);
-    } catch (e) {
+    } catch {
         notifySend({ appName: 'Pass', title: 'Pass sync to homelab failed' });
     }
 };
@@ -120,5 +120,5 @@ export default () => inputControl('passSave', () =>
             }
         />
     </box>,
-    () => { reset(); siteBox?.grab_focus(); }
+    { onShow: reset, focus: () => siteBox }
 );

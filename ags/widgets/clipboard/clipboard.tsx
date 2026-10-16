@@ -4,29 +4,24 @@ import { Gtk } from 'ags/gtk4';
 import app from 'ags/gtk4/app'
 import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
+import Gdk from 'gi://Gdk';
 import { ClipboardItem, entryPath, cacheDir, videoExts, binaryData } from './clipboardItem';
 import { openCompress } from './compress';
 import BackgroundSection from '../../lib/backgroundSection';
 import inputControl from '../../lib/inputControl';
 import { streamingMode } from '../notifications/notifications';
 
-const list = new Gtk.ListBox();
 const hide = () => app.get_window('clipboard')?.hide();
 const items = new Map<string, { mime: string, path: string | null, child: Gtk.Widget }>();
 
+const list = new Gtk.ListBox();
+list.set_sort_func((a, b) => Number(b.child!.name) - Number(a.child!.name));
 list.connect('row-activated', (_, row) => {
     hide();
 
-    const id = row.child.name;
+    const id = row.child!.name;
     const type = items.get(id)?.mime ?? 'text/plain';
     execAsync(['bash', '-c', `cliphist decode ${id} | wl-copy -t ${type} 2>/dev/null`]);
-});
-
-list.set_sort_func((a, b) => {
-    const row1id = Number(a.child.name);
-    const row2id = Number(b.child.name);
-
-    return row2id - row1id;
 });
 
 streamingMode.subscribe(() => {
@@ -81,7 +76,7 @@ const focusTop = () => {
 };
 
 const selectedRow = () => list.get_selected_row() ?? list.get_row_at_index(0);
-const selectedId = () => selectedRow()?.child.name ?? '';
+const selectedId = () => selectedRow()?.child?.name ?? '';
 
 const showInFileManager = (file: string) => Gio.DBus.session.call(
     'org.freedesktop.FileManager1',
@@ -109,13 +104,13 @@ const withFile = (want: { test: (f: string) => boolean } | null,
 };
 
 const actions: Record<number, () => void> = {
-    65293: () => selectedRow()?.activate(),              // Enter
-    99:    () => list.get_row_at_index(1)?.activate(),   // C - copy 2nd recent entry
-    101:   () => withFile(notVideo, (f) => execAsync(['swappy', '-f', f])), // E - edit in swappy
-    103:   () => withFile(null, (f) => execAsync(['gthumb', f])),       // G - open in gthumb
-    109:   () => withFile(videoExts, openCompress),                     // M - compress video
-    110:   () => withFile(null, showInFileManager),                     // N - open in nemo
-    119:   () => {                                       // W - wipe clipboard history
+    [Gdk.KEY_Return]: () => selectedRow()?.activate(),
+    [Gdk.KEY_c]: () => list.get_row_at_index(1)?.activate(), // copy 2nd recent entry
+    [Gdk.KEY_e]: () => withFile(notVideo, (f) => execAsync(['swappy', '-f', f])),
+    [Gdk.KEY_g]: () => withFile(null, (f) => execAsync(['gthumb', f])),
+    [Gdk.KEY_m]: () => withFile(videoExts, openCompress),
+    [Gdk.KEY_n]: () => withFile(null, showInFileManager),
+    [Gdk.KEY_w]: () => { // wipe clipboard history
         execAsync(['bash', '-c', `cliphist wipe && rm -rf ${cacheDir}/* && mkdir -p ${cacheDir}`]);
         hide();
     },
@@ -132,7 +127,7 @@ export default () => inputControl('clipboard', () =>
         width={500}
         header={<label $type="overlay" label="Clipboard"/>}
         content={
-        <Gtk.ScrolledWindow
+        <scrolledwindow
             cssClasses={['clipboardScroll']}
             hscrollbarPolicy={Gtk.PolicyType.NEVER}
             vscrollbarPolicy={Gtk.PolicyType.AUTOMATIC}
@@ -141,11 +136,12 @@ export default () => inputControl('clipboard', () =>
             propagateNaturalHeight
         >
             {list}
-        </Gtk.ScrolledWindow>}
+        </scrolledwindow>}
     />,
-    () => {
-        focusTop();
-        refreshItems().then(focusTop);
-    },
-    undefined,
-    handleKeys);
+    {
+        onShow: () => {
+            focusTop();
+            refreshItems().then(focusTop);
+        },
+        onKeyPressed: handleKeys,
+    });

@@ -13,6 +13,7 @@ in {
     manageHostName = true; # keep networking.hostName
   };
 
+  users.users.alec.initialPassword = "nixos"; # change with passwd
   networking.wireless.iwd.enable = false; # no wifi in a container
   boot.loader.systemd-boot.enable = false; # fix boot eval
   zramSwap.enable = false; # cant use in proxmox

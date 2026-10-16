@@ -12,10 +12,7 @@ import { execAsync } from "ags/process";
 import astalIO from "gi://AstalIO"
 
 import status, { setStatusMargin } from './widgets/status/status';
-import bluetooth from './lib/bluetooth';
-import wifi from './widgets/status/network';
 import sideview, { showPage, closeSideview, hideSideview, toggleSideviewFocus, toggleSideviewSize } from './widgets/sideview';
-import calendar from './widgets/status/calendar';
 import clipboard from './widgets/clipboard/clipboard';
 import compress from './widgets/clipboard/compress';
 import emojiPicker from './widgets/emojiPicker';
@@ -27,18 +24,17 @@ import recordMenu from './widgets/record/record';
 import { notifications, clearOldestNotification, invokeOldestNotification, streamingMode, setStreamingMode } from './widgets/notifications/notifications';
 import osd from './widgets/osd/osd';
 import powermenu from './widgets/powermenu/powermenu';
-import quickSettings from './widgets/status/quicksettings/quicksettings';
 import { notifySend } from './lib/notifySend';
 import { isRec, stopRec, startClippingService } from './widgets/record/service';
 
 import { lockScreen } from './widgets/lockscreen/lockscreen';
 import { monitorBrightness } from './lib/brightness';
-// import { monitorIdle } from './lib/idle';
 import { initMedia, updTrack, playPause, chngPlaylist, randomWallpaper } from './lib/mediaPlayer';
 import workspaces from './widgets/workspaces';
-import asideStatusWindow, { setAsideWindow, closeAsideWindow } from './lib/asideStatusWindow';
+import asideStatusWindow from './lib/asideStatusWindow';
+import { setAsideWindow, closeAsideWindow } from './lib/asideState';
 
-let blueLightFilter = false;
+let blueLightFilter = true;
 
 const media: Record<string, () => void> = {
     next: () => updTrack('next'),
@@ -74,8 +70,8 @@ const requests: Record<string, (arg?: string) => void> = {
     toggleStreamingMode: () => setStreamingMode(!streamingMode.peek()),
     toggleFocus,
     toggleFilter: () => {
-        execAsync(`busctl --user set-property rs.wl-gammarelay / rs.wl.gammarelay Temperature q ${blueLightFilter ? 3500 : 6500}`);
         blueLightFilter = !blueLightFilter;
+        execAsync(`busctl --user set-property rs.wl-gammarelay / rs.wl.gammarelay Temperature q ${blueLightFilter ? 3500 : 6500}`);
     },
 };
 
@@ -95,16 +91,10 @@ app.start({
         focusTask();
         osd();
         powermenu();
-        asideStatusWindow({
-            quickSettings,
-            bluetooth,
-            wifi,
-            calendar
-        });
+        asideStatusWindow();
         workspaces();
 
         monitorBrightness();
-        // monitorIdle();
         notifications();
         initMedia();
         reminders();
@@ -127,7 +117,7 @@ app.start({
 const reminders = async () => {
     const lastSync = Number(astalIO.read_file("/home/alec/Projects/flake/ags/lastSync.txt"));
 
-    if ((Date.now() - lastSync) > 540000000) { // Last sync was ~7 days ago
+    if ((Date.now() - lastSync) > 540000000 && (await execAsync(['sh', '-c', 'sleep 5; iwctl station wlan0 show']).catch(() => '')).includes('GreatEscape')) { // Last sync was ~7 days ago
         notifySend({
             appName: 'Sync',
             title: 'Sync system',

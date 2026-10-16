@@ -1,9 +1,10 @@
-import { createState, For, onCleanup } from 'ags';
+import { createRoot, createState, For, onCleanup } from 'ags';
 import { Gtk } from 'ags/gtk4';
 import { execAsync } from 'ags/process';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
-import { currentAsideWindow } from '../../lib/asideStatusWindow';
+import Pango from 'gi://Pango';
+import { currentAsideWindow } from '../../lib/asideState';
 import { streamingMode } from '../notifications/notifications';
 
 type WifiNet = { ssid: string; security: string; icon: string; connected: boolean; known: boolean; path: string };
@@ -14,8 +15,6 @@ const iwdBus = 'net.connman.iwd';
 const deviceInterface = 'net.connman.iwd.Device';
 const stationInterface = 'net.connman.iwd.Station';
 const networkInterface = 'net.connman.iwd.Network';
-
-const unwrap = (v: any): any => (v && typeof v === 'object' && 'data' in v) ? v.data : v;
 
 const [ networks, setNetworks ] = createState<WifiNet[]>([]);
 const [ scanning, setScanning ] = createState(false);
@@ -30,15 +29,16 @@ const sigIcon = (mbm: number) => {
     return `network-wireless-signal-${['none', 'weak', 'ok', 'good', 'excellent'][n]}-symbolic`;
 };
 
-const busctlJSON = (...args: string[]): Promise<any> =>
-    execAsync(['busctl', '--json=short', 'call', iwdBus, ...args])
-        .then(out => {
-            const v = unwrap(JSON.parse(out.trim()));
-            return Array.isArray(v) ? v[0] : v;
-        });
+const systemBus = Gio.DBus.system;
 
-const busctlAct = (...args: string[]) =>
-    execAsync(['busctl', 'call', iwdBus, ...args]);
+const iwdCall = (path: string, iface: string, method: string, params: GLib.Variant | null = null) =>
+    new Promise<any>((resolve, reject) => systemBus.call(
+        iwdBus, path, iface, method, params, null, Gio.DBusCallFlags.NONE, -1, null,
+        (bus, res) => {
+            try { resolve(bus!.call_finish(res).recursiveUnpack()); }
+            catch (e) { reject(e); }
+        },
+    ));
 
 let stationPath = '';
 let devicePath = '';
@@ -51,7 +51,7 @@ const rowBySsid = new Map<string, Gtk.Widget>(); // survives For rebuilds
 let focusedSsid: string | null = null; // row to restore after a refresh
 const focusTarget = () => {
     if (!wifiOn()) return powerButton;
-    const remembered = focusedSsid && rowBySsid.get(focusedSsid);
+    const remembered = focusedSsid ? rowBySsid.get(focusedSsid) : undefined;
     if (remembered?.get_mapped()) return remembered;
     const connected = networks.peek().find(n => n.connected);
     const connectedRow = connected && rowBySsid.get(connected.ssid);
@@ -72,13 +72,12 @@ const menuHasFocus = () => {
     return !!root?.get_focus()?.get_mapped();
 };
 
-const systemBus = Gio.DBus.system;
 let subIds: number[] = [];
 let coalesceId = 0;
 
 const queueRefresh = () => {
     if (coalesceId) return;
-    coalesceId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
+    coalesceId = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
         coalesceId = 0;
         refresh();
         return GLib.SOURCE_REMOVE;
@@ -92,9 +91,9 @@ const watchIwd = () => { // update dynamically
         iwdBus, 'org.freedesktop.DBus.Properties', 'PropertiesChanged',
         null, null, Gio.DBusSignalFlags.NONE,
         (_bus, _sender, path, _iface, _signal, params) => {
-            const [changedIface, changed] = params.deep_unpack() as [string, Record<string, any>, string[]];
+            const [changedIface, changed] = params.recursiveUnpack() as [string, Record<string, any>];
             if (changedIface === stationInterface && path === stationPath && 'Scanning' in changed)
-                setScanning(unwrap(changed.Scanning) === true);
+                setScanning(changed.Scanning === true);
             queueRefresh();
         },
     ));
@@ -117,27 +116,11 @@ const unwatchIwd = () => {
 
 type ObjMap = Record<string, Record<string, Record<string, any>>>;
 
-const getObjects = async (): Promise<ObjMap> => {
-    const raw: any = await busctlJSON('/', 'org.freedesktop.DBus.ObjectManager', 'GetManagedObjects');
-
-    // Unwrap variant values one level deep
-    const result: ObjMap = {};
-    for (const [path, ifaces] of Object.entries(raw as Record<string, unknown>)) {
-        result[path] = {};
-        for (const [iface, props] of Object.entries(ifaces as Record<string, unknown>)) {
-            result[path][iface] = Object.fromEntries(
-                Object.entries(props as Record<string, unknown>).map(([k, v]) => [k, unwrap(v)])
-            );
-        };
-    };
-    return result;
-};
-
 let refreshGen = 0;
 const refresh = async () => {
     const gen = ++refreshGen;
     try {
-        const objects = await getObjects();
+        const [objects]: [ObjMap] = await iwdCall('/', 'org.freedesktop.DBus.ObjectManager', 'GetManagedObjects');
 
         // Locate device and station paths
         for (const [path, ifaces] of Object.entries(objects)) {
@@ -157,7 +140,7 @@ const refresh = async () => {
             return;
         };
 
-        const ordered: [string, number][] = await busctlJSON(stationPath, stationInterface, 'GetOrderedNetworks');
+        const [ordered]: [[string, number][]] = await iwdCall(stationPath, stationInterface, 'GetOrderedNetworks');
         if (gen !== refreshGen) return;
 
         const next = ordered
@@ -188,11 +171,8 @@ const toggleWifi = async () => {
     try {
         if (!devicePath) await refresh();
         const next = !wifiOn();
-        await execAsync([
-            'busctl', 'call', iwdBus, devicePath,
-            'org.freedesktop.DBus.Properties', 'Set',
-            'ssv', deviceInterface, 'Powered', 'b', next ? 'true' : 'false',
-        ]);
+        await iwdCall(devicePath, 'org.freedesktop.DBus.Properties', 'Set',
+            new GLib.Variant('(ssv)', [deviceInterface, 'Powered', new GLib.Variant('b', next)]));
         setWifiOn(next);
         if (!next) setNetworks([]);
         else await refresh();
@@ -204,13 +184,94 @@ const scan = async () => {
     setScanning(true);
     try {
         if (!stationPath) await refresh();
-        await busctlAct(stationPath, stationInterface, 'Scan').catch((e) => {
+        await iwdCall(stationPath, stationInterface, 'Scan').catch((e) => {
             if (!String(e).includes('Operation already in progress')) throw e;
         });
         refresh();
     } catch {
         setScanning(false);
     };
+};
+
+const NetworkRow = ({ net }: { net: WifiNet }) => {
+    let entry: Gtk.Entry | null = null;
+    let popover: Gtk.Popover | null = null;
+    let disposePopover = () => {};
+
+    const submit = () => {
+        const pw = entry?.text ?? '';
+        const args = pw
+            ? ['iwctl', '--passphrase', pw, 'station', station, 'connect', net.ssid]
+            : ['iwctl', 'station', station, 'connect', net.ssid];
+        execAsync(args).then(() => { popover?.popdown(); refresh(); }).catch(() => {});
+    };
+
+    const removePopover = () => {
+        if (!popover) return;
+        openPopovers.delete(popover);
+        popover.unparent();
+        popover = entry = null;
+        disposePopover();
+    };
+
+    const openPasswordPopover = (self: Gtk.Widget) => {
+        const p: Gtk.Popover = popover = createRoot((dispose) => {
+            disposePopover = dispose;
+            return <popover
+                onClosed={() => GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+                    if (popover === p) removePopover();
+                    queueRefresh();
+                    return GLib.SOURCE_REMOVE;
+                })}
+            >
+                <entry
+                    hexpand
+                    visibility={false}
+                    placeholderText="Password"
+                    onActivate={submit}
+                    $={(self) => entry = self}
+                />
+            </popover> as Gtk.Popover;
+        });
+        p.set_parent(self);
+        openPopovers.add(p);
+        p.popup();
+        entry?.grab_focus();
+    };
+
+    return <button
+        cssClasses={net.connected ? ['active'] : []}
+        onClicked={(self) => {
+            focusedSsid = net.ssid; // keep focus here through the reorder
+            if (net.connected) {
+                iwdCall(stationPath, stationInterface, 'Disconnect')
+                    .then(refresh).catch(() => {});
+            } else if (net.security !== 'open' && !net.known) {
+                if (popover) return popover.popdown();
+                closeAllPopovers();
+                openPasswordPopover(self);
+            } else {
+                iwdCall(net.path, networkInterface, 'Connect')
+                    .then(refresh).catch(() => {});
+            }
+        }}
+        onStateFlagsChanged={(self) => {
+            if (self.has_focus) focusedSsid = net.ssid; // remember across refreshes
+        }}
+        $={(self) => {
+            rowBySsid.set(net.ssid, self);
+            onCleanup(() => {
+                if (rowBySsid.get(net.ssid) === self) rowBySsid.delete(net.ssid);
+                removePopover();
+            });
+        }}
+    >
+        <box spacing={10}>
+            <image iconName={net.icon}/>
+            <label hexpand halign={Gtk.Align.START} label={net.ssid} ellipsize={Pango.EllipsizeMode.END}/>
+            {net.security !== 'open' && <image iconName="network-wireless-encrypted-symbolic"/>}
+        </box>
+    </button>;
 };
 
 export default () =>
@@ -221,115 +282,42 @@ export default () =>
             halign={Gtk.Align.CENTER}
         />
         <box visible={streamingMode.as(d => !d)} orientation={Gtk.Orientation.VERTICAL}>
-        <box>
-            <button
-                hexpand halign={Gtk.Align.START}
-                cssClasses={wifiOn.as(on => [on ? 'active' : 'unpowered'])}
-                onClicked={toggleWifi}
-                $={(self) => {
-                    powerButton = self;
-                    self.connect('map', () => { watchIwd(); refresh(); focusWifiMenu(); });
-                    self.connect('unmap', unwatchIwd);
-                }}
-            >
-                <image iconName={wifiOn.as(on =>
-                    on ? 'network-wireless-symbolic' : 'network-wireless-offline-symbolic'
-                )}/>
-            </button>
-            <button
-                onClicked={scan}
-                sensitive={scanning.as(s => !s)}
-                visible={wifiOn}
-                cssClasses={scanning.as(s => s ? ['active'] : [])}
-                $={(self) => scanButton = self}
-            >
-                <image iconName="view-refresh-symbolic"/>
-            </button>
-        </box>
-        <Gtk.Separator visible={wifiOn}/>
-        <Gtk.ScrolledWindow
-            hscrollbarPolicy={Gtk.PolicyType.NEVER}
-            hexpand vexpand
-            propagateNaturalWidth propagateNaturalHeight
-            maxContentHeight={500}
-            visible={wifiOn}
-        >
-        <box orientation={Gtk.Orientation.VERTICAL} $={(self) => listBox = self}>
-        <For each={networks}>
-            {(net: WifiNet) => {
-                let entry: Gtk.Entry | null = null;
-                let popover: Gtk.Popover | null = null;
-                const submit = () => {
-                    const pw = entry?.text ?? '';
-                    const args = pw
-                        ? ['iwctl', '--passphrase', pw, 'station', station, 'connect', net.ssid]
-                        : ['iwctl', 'station', station, 'connect', net.ssid];
-                    execAsync(args).then(() => { popover?.popdown(); refresh(); }).catch(() => {});
-                };
-                const removePopover = () => {
-                    if (!popover) return;
-                    openPopovers.delete(popover);
-                    popover.unparent();
-                    popover = entry = null;
-                };
-                const openPasswordPopover = (self: Gtk.Widget) => {
-                    const p = popover = new Gtk.Popover();
-                    p.add_css_class('passwordRow');
-
-                    entry = new Gtk.Entry({ hexpand: true, visibility: false, placeholderText: 'Password' });
-                    entry.connect('activate', submit);
-
-                    // todo jsx components
-                    const row = new Gtk.Box();
-                    row.append(entry);
-                    p.set_child(row);
-                    p.set_parent(self);
-
-                    p.connect('closed', () => GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-                        if (popover === p) removePopover();
-                        queueRefresh();
-                        return GLib.SOURCE_REMOVE;
-                    }));
-                    openPopovers.add(p);
-                    p.popup();
-                    entry.grab_focus();
-                };
-                return <button
-                    cssClasses={net.connected ? ['active'] : []}
-                    onClicked={(self) => {
-                        focusedSsid = net.ssid; // keep focus here through the reorder
-                        if (net.connected) {
-                            busctlAct(stationPath, stationInterface, 'Disconnect')
-                                .then(refresh).catch(() => {});
-                        } else if (net.security !== 'open' && !net.known) {
-                            if (popover) return popover.popdown();
-                            closeAllPopovers();
-                            openPasswordPopover(self);
-                        } else {
-                            busctlAct(net.path, networkInterface, 'Connect')
-                                .then(refresh).catch(() => {});
-                        }
-                    }}
-                    $={(self) => {
-                        rowBySsid.set(net.ssid, self);
-                        self.connect('state-flags-changed', () => {
-                            if (self.has_focus) focusedSsid = net.ssid; // remember across refreshes
-                        });
-                        onCleanup(() => {
-                            if (rowBySsid.get(net.ssid) === self) rowBySsid.delete(net.ssid);
-                            removePopover();
-                        });
-                    }}
+            <box>
+                <button
+                    hexpand halign={Gtk.Align.START}
+                    cssClasses={wifiOn.as(on => [on ? 'active' : 'unpowered'])}
+                    onClicked={toggleWifi}
+                    onMap={() => { watchIwd(); refresh(); focusWifiMenu(); }}
+                    onUnmap={unwatchIwd}
+                    $={(self) => powerButton = self}
                 >
-                    <box spacing={10}>
-                        <image iconName={net.icon}/>
-                        <label hexpand halign={Gtk.Align.START} label={net.ssid} ellipsize={3}/>
-                        {net.security !== 'open' && <image iconName="network-wireless-encrypted-symbolic"/>}
-                    </box>
-                </button>;
-            }}
-        </For>
-        </box>
-        </Gtk.ScrolledWindow>
+                    <image iconName={wifiOn.as(on =>
+                        on ? 'network-wireless-symbolic' : 'network-wireless-offline-symbolic'
+                    )}/>
+                </button>
+                <button
+                    onClicked={scan}
+                    sensitive={scanning.as(s => !s)}
+                    visible={wifiOn}
+                    cssClasses={scanning.as(s => s ? ['active'] : [])}
+                    $={(self) => scanButton = self}
+                >
+                    <image iconName="view-refresh-symbolic"/>
+                </button>
+            </box>
+            <Gtk.Separator visible={wifiOn}/>
+            <scrolledwindow
+                hscrollbarPolicy={Gtk.PolicyType.NEVER}
+                hexpand vexpand
+                propagateNaturalWidth propagateNaturalHeight
+                maxContentHeight={500}
+                visible={wifiOn}
+            >
+                <box orientation={Gtk.Orientation.VERTICAL} $={(self) => listBox = self}>
+                    <For each={networks}>
+                        {(net: WifiNet) => <NetworkRow net={net}/>}
+                    </For>
+                </box>
+            </scrolledwindow>
         </box>
     </box>

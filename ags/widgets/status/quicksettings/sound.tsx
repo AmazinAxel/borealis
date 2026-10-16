@@ -10,15 +10,12 @@ const audio = Wp.get_default()?.audio!;
 
 const defaultSpeaker = createBinding(audio, 'defaultSpeaker');
 
-const trackSpeaker = <K extends 'volume' | 'volumeIcon'>(prop: K, fallback: Wp.Endpoint[K]) =>
-    createComputed((track) => {
-        const speaker = track(defaultSpeaker);
-        return speaker ? track(createBinding(speaker, prop)) : fallback;
-    });
+const volume = createBinding(audio, 'defaultSpeaker', 'volume')((v) => v ?? 0);
+const volumeIcon = createBinding(audio, 'defaultSpeaker', 'volumeIcon')((i) => i ?? 'audio-volume-muted-symbolic');
 
 export const VolumeSlider = () =>
     <box>
-        <image iconName={trackSpeaker('volumeIcon', 'audio-volume-muted-symbolic')}/>
+        <image iconName={volumeIcon}/>
         <slider
             hexpand
             focusable={false}
@@ -28,11 +25,11 @@ export const VolumeSlider = () =>
                 speaker.volume = value;
                 speaker.mute = false;
             }}
-            value={trackSpeaker('volume', 0)}
+            value={volume}
         />
     </box>
 
-const nameSubstitute = (name: string) => {
+const nameSubstitute = (name: string | null) => {
     if (!name) return '';
     if (name.includes('HD Audio Controller')) return name.split(' ').pop()!; // 'Speaker' or 'Headphones'
     if (name.includes('HDMI')) return 'Monitor'; // monitor has a speaker
@@ -40,6 +37,7 @@ const nameSubstitute = (name: string) => {
 };
 
 const speakersBind = createBinding(audio, 'speakers');
+const speakers = () => audio.speakers ?? [];
 
 const COMBINED = 'combined-bt-sink';
 const isCombined = (s: Wp.Endpoint) => nodeName(s) == COMBINED;
@@ -61,7 +59,7 @@ const link = (target: string, connect: boolean) => {
 const [ selected, setSelected ] = createState<string[]>([]);
 
 const resolve = (names: string[]) => {
-    const byName = new Map(audio.speakers.map(s => [ nodeName(s), s ]));
+    const byName = new Map(speakers().map(s => [ nodeName(s), s ]));
     return [ ...new Set(names) ].flatMap(n => byName.get(n) ?? []);
 };
 
@@ -69,7 +67,7 @@ const applySelection = (names: string[]) => {
     const sinks = resolve(names);
     if (!sinks.length) return reconcileNow();
 
-    const combined = audio.speakers.find(isCombined);
+    const combined = speakers().find(isCombined);
     const want = sinks.length > 1 && combined ? sinks.map(nodeName) : [];
 
     for (const t of linked) if (!want.includes(t)) link(t, false);
@@ -87,8 +85,8 @@ const reconcileNow = () => {
     const def = audio.defaultSpeaker;
     if (def && !isCombined(def)) return setSelected([ nodeName(def) ]);
 
-    const real = audio.speakers.find(s => !isCombined(s) && !isBluetooth(s))
-        ?? audio.speakers.find(s => !isCombined(s));
+    const real = speakers().find(s => !isCombined(s) && !isBluetooth(s))
+        ?? speakers().find(s => !isCombined(s));
     if (real) real.isDefault = true;
     else setSelected([]);
 };
@@ -110,7 +108,7 @@ const watched = new Map<string, [ Wp.Endpoint, number ]>();
 let firstWire = true;
 const wire = () => {
     const wasFirst = firstWire;
-    const present = new Set(audio.speakers.map(nodeName));
+    const present = new Set(speakers().map(nodeName));
 
     for (const [ name, [ sink, id ] ] of watched)
         if (!present.has(name)) {
@@ -119,7 +117,7 @@ const wire = () => {
         }
 
     let fresh: Wp.Endpoint | null = null;
-    for (const s of audio.speakers) {
+    for (const s of speakers()) {
         const name = nodeName(s);
         if (watched.has(name)) continue;
         watched.set(name, [ s, s.connect('notify::is-default', reconcile) ]);
@@ -151,30 +149,26 @@ const toggleSink = (sink: Wp.Endpoint) => {
         : [ ...current, name ]);
 };
 
-const shiftEnter = (fn: () => void) => (self: Gtk.Widget) => {
-    const key = new Gtk.EventControllerKey();
-    key.propagation_phase = Gtk.PropagationPhase.CAPTURE;
-    key.connect('key-pressed', (_, keyval, __, mod) => {
-        const enter = keyval == Gdk.KEY_Return || keyval == Gdk.KEY_KP_Enter;
-        if (!enter || !(mod & Gdk.ModifierType.SHIFT_MASK)) return false;
-        fn();
-        return true;
-    });
-    self.add_controller(key);
-};
-
 export const SinkSelector = () =>
     <box orientation={Gtk.Orientation.VERTICAL} cssClasses={['sinkSelector']}
-        $={(self) => { self.connect('map', () => self.get_first_child()?.grab_focus()); }}
+        onMap={(self) => self.get_first_child()?.grab_focus()}
     >
-        <For each={speakersBind(all => all.filter(s => !isCombined(s)))}>
-            {(speaker) => {
+        <For each={speakersBind(all => (all ?? []).filter(s => !isCombined(s)))}>
+            {(speaker: Wp.Endpoint) => {
                 const isSelected = selected(names => names.includes(nodeName(speaker)));
                 return <button
-					onClicked={() => applySelection([ nodeName(speaker) ])}
-					cssClasses={isSelected(v => v ? ['active'] : [])}
-					$={shiftEnter(() => toggleSink(speaker))}
-				>
+                    onClicked={() => applySelection([ nodeName(speaker) ])}
+                    cssClasses={isSelected(v => v ? ['active'] : [])}
+                >
+                    <Gtk.EventControllerKey
+                        propagationPhase={Gtk.PropagationPhase.CAPTURE}
+                        onKeyPressed={(_, keyval, __, mod) => {
+                            const enter = keyval == Gdk.KEY_Return || keyval == Gdk.KEY_KP_Enter;
+                            if (!enter || !(mod & Gdk.ModifierType.SHIFT_MASK)) return false;
+                            toggleSink(speaker);
+                            return true;
+                        }}
+                    />
                     <box>
                         <image visible={isSelected} iconName="emblem-default-symbolic" marginEnd={7}/>
                         <label halign={Gtk.Align.START} hexpand label={nameSubstitute(speaker.description)}/>

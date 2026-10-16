@@ -9,7 +9,7 @@ import { RecordingIndicator } from '../record/record';
 import Wp from "gi://AstalWp";
 
 const { BOTTOM, LEFT } = Astal.WindowAnchor;
-const speaker = Wp.get_default()?.audio.defaultSpeaker!;
+const audio = Wp.get_default()!.audio;
 
 export const [ statusMargin, setStatusMargin ] = createState(0);
 
@@ -30,7 +30,10 @@ export default () =>
       <box orientation={Gtk.Orientation.VERTICAL} cssClasses={['statusElement', 'infoCenter']}>
         <Gtk.EventControllerScroll
           flags={Gtk.EventControllerScrollFlags.VERTICAL}
-          onScroll={(self, __, y) => { speaker.volume -= self.get_unit() === Gdk.ScrollUnit.WHEEL ? Math.sign(y) * 0.05 : y * 0.002 }}
+          onScroll={(self, __, y) => {
+            const speaker = audio.defaultSpeaker;
+            if (speaker) speaker.volume -= self.get_unit() === Gdk.ScrollUnit.WHEEL ? Math.sign(y) * 0.05 : y * 0.002;
+          }}
         />
         <RecordingIndicator/>
         <Time/>

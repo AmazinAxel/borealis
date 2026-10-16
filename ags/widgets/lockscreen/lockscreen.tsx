@@ -6,7 +6,7 @@ import Gdk from 'gi://Gdk';
 import { createPoll, timeout } from 'ags/time';
 import { execAsync } from 'ags/process';
 import { createState, createRoot } from 'ags';
-import { wallpaperTexture } from '../../lib/mediaPlayer';
+import { wallpaperTexture, randomWallpaper } from '../../lib/mediaPlayer';
 
 const [ authFailed, setAuthFailed ] = createState(false);
 const time = createPoll('', 1000, () => GLib.DateTime.new_now_local().format('%H\n%M'));
@@ -35,6 +35,7 @@ const checkLogin = (entry: Gtk.Entry) => {
             busy = false;
             failures = 0;
             unlockScreen();
+            randomWallpaper();
         } catch { // Wrong password
             setAuthFailed(true);
             if (++failures >= 5) return void execAsync('systemctl reboot');
@@ -44,22 +45,22 @@ const checkLogin = (entry: Gtk.Entry) => {
 };
 
 const handleKeys = (entry: Gtk.Entry, key: number, state: Gdk.ModifierType) => {
-    if (key == 65379) return true; // Insert
+    if (key == Gdk.KEY_Insert) return true;
     if (!(state & Gdk.ModifierType.CONTROL_MASK)) return busy;
 
     switch (Gdk.keyval_to_lower(key)) {
-        case 115: // S - sleep
+        case Gdk.KEY_s: // sleep
             execAsync('systemctl suspend');
             break;
-        case 104: // H - hibernate
+        case Gdk.KEY_h:
             execAsync('systemctl hibernate');
             break;
-        case 113: // Q - power off
+        case Gdk.KEY_q: // power off
             execAsync('systemctl poweroff');
             break;
-        case 99: // C - clear input
+        case Gdk.KEY_c: // clear input
             break;
-        case 118: // V - no paste from clipboard!
+        case Gdk.KEY_v: // no paste from clipboard!
             return true;
         default: return false;
     };
@@ -70,12 +71,8 @@ const handleKeys = (entry: Gtk.Entry, key: number, state: Gdk.ModifierType) => {
 
 const assignLockWindow = (monitor: Gdk.Monitor) =>
     createRoot((dispose) => {
-        const win = new Gtk.Window({ name: 'lockscreen', cursor: hiddenCursor });
-        win.connect('destroy', dispose);
-        lockWindows.push(win);
-
         let entry: Gtk.Entry;
-        win.set_child(
+        const win = <Gtk.Window name="lockscreen" cursor={hiddenCursor} onDestroy={dispose}>
             <overlay>
                 <Gtk.EventControllerKey
                     propagationPhase={Gtk.PropagationPhase.CAPTURE}
@@ -88,8 +85,9 @@ const assignLockWindow = (monitor: Gdk.Monitor) =>
                     visibility={false}
                     invisibleChar={0}
                     onActivate={checkLogin}
+                    onMap={(self) => self.grab_focus()}
                     $type="overlay"
-                    $={(self) => (entry = self, self.connect('map', () => self.grab_focus()))}
+                    $={(self) => entry = self}
                 />
                 <label
                     halign={Gtk.Align.CENTER}
@@ -103,11 +101,12 @@ const assignLockWindow = (monitor: Gdk.Monitor) =>
                 <box
                     hexpand
                     vexpand
+                    cursor={hiddenCursor}
                     $type="overlay"
-                    $={(self) => self.set_cursor(hiddenCursor)}
                 />
-            </overlay> as Gtk.Widget
-        );
+            </overlay>
+        </Gtk.Window> as Gtk.Window;
+        lockWindows.push(win);
         lock!.assign_window_to_monitor(win, monitor);
     });
 

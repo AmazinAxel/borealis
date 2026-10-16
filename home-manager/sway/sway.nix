@@ -1,7 +1,7 @@
 { pkgs, config, ... }: {
   services.swayidle = { # lock before suspend on laptop lid close
     enable = true;
-    events.before-sleep = "/home/alec/bin/ags request lock; ${pkgs.coreutils}/bin/sleep 1";
+    events.before-sleep = "${config.home.profileDirectory}/bin/ags request lock; ${pkgs.coreutils}/bin/sleep 1";
   };
 
   wayland.windowManager.sway = {

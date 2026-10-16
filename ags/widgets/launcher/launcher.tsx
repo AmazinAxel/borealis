@@ -37,30 +37,23 @@ export default () => inputControl('launcher', () =>
             placeholderText="Search"
             onActivate={() => launchApp(appsList.peek()[0])}
             onNotifyText={({ text }) => search(text)}
-            $={self => { textBox = self; }}>
-        </entry>}
-
+            $={self => { textBox = self; }}/>}
         content={<box spacing={6} orientation={Gtk.Orientation.VERTICAL}>
             <For each={appsList}>
-                {(app) => {
-                    const blocked = focus(f => f && blockable(app));
+                {(entry) => {
+                    const blocked = focus(f => f && blockable(entry));
                     return <button
-                        onClicked={() => launchApp(app)}
+                        onClicked={() => launchApp(entry)}
                         sensitive={blocked(b => !b)}
                         cssClasses={blocked(b => b ? ["button", "blocked"] : ["button"])}
                     >
                         <box>
-                            <image iconName={app.iconName} />
-                            <box valign={Gtk.Align.CENTER}>
-                                <label
-                                    cssClasses={["name"]}
-                                    xalign={0}
-                                    label={app.name}
-                                />
-                            </box>
+                            <image iconName={entry.iconName}/>
+                            <label cssClasses={["name"]} xalign={0} valign={Gtk.Align.CENTER} label={entry.name}/>
                         </box>
                     </button>;
                 }}
             </For>
         </box>}
-        />, () => textBox.text = '', true, undefined, undefined, undefined, () => textBox);
+    />,
+    { onShow: () => textBox.text = '', searchable: true, focus: () => textBox });

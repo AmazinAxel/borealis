@@ -37,9 +37,7 @@ export const monitorBrightness = () =>
         ['udevadm', 'monitor', '--udev', '--subsystem-match=backlight'],
         (line) => {
             if (!line.includes(screen)) return;
-            const [ok, contents] = GLib.file_get_contents(brightnessPath);
-            if (!ok) return;
-            const v = Number(new TextDecoder().decode(contents).trim()) / screenMax;
+            const v = readNum(brightnessPath) / screenMax;
             if (v !== brightness.peek()) setBrightnessValue(v); // only updates for non internal changes
         }
     );
@@ -50,7 +48,7 @@ export const BrightnessSlider = () =>
         <slider
             hexpand
             focusable={false}
-            value={brightness.as((v: number) => v)}
+            value={brightness}
             onChangeValue={({ value }) => setBrightness(value)}
         />
     </box>

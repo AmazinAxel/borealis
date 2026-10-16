@@ -1,13 +1,10 @@
-{ lib, ... }: {
+{ ... }: {
   imports = [ ./impermanence.nix ];
 
   # sudo install -Dm600 <(grep '^alec:' /etc/shadow | cut -d: -f2) /passwords/alec
   # maybe install to /persist/passwords/alec
   users = {
-    users.alec = {
-      hashedPasswordFile = "/persist/passwords/alec";
-      initialPassword = lib.mkForce null; # todo will NEVER be necessary when we are finished with impermanence config
-    };
+    users.alec.hashedPasswordFile = "/persist/passwords/alec";
     mutableUsers = false;
   };
 

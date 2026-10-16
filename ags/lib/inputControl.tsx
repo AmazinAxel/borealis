@@ -1,9 +1,21 @@
 import app from "ags/gtk4/app"
 import { Astal, Gtk } from "ags/gtk4"
+import Gdk from "gi://Gdk"
 import wrapFocus from "./wrapFocus"
 const { TOP, BOTTOM, LEFT, RIGHT } = Astal.WindowAnchor;
 
-export default (windowName: string, Child: () => JSX.Element, onShow?: any, searchableDialog?: boolean, onKeyPressed?: any, keymode: Astal.Keymode = Astal.Keymode.EXCLUSIVE, layer: Astal.Layer = Astal.Layer.OVERLAY, focusTarget?: () => Gtk.Widget | undefined) =>
+type Options = {
+  onShow?: () => void,
+  searchable?: boolean,
+  onKeyPressed?: (ctrl: Gtk.EventControllerKey, key: number, keycode: number, state: Gdk.ModifierType) => boolean | void,
+  keymode?: Astal.Keymode,
+  layer?: Astal.Layer,
+  focus?: () => Gtk.Widget | undefined,
+};
+
+export default (windowName: string, Child: () => JSX.Element, {
+  onShow, searchable, onKeyPressed, keymode = Astal.Keymode.EXCLUSIVE, layer = Astal.Layer.OVERLAY, focus,
+}: Options = {}) =>
   <window
     name={windowName}
     namespace={windowName}
@@ -11,20 +23,20 @@ export default (windowName: string, Child: () => JSX.Element, onShow?: any, sear
     anchor={TOP | BOTTOM | LEFT | RIGHT}
     application={app}
     layer={layer}
-    onShow={(self: any) => {
-      onShow?.(self);
-      const target = focusTarget?.();
+    onShow={() => {
+      onShow?.();
+      const target = focus?.();
       if (!target) return;
       target.grab_focus();
       (target as Gtk.Entry).set_position?.(-1); // cursor pos
     }}
-    cssClasses={searchableDialog ? ['backgroundDim', 'searchableDialog'] : ['backgroundDim']}
+    cssClasses={searchable ? ['backgroundDim', 'searchableDialog'] : ['backgroundDim']}
   >
-		<Gtk.EventControllerKey
-			propagationPhase={Gtk.PropagationPhase.CAPTURE}
-			onKeyPressed={(ctrl, key, keycode, state) => {
-			  if (key == 65307) { app.toggle_window(windowName); return true; } // Escape
-			  return onKeyPressed?.(ctrl, key, keycode, state) || wrapFocus(ctrl, key, keycode, state);
-			}}/>
+    <Gtk.EventControllerKey
+      propagationPhase={Gtk.PropagationPhase.CAPTURE}
+      onKeyPressed={(ctrl, key, keycode, state) => {
+        if (key == Gdk.KEY_Escape) { app.toggle_window(windowName); return true; }
+        return onKeyPressed?.(ctrl, key, keycode, state) || wrapFocus(ctrl, key, keycode, state);
+      }}/>
     <Child/>
   </window>

@@ -57,25 +57,17 @@ export default () => inputControl('pass', () =>
         />}
         content={<box spacing={6} orientation={Gtk.Orientation.VERTICAL}>
             <For each={results}>
-                {(name) => (
-                    <button
-                        onClicked={() => copyPair(name)}
-                        cssClasses={['button']}
-                    >
-                        <box>
-                            <box valign={Gtk.Align.CENTER}>
-                                <label
-                                    cssClasses={['name']}
-                                    xalign={0}
-                                    label={name}
-                                />
-                            </box>
-                        </box>
+                {(name) =>
+                    <button onClicked={() => copyPair(name)} cssClasses={['button']}>
+                        <label cssClasses={['name']} xalign={0} valign={Gtk.Align.CENTER} label={name}/>
                     </button>
-                )}
+                }
             </For>
         </box>}
     />,
-    () => { if (textBox) { textBox.text = ''; } setResults([]); loadEntries(); },
-    true, undefined, undefined, undefined, () => textBox
+    {
+        onShow: () => { textBox.text = ''; setResults([]); loadEntries(); },
+        searchable: true,
+        focus: () => textBox,
+    }
 );

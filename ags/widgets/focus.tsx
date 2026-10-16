@@ -30,9 +30,8 @@ export const focusMenu = () => inputControl('focusMenu', () =>
             placeholderText="Task"
             maxLength={60}
             onActivate={startFocus}
-            $={self => { textBox = self; }}/>}
-        content={<></>}/>,
-    () => textBox.text = '', true, undefined, undefined, undefined, () => textBox);
+            $={self => { textBox = self; }}/>}/>,
+    { onShow: () => textBox.text = '', searchable: true, focus: () => textBox });
 
 export const focusTask = () =>
     <For each={monitors}>

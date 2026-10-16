@@ -11,6 +11,8 @@
       "/root/.cache/nix" # flake cache
       "/etc/ssh" # host keys for ssh
       "/var/lib/tailscale"
+      "/var/lib/upower"
+      "/var/log/journal" # logs survive reboot
     ];
     files = [
       "/etc/machine-id" # stable id

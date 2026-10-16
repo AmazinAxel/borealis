@@ -11,7 +11,7 @@ let
     version = "1.0.0";
     src = skriptTreesitterSrc;
   };
-  # TODO drop override once tree-sitter-perl builds with glibc 2.44 (bsearch _Generic macro clash)
+  # perl grammar breaks on glibc 2.44 (bsearch _Generic clash)
   helixPkg = inputs.helix.packages.${pkgs.stdenv.hostPlatform.system}.default.override {
     includeGrammarIf = g: g.name != "perl";
   };
@@ -105,6 +105,9 @@ in
             space.f = "file_picker_in_current_directory";
             space.F = "file_picker";
             space.m = "@:move <C-r>%<C-w>";
+            space.b.n = "goto_next_change";
+            space.b.N = "goto_prev_change";
+            space.b.r = ":reset-diff-change";
             space.x = [ ":sh rm '%{buffer_name}'"  ":buffer-close!" ];
             space.o = [ ":sh cp '%{buffer_name}' ./"  ":open %sh{basename '%{buffer_name}'}" ];
             space.D = [

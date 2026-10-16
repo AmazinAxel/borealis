@@ -3,6 +3,7 @@ import { execAsync } from 'ags/process';
 import { Gtk } from 'ags/gtk4';
 import app from 'ags/gtk4/app';
 import GLib from 'gi://GLib';
+import Gdk from 'gi://Gdk';
 import BackgroundSection from '../../lib/backgroundSection';
 import inputControl from '../../lib/inputControl';
 import { notifySend } from '../../lib/notifySend';
@@ -60,10 +61,10 @@ export const openCompress = (file: string, id: string) => {
 
 const handleKeys = (_ctrl: any, key: number) => {
     switch (key) {
-    case 65289: // Tab - change size
+    case Gdk.KEY_Tab: // change size
         setTarget((target.peek() + 1) % targets.length);
         return true;
-    case 65293: // Enter - compress!!
+    case Gdk.KEY_Return: // compress!!
         compress();
         return true;
     };
@@ -76,7 +77,5 @@ export default () => inputControl('compress', () =>
         header={<label $type="overlay" hexpand vexpand
             halign={Gtk.Align.CENTER} valign={Gtk.Align.CENTER}
             label={target((t) => `${targets[t]}MB`)}/>}
-        content={<></>}/>,
-    undefined,
-    undefined,
-    handleKeys);
+    />,
+    { onKeyPressed: handleKeys });
