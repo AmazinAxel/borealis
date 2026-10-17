@@ -42,7 +42,7 @@
     '';
   };
 in {
-  # home.packages = [ ags ];
+  home.packages = [ ags ];
 
   systemd.user.services.ags = {
     Unit = {
