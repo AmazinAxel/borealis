@@ -1,5 +1,4 @@
 { inputs, pkgs, lib, ... }: let
-
   screenshot = pkgs.writeShellScriptBin "screenshot" ''
     ${pkgs.wayfreeze}/bin/wayfreeze --hide-cursor --after-freeze-cmd '
       geom=$(${pkgs.slurp}/bin/slurp) &&
@@ -9,7 +8,6 @@
     '
   '';
 in {
-
   imports = [
     ./tmpfs-root.nix
     inputs.lanzaboote.nixosModules.lanzaboote
@@ -27,10 +25,7 @@ in {
     # more ram on desktops so use more zram
     kernel.sysctl."vm.swappiness" = 180;
 
-    loader = { # Secure boot
-      systemd-boot.enable = lib.mkForce false; # lanzaboote replaces systemd-boot
-      efi.canTouchEfiVariables = true;
-    };
+    loader.systemd-boot.enable = lib.mkForce false; # use lanzaboote
     lanzaboote = {
       enable = true;
       pkiBundle = "/var/lib/sbctl";
@@ -58,25 +53,16 @@ in {
   environment = {
     systemPackages = with pkgs; [
       # Desktop services
-      swaybg
       libnotify # Astal internal notifications
       mpc
       screenshot # Freeze-then-select region screenshot (defined above)
-      grim
-      slurp
-      swappy # Annotation
       brightnessctl
       adwaita-icon-theme # Icons for GTK apps
-      wl-clipboard # Astal clipboard utils
       wl-gammarelay-rs # Blue light filter
-      gpu-screen-recorder
       cifs-utils # Needed for mounting Samba NAS drive
       rsync # Quickly pull files from NAS drive
-      spotdl # Playlist downloads
       playerctl # mpris control from shell
-      # killall
       pass # password management
-      gnupg # GPG for passkeys
       xdg-terminal-exec # open in terminals
 
       # Desktop applications
@@ -89,19 +75,20 @@ in {
       discord
       slack
       filezilla
+      libreoffice
+      thunderbird
+      bun
 
       # Scripts
       (writeScriptBin "fetch" (builtins.readFile ../scripts/fetch.fish))
       (writeScriptBin "sys-sync" (builtins.readFile ../scripts/sys-sync.fish))
       (writeScriptBin "homelab-update" (builtins.readFile ../scripts/homelab-update.fish))
       (writeScriptBin "nx-gc" (builtins.readFile ../scripts/nx-gc.fish))
-      (writeScriptBin "persist-prune" (builtins.readFile ../scripts/persist-prune.fish))
     ];
     persistence."/persist" = {
       directories = [
         "/var/lib/iwd" # saved wifi networks
         "/var/lib/systemd" # backlight
-        "/var/lib/bluetooth" # bt paired devices
         "/var/lib/sbctl" # secure boot keys
       ];
       users.alec = {
@@ -111,6 +98,7 @@ in {
           "Pictures"
           "Videos"
           "Music"
+          "Wallpapers"
           "Projects"
 
           # keys
@@ -122,6 +110,10 @@ in {
           ".config/discord"
           ".config/Slack"
           ".config/filezilla"
+          ".config/libreoffice"
+          ".thunderbird"
+          ".bun"
+          ".config/valent"
           ".local/share/PrismLauncher"
           ".claude"
           ".config/zen"
@@ -131,7 +123,6 @@ in {
           ".config/Code"
           ".vscode-shared" # logins and recents
           ".vscode" # password store
-          ".wakatime" # hackatime cli
           ".local/share/ags-sideview"
           ".cache/ags-sideview"
 
@@ -143,7 +134,6 @@ in {
         ];
         files = [
           ".claude.json" # claude login
-          ".wakatime.cfg" # hackatime key
         ];
       };
     };
@@ -153,18 +143,18 @@ in {
       NO_AT_BRIDGE = "1"; # suppress warnings
       GTK_A11Y = "none";
     };
-    etc."xdg/fcitx5/addon/cloudpinyin.conf".text = ''
-      [Addon]
-      Enabled=False
-    '';
+    # etc."xdg/fcitx5/addon/cloudpinyin.conf".text = ''
+    #   [Addon]
+    #   Enabled=False
+    # '';
   };
 
 
   systemd = {
-    coredump.settings.Coredump = { # if an app crashes dont keep it open
-      Storage = "none";
-      ProcessSizeMax = "0";
-    };
+    # coredump.settings.Coredump = { # if an app crashes dont keep it open
+    #   Storage = "none";
+    #   ProcessSizeMax = "0";
+    # };
     tmpfiles.rules = [
       "Z /persist/home/alec/Music - alec users - -" # music proper owner
       "R! /home/alec/*/.Trash-* - - - - -" # wipe trash in each persisted folder on boot
@@ -205,33 +195,33 @@ in {
   };
 
   # Chinese input support
-  i18n.inputMethod = {
-    enable = true;
-    type = "fcitx5";
-    fcitx5 = {
-      addons = with pkgs; [ qt6Packages.fcitx5-chinese-addons fcitx5-nord ];
-      waylandFrontend = true;
+  # i18n.inputMethod = {
+  #   enable = true;
+  #   type = "fcitx5";
+  #   fcitx5 = {
+  #     addons = with pkgs; [ qt6Packages.fcitx5-chinese-addons fcitx5-nord ];
+  #     waylandFrontend = true;
 
-      settings = {
-        inputMethod = {
-          "Groups/0" = {
-            Name = "Default";
-            "Default Layout" = "us";
-            DefaultIM = "pinyin";
-          };
-          "Groups/0/Items/0".Name = "keyboard-us";
-          "Groups/0/Items/1".Name = "pinyin";
-        };
-        globalOptions."Hotkey/TriggerKeys"."0" = "Control+Super+space";
+  #     settings = {
+  #       inputMethod = {
+  #         "Groups/0" = {
+  #           Name = "Default";
+  #           "Default Layout" = "us";
+  #           DefaultIM = "pinyin";
+  #         };
+  #         "Groups/0/Items/0".Name = "keyboard-us";
+  #         "Groups/0/Items/1".Name = "pinyin";
+  #       };
+  #       globalOptions."Hotkey/TriggerKeys"."0" = "Control+Super+space";
 
-        addons = {
-          clipboard.globalSection."TriggerKey" = ""; # Disable clipboard
-          classicui.globalSection."Theme" = "Nord-Dark";
-          pinyin.globalSection."FirstRun" = "False";
-        };
-      };
-    };
-  };
+  #       addons = {
+  #         clipboard.globalSection."TriggerKey" = ""; # Disable clipboard
+  #         classicui.globalSection."Theme" = "Nord-Dark";
+  #         pinyin.globalSection."FirstRun" = "False";
+  #       };
+  #     };
+  #   };
+  # };
 
   console.colors = [ # TTY
     "000000" # black (background)
@@ -254,9 +244,7 @@ in {
 
   services = {
     gvfs.enable = true; # Samba shares in nemo
-    devmon.enable = true; # Automatic drive mount/unmount
     logrotate.enable = false; # no logs
-    tailscale.enable = true;
     logind.settings.Login.HandlePowerKey = "ignore"; # Don't turn off computer on power key press
 
     # Prevent crashes
@@ -270,7 +258,6 @@ in {
     pipewire = {
       enable = true;
       alsa.enable = true;
-      alsa.support32Bit = true;
       pulse.enable = true;
       wireplumber.enable = true;
     };
@@ -289,22 +276,7 @@ in {
     pam.services.astal-auth.nodelay = true; # handle our own delays
   };
 
-  # Bluetooth
-  hardware = {
-    graphics.enable = true; # this isn't set by sway hm by default for some reason?
-    bluetooth = {
-      enable = true;
-      powerOnBoot = false; # Don't start bluetooth until its needed
-      settings.General = {
-        Experimental = true; # battery reporting
-        FastConnectable = true;
-      };
-      settings.Policy = {
-        ReconnectAttempts = 7;
-        ReconnectIntervals = "1,2,4,8,16,32,64";
-      };
-    };
-  };
+  hardware.graphics.enable = true; # this isn't set by sway hm by default for some reason?
 
   # Since we dont use the sway nix module we have to set the portal explicitly for things like flatpak and screensharing to work
   xdg.portal = {

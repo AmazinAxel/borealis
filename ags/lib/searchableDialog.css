@@ -11,10 +11,8 @@
 }
 
 .searchableDialog button:focus,
-.searchableDialog button:hover,
 .searchableDialog row:selected,
-.searchableDialog row:focus,
-.searchableDialog row:hover {
+.searchableDialog row:focus {
   border: 1px solid @blue1;
 }
 

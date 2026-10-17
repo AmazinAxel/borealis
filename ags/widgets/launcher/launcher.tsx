@@ -43,6 +43,7 @@ export default () => inputControl('launcher', () =>
                 {(entry) => {
                     const blocked = focus(f => f && blockable(entry));
                     return <button
+                        canTarget={false}
                         onClicked={() => launchApp(entry)}
                         sensitive={blocked(b => !b)}
                         cssClasses={blocked(b => b ? ["button", "blocked"] : ["button"])}

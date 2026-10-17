@@ -157,6 +157,7 @@ export const SinkSelector = () =>
             {(speaker: Wp.Endpoint) => {
                 const isSelected = selected(names => names.includes(nodeName(speaker)));
                 return <button
+                    canTarget={false}
                     onClicked={() => applySelection([ nodeName(speaker) ])}
                     cssClasses={isSelected(v => v ? ['active'] : [])}
                 >

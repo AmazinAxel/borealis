@@ -17,26 +17,28 @@ function s --inherit-variable passwd
     echo $passwd | sudo -S -p '' $argv
 end
 
+set -x NAS_KEEP_MOUNT 1 # sys-sync leaves the NAS mounted for the push
 sys-sync
-or exit 1
+mountpoint -q $mntPoint
+or begin
+    echo \n"[Homelab] NAS not mounted"
+    exit 1
+end
 
+set spotdl (nix build --no-link --print-out-paths nixpkgs#spotdl)/bin/spotdl # eval once
 mkdir -p $musicDir
 for playlist in $playlists
     set fields (string split ' ' $playlist)
     echo \n"[Spotify sync] $fields[1]"
-    spotdl download "$fields[2]" --output $musicDir/$fields[1] --archive $musicDir/$fields[1].archive \
+    $spotdl download "$fields[2]" --output $musicDir/$fields[1] --archive $musicDir/$fields[1].archive \
         --add-unavailable --threads 8 --skip-album-art
 end
-
-s mkdir -p $mntPoint
-s mount.cifs //ALECHOMELAB.local/USB $mntPoint -o user=alec,password=$passwd,uid=alec,gid=users
-or exit 1
+mpc update >/dev/null
 
 echo \n"[Homelab] Pushing music to NAS"
 rsync -av --ignore-existing $musicDir/ "$mntPoint/Music/"
 s umount $mntPoint
 
 echo \n"[Homelab] Rebuilding"
-cd /home/alec/Projects/flake
-and git pull
-and nixos-rebuild boot --flake .#alechomelab --sudo --target-host alec@alechomelab.local
+cd /home/alec/Projects/flake # sys-sync already pulled
+and nixos-rebuild boot --flake .#alechomelab --sudo --build-host alec@alecpc --target-host alec@alechomelab.local

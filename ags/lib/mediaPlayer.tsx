@@ -41,7 +41,7 @@ export const playPause = () => {
 let swaybg: AstalIO.Process | null = null;
 let current = '';
 export const randomWallpaper = async () => {
-    const files = (await execAsync(['find', '/home/alec/Projects/flake/wallpapers', '-type', 'f'])).split('\n').filter((f) => f && f !== current);
+    const files = (await execAsync(['find', '/home/alec/Wallpapers', '-type', 'f'])).split('\n').filter((f) => f && f !== current);
     const wallpaper = current = files[Math.floor(Math.random() * files.length)];
     const old = swaybg;
     swaybg = AstalIO.Process.subprocessv(['swaybg', '-i', wallpaper, '-m', 'fill']);

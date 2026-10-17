@@ -240,6 +240,7 @@ const NetworkRow = ({ net }: { net: WifiNet }) => {
     };
 
     return <button
+        canTarget={false}
         cssClasses={net.connected ? ['active'] : []}
         onClicked={(self) => {
             focusedSsid = net.ssid; // keep focus here through the reorder
@@ -284,6 +285,7 @@ export default () =>
         <box visible={streamingMode.as(d => !d)} orientation={Gtk.Orientation.VERTICAL}>
             <box>
                 <button
+                    canTarget={false}
                     hexpand halign={Gtk.Align.START}
                     cssClasses={wifiOn.as(on => [on ? 'active' : 'unpowered'])}
                     onClicked={toggleWifi}
@@ -296,6 +298,7 @@ export default () =>
                     )}/>
                 </button>
                 <button
+                    canTarget={false}
                     onClicked={scan}
                     sensitive={scanning.as(s => !s)}
                     visible={wifiOn}

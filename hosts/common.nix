@@ -113,11 +113,11 @@
 
       # Binary caches
       extra-substituters = [
-        "https://attic.xuyh0120.win/lantian" # cachyos kernel
+        "https://cache.xinux.uz" # cachyos kernel (lantian attic mirror)
         "https://helix.cachix.org" # helix
       ];
       extra-trusted-public-keys = [
-        "lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc="
+        "cache.xinux.uz:BXCrtqejFjWzWEB9YuGB7X2MV4ttBur1N8BkwQRdH+0="
         "helix.cachix.org-1:ejp9KQpR1FBI2onstMQ34yogDm4OgU2ru6lIwPvuCVs="
       ];
     };
@@ -130,6 +130,10 @@
     };
 
     journald.settings.Journal.SystemMaxUse = "20M";
+    tailscale = {
+      enable = true;
+      openFirewall = true;
+    };
 
     avahi = {
       enable = true;

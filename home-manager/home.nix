@@ -1,8 +1,9 @@
-{ inputs, pkgs, ... }: {
+{ pkgs, ... }: {
   imports = [
     ./sway/keybinds.nix
     ./sway/sway.nix
 
+    ./ags.nix
     ./aseprite.nix
     ./claude.nix
     ./fish.nix
@@ -16,44 +17,9 @@
     ./swappy.nix
     ./vscode.nix
     ./zen.nix
-
-    inputs.ags.homeManagerModules.default
   ];
 
-  programs = {
-    home-manager.enable = true;
-    ags = {
-      enable = true;
-      configDir = ../ags;
-      systemd.enable = true;
-
-      extraPackages = with inputs.astal.packages.x86_64-linux; [
-        apps # App launcher
-        auth
-        battery
-        bluetooth
-        mpris
-        notifd
-        wireplumber
-        wl4
-        # idle-notify
-
-        pkgs.webkitgtk_6_0 # webview
-        pkgs.glib-networking # TLS stuff for webview
-        pkgs.gst_all_1.gst-plugins-base # webview media
-        pkgs.brightnessctl
-        pkgs.sway # swaymsg IPC
-        pkgs.iwd # wifi control
-        pkgs.mpc # MPD
-        pkgs.cliphist
-        pkgs.wl-clipboard # wl-copy
-        pkgs.swappy
-        pkgs.swaybg
-        pkgs.procps # pkill for gpu-screenrec
-        pkgs.ffmpeg-headless # clipboard video thumbnails & compression
-      ];
-    };
-  };
+  programs.home-manager.enable = true;
   systemd.user.startServices = "sd-switch"; # Better system unit reloads
 
   home = {

@@ -11,12 +11,23 @@ function s --inherit-variable passwd
 end
 
 s mkdir -p $mntPoint
-s mount.cifs //ALECHOMELAB.local/USB $mntPoint -o user=alec,password=$passwd,uid=alec,gid=users
+set cred (mktemp) # keeps the password out of ps
+printf 'username=alec\npassword=%s\n' $passwd >$cred
+s mount.cifs //ALECHOMELAB.local/USB $mntPoint -o credentials=$cred,uid=alec,gid=users
+set mounted $status
+rm $cred
 
-echo \n"[Sync] Pulling music from NAS"
-s rsync -av --ignore-existing --chown=alec:users "$mntPoint/Music/" /home/alec/Music/
-mpc update >/dev/null
-s umount $mntPoint
+if test $mounted -eq 0
+    echo \n"[Sync] Pulling music from NAS"
+    rsync -av --ignore-existing "$mntPoint/Music/" /home/alec/Music/
+    mpc update >/dev/null
+    echo \n"[Sync] Syncing wallpapers with NAS"
+    rsync -av --ignore-existing "$mntPoint/Wallpapers/" /home/alec/Wallpapers/
+    rsync -av --ignore-existing /home/alec/Wallpapers/ "$mntPoint/Wallpapers/"
+    set -q NAS_KEEP_MOUNT; or s umount $mntPoint # homelab-update reuses the mount
+else
+    echo \n"[Sync] NAS mount failed - skipping music and wallpapers"
+end
 
 echo \n"[Sync] Pulling passwords"
 pass git pull --rebase
@@ -46,7 +57,7 @@ if test -n "$isDirty"
     echo \n"[Sync] System flake is dirty - not updating system"
 else
     git pull
-    s nixos-rebuild boot --flake 'path:/home/alec/Projects/flake/'
+    s nixos-rebuild boot --flake .
 end
 
 # Astal

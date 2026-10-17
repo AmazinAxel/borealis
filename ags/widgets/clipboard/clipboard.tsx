@@ -14,7 +14,7 @@ import { streamingMode } from '../notifications/notifications';
 const hide = () => app.get_window('clipboard')?.hide();
 const items = new Map<string, { mime: string, path: string | null, child: Gtk.Widget }>();
 
-const list = new Gtk.ListBox();
+const list = new Gtk.ListBox({ canTarget: false });
 list.set_sort_func((a, b) => Number(b.child!.name) - Number(a.child!.name));
 list.connect('row-activated', (_, row) => {
     hide();

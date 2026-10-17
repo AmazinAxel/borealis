@@ -58,7 +58,7 @@ export default () => inputControl('pass', () =>
         content={<box spacing={6} orientation={Gtk.Orientation.VERTICAL}>
             <For each={results}>
                 {(name) =>
-                    <button onClicked={() => copyPair(name)} cssClasses={['button']}>
+                    <button canTarget={false} onClicked={() => copyPair(name)} cssClasses={['button']}>
                         <label cssClasses={['name']} xalign={0} valign={Gtk.Align.CENTER} label={name}/>
                     </button>
                 }

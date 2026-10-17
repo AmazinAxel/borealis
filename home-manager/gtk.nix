@@ -26,10 +26,10 @@
       colorVariants = [ "light" "dark" ];
     };
     };
-    gtk3.extraConfig.gtk-im-module = "fcitx";
+    # gtk3.extraConfig.gtk-im-module = "fcitx";
     gtk4 = {
       theme = config.gtk.theme;
-      extraConfig.gtk-im-module = "fcitx";
+      # extraConfig.gtk-im-module = "fcitx";
     };
   };
 

@@ -72,7 +72,6 @@ in {
 
   config = lib.mkIf cfg.enable {
     environment.systemPackages = [
-      pkgs.openjdk25
 
       # see & type in console
       (pkgs.writeShellScriptBin "mc" ''

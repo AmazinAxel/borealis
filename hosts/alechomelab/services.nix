@@ -31,7 +31,7 @@ in {
         };
       };
       daily = {
-        path = with pkgs; [ util-linux curl jq toybox fish git ];
+        path = with pkgs; [ util-linux curl jq fish git ];
         script = ''
           fish ${./scripts}/githubBackup.fish
           date +%s > /home/alec/lastSynced

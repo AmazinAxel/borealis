@@ -9,7 +9,6 @@
       audio_output {
         type "pipewire"
         name "Main Output"
-        always_on "yes"
       }
     '';
   };

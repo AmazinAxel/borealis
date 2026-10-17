@@ -20,7 +20,6 @@
 
   networking = {
     useNetworkd = false; # use nm
-    firewall.allowedTCPPorts = [ 9000 8000 ];
     networkmanager = {
       enable = true;
       wifi.powersave = false; # Stops network drops
@@ -75,10 +74,6 @@
     "vm.vfs_cache_pressure" = 50; # keep dentry/inode cache, avoids re-reads
   };
 
-  services.fstrim = {
-    enable = true;
-    interval = "weekly";
-  };
 
   nix = {
     gc = {
@@ -87,13 +82,5 @@
       options = "--delete-older-than 14d";
       randomizedDelaySec = "30m";
     };
-    optimise = {
-      automatic = true;
-      dates = [ "weekly" ];
-    };
   };
-
-  environment.systemPackages = [
-    (pkgs.writeScriptBin "persist-prune" (builtins.readFile ../scripts/persist-prune.fish))
-  ];
 }

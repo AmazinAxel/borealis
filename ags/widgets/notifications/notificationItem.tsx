@@ -1,5 +1,5 @@
 import GLib from "gi://GLib";
-import { Gtk, Gdk } from 'ags/gtk4';
+import { Gtk } from 'ags/gtk4';
 import Notifd from 'gi://AstalNotifd';
 import Pango from 'gi://Pango';
 import { execAsync } from 'ags/process';
@@ -9,8 +9,6 @@ const notifd = Notifd.get_default();
 const time = (time: number) => GLib.DateTime.new_from_unix_local(time).format("%H:%M")!;
 
 const capitalizeFirstLetter = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-
-const pointer = Gdk.Cursor.new_from_name('pointer', null);
 
 const invoke = (n: Notifd.Notification, id: string) => {
     n.invoke(id);
@@ -51,11 +49,8 @@ export const notificationItem = (n: Notifd.Notification) =>
                     maxWidthChars={30}
                 />}
                 {n.get_actions().length > 0 && <box cssClasses={['actions']} spacing={5}>
-                    {n.get_actions().map(({ label, id }) =>
-                        <button
-                            hexpand
-                            cursor={pointer}
-                            onClicked={() => invoke(n, id)}>
+                    {n.get_actions().map(({ label }) =>
+                        <button hexpand canTarget={false} focusable={false}>
                             <label label={label.replace('Activate', 'Open')} halign={CENTER}/>
                         </button>
                     )}

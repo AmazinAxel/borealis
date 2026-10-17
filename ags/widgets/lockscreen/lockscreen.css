@@ -1,18 +1,19 @@
 #lockscreen label {
   /* Time */
   font-size: 12rem;
-  color: @blue2;
-  text-shadow: 0 0 2rem @blue2;
+  color: alpha(@blue1, 0.9);
+  text-shadow: 0 2px 6px alpha(@dark1, 0.6), 0 0 2rem alpha(@blue2, 0.8);
   font-family: 'WenQuanYi Zen Hei Mono';
   border-radius: 0.5rem;
-  outline: 3px solid #ffffff1c;
+  outline: 3px solid alpha(@blue2, 0.2);
   padding: 30px 31px 20px 26px;
-  background-color: rgba(236, 239, 244, 0.05);
+  background-color: alpha(@dark1, 0.45);
+  box-shadow: 0 0 3rem alpha(@dark1, 0.35);
 }
 
 #lockscreen label.failed {
   color: @red;
-  text-shadow: 0 0 1rem @red;
+  text-shadow: 0 2px 6px alpha(@dark1, 0.6), 0 0 1rem @red;
 }
 
 #lockscreen entry {

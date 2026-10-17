@@ -44,10 +44,7 @@
     };
 
     # apps
-    helix = {
-      url = "github:helix-editor/helix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    helix.url = "github:helix-editor/helix"; # no follows so helix.cachix hits
     spicetify-nix = {
       url = "github:Gerg-L/spicetify-nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -92,7 +89,7 @@
       };
 
       # headless devices
-      # nixos-rebuild switch --flake .#<hostname> --sudo --ask-sudo-password --target-host alec@<hostname>.local
+      # nixos-rebuild switch --flake .#<hostname> --sudo --ask-sudo-password --build-host alec@alecpc --target-host alec@<hostname>.local
 
       # Homelab (Zero 2W)
       "alechomelab" = nixpkgs.lib.nixosSystem {

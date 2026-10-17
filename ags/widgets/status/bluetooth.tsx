@@ -173,6 +173,7 @@ const DeviceRow = ({ device }: { device: BluetoothService.Device }) => {
     });
 
     return <button hexpand
+        canTarget={false}
         visible={visible}
         sensitive={connecting(c => !c)}
         cssClasses={createComputed((track) =>
@@ -245,6 +246,7 @@ export default () => {
     return <box orientation={Gtk.Orientation.VERTICAL} $={wireMenuLifecycle}>
         <box>
             <button
+                canTarget={false}
                 hexpand halign={Gtk.Align.START}
                 onClicked={() => bluetooth.toggle()}
                 cssClasses={bluetoothOn.as(power => [power ? 'active' : 'unpowered'])}
@@ -253,6 +255,7 @@ export default () => {
                 <image iconName="bluetooth-active-symbolic"/>
             </button>
             <button
+                canTarget={false}
                 onClicked={() => {
                     const adapter = bluetooth.adapter;
                     if (!adapter) return;

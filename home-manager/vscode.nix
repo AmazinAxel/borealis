@@ -67,7 +67,6 @@
           };
         };
         update.mode = "none";
-        wakatime.apiUrl = "https://hackatime.hackclub.com/api/hackatime/v1";
         svelte.enable-ts-plugin = true; # Svelte TS intellisense
         window.titleBarStyle = "custom"; # Fix Wayland bug
         javascript.updateImportsOnFileMove.enabled = "always";

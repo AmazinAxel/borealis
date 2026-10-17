@@ -22,8 +22,6 @@
   security.sudo.wheelNeedsPassword = false;
 
   hardware = {
-    i2c.enable = true;
-
     # custom spi dts for waveshare display output
     deviceTree = {
       enable = true;
@@ -49,7 +47,6 @@
   services = {
     samba = { # USB NAS
       enable = true;
-      package = pkgs.samba4Full; # Autodiscovery support
       openFirewall = true;
       settings = {
         global = {

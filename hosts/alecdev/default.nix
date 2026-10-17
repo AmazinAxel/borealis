@@ -1,6 +1,6 @@
 { pkgs, inputs, ... }: {
   imports = [
-    ../mcscripts.nix
+    ../../modules/mcscripts.nix
     ../common.nix
     ../../modules/pi.nix
     ../../modules/mcdev.nix

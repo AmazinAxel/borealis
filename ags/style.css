@@ -37,10 +37,6 @@ button:focus {
   outline-offset: 1px;
 }
 
-.notification button:focus {
-  outline: none;
-}
-
 window {
   background: transparent;
   font-family: 'Sora';
@@ -131,9 +127,7 @@ button {
 
 button.active,
 .button:focus,
-.button:hover,
 list row:focus,
-list row:hover,
 calendar button:focus,
 calendar .today {
   background-color: @blue2;
@@ -152,9 +146,7 @@ calendar .today {
 }
 
 list row:focus,
-list row:hover,
-.searchableDialog button:focus,
-.searchableDialog button:hover {
+.searchableDialog button:focus {
   transform: translateY(-2px) scale(1.01);
 }
 

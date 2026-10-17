@@ -7,11 +7,10 @@
     ${lib.concatMapStringsSep "\n" (s: "cp -r ${src}/skills/${s} $out/skills/${s}") keep}
     chmod -R u+w $out
     cp ${ruleset} $out/skills/${name}/SKILL.md
+    find $out -name '*.json' -exec sed -i 's|"node |"${pkgs.bun}/bin/bun |' {} +
   '';
 
 in {
-  home.packages = [ pkgs.nodejs-slim ]; # caveman/ponytail hooks are node scripts
-
   programs.claude-code = {
     enable = true;
     package = pkgs.claude-code;

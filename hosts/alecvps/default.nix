@@ -17,6 +17,8 @@ in {
   networking.wireless.iwd.enable = false; # no wifi in a container
   boot.loader.systemd-boot.enable = false; # fix boot eval
   zramSwap.enable = false; # cant use in proxmox
+  services.avahi.enable = lib.mkForce false; # no mDNS in LXC
+  services.tailscale.interfaceName = "userspace-networking"; # no /dev/net/tun in unprivileged LXC
 
   services = {
     fstrim.enable = false; # Proxmox handles this
