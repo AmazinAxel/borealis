@@ -26,7 +26,7 @@
   ];
 
   # CLI
-  # ags = inputs.ags.packages.${system}.default.override { inherit extraPackages; };
+  ags = inputs.ags.packages.${system}.default.override { inherit extraPackages; };
 
   shell = pkgs.stdenv.mkDerivation {
     name = "ags-shell";
