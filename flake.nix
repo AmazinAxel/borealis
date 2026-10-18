@@ -89,7 +89,7 @@
       };
 
       # headless devices
-      # nixos-rebuild switch --flake .#<hostname> --sudo --ask-sudo-password --build-host alec@alecpc --target-host alec@<hostname>.local
+      # nixos-rebuild switch --flake .#<hostname> --sudo --ask-sudo-password --build-host alec@alecpc --target-host alec@<hostname>
 
       # Homelab (Zero 2W)
       "alechomelab" = nixpkgs.lib.nixosSystem {

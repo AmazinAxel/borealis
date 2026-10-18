@@ -24,23 +24,6 @@
       exec footclient
     fi
   '';
-  openNemo = pkgs.writeShellScriptBin "nemo" ''
-    if ${shouldFloat}; then
-      exec ${pkgs.nemo-with-extensions}/bin/nemo "$@"
-    fi
-    (
-      ${pkgs.sway}/bin/swaymsg -t subscribe -m '["window"]' 2>/dev/null \
-        | ${pkgs.jq}/bin/jq -c --unbuffered 'select(.change == "new" and (.container.app_id // "") == "nemo") | .container.id' \
-        | head -n 1 \
-        | while IFS= read -r con_id; do
-            ${pkgs.sway}/bin/swaymsg "[con_id=$con_id] floating disable" >/dev/null
-          done
-    ) &
-    watcher=$!
-    ( sleep 2; kill $watcher 2>/dev/null ) &
-    ${pkgs.nemo-with-extensions}/bin/nemo "$@"
-    wait $watcher 2>/dev/null
-  '';
   toggleTheme = pkgs.writeShellScript "toggle-theme" ''
     gs=${pkgs.glib}/bin/gsettings
     pk=${pkgs.procps}/bin/pkill
@@ -59,8 +42,6 @@
     fi
   '';
 in {
-  home.packages = [ openNemo ]; # Shadow system nemo with wrapper
-
   wayland.windowManager.sway = {
     config.keybindings = {
       # Volume

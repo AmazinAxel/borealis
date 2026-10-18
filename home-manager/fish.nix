@@ -23,6 +23,9 @@
         nb = "nix build";
         nd = "nix develop";
         nfc = "nix flake check";
+
+        c = "claude --dangerously-skip-permissions";
+        cdp = "cd /home/alec/Projects/";
       };
       functions = {
         gcm = ''git commit -m "$argv"'';

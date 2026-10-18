@@ -117,7 +117,7 @@ app.start({
 const reminders = async () => {
     const lastSync = Number(astalIO.read_file("/home/alec/Projects/flake/ags/lastSync.txt"));
 
-    if ((Date.now() - lastSync) > 540000000 && (await execAsync(['sh', '-c', 'sleep 5; iwctl station wlan0 show']).catch(() => '')).includes('GreatEscape')) { // Last sync was ~7 days ago
+    if ((Date.now() - lastSync) > 540000000) { // Last sync was ~7 days ago
         notifySend({
             appName: 'Sync',
             title: 'Sync system',

@@ -13,7 +13,7 @@ end
 s mkdir -p $mntPoint
 set cred (mktemp) # keeps the password out of ps
 printf 'username=alec\npassword=%s\n' $passwd >$cred
-s mount.cifs //ALECHOMELAB.local/USB $mntPoint -o credentials=$cred,uid=alec,gid=users
+s mount.cifs //alechomelab/USB $mntPoint -o credentials=$cred,uid=alec,gid=users
 set mounted $status
 rm $cred
 

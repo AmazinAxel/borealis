@@ -41,4 +41,4 @@ s umount $mntPoint
 
 echo \n"[Homelab] Rebuilding"
 cd /home/alec/Projects/flake # sys-sync already pulled
-and nixos-rebuild boot --flake .#alechomelab --sudo --build-host alec@alecpc --target-host alec@alechomelab.local
+and nixos-rebuild boot --flake .#alechomelab --sudo --build-host alec@alecpc --target-host alec@alechomelab
