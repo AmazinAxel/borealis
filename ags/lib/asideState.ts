@@ -1,4 +1,4 @@
-import { createState } from "ags"
+import { createState } from 'ags';
 
 export const [ currentAsideWindow, setCurrentAsideWindow ] = createState<string | null>(null);
 

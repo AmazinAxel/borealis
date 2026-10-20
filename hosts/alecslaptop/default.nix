@@ -1,4 +1,4 @@
-{ pkgs, ... }: {
+{ pkgs, lib, ... }: {
   imports = [
     ./hardware-configuration.nix
     ../common.nix
@@ -47,7 +47,28 @@
     };
   };
 
+  # battery debug: every 2 min awake on battery, log drain, lid and top cpu users (monotonic timer pauses in suspend)
+  # TODO REMOVE THIS DEBUG WHEN DONE!!
+  systemd.services.battery-awake-log = {
+    path = with pkgs; [ procps gawk ];
+    serviceConfig.Type = "oneshot";
+    script = ''
+      bat=$(echo /sys/class/power_supply/BAT*)
+      [ "$(cat $bat/status)" = Discharging ] || exit 0
+      echo "awake on battery: $(cat $bat/capacity)%, $(( $(cat $bat/current_now) / 1000 ))mA, lid $(grep -o 'open\|closed' /proc/acpi/button/lid/*/state)"
+      top -b -n2 -d1 -o %CPU -w 120 | awk '/^top -/{n++} n==2' | sed -n '7,12p'
+    '';
+  };
+  systemd.timers.battery-awake-log = {
+    wantedBy = [ "timers.target" ];
+    timerConfig = { OnBootSec = "2min"; OnUnitActiveSec = "2min"; };
+  };
+
   services = {
+    journald.settings.Journal = { # battery debug: room for pm_debug logs overnight, flush often in case it dies
+      SystemMaxUse = lib.mkForce "300M";
+      SyncIntervalSec = "30s";
+    };
     flatpak.enable = true; # For running Sober
     scx = { # scheduler for less active cores
       enable = true;

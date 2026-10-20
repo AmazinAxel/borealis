@@ -62,6 +62,7 @@ in {
       playerctl # mpris control from shell
       pass # password management
       xdg-terminal-exec # open in terminals
+      wl-clipboard # wl paste for some apps
 
       # Desktop applications
       gthumb

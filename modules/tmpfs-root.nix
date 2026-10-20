@@ -1,4 +1,4 @@
-{ ... }: {
+{
   imports = [ ./impermanence.nix ];
 
   # sudo install -Dm600 <(grep '^alec:' /etc/shadow | cut -d: -f2) /passwords/alec

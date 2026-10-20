@@ -1,4 +1,4 @@
-{ ... }: let
+let
   nordColors = {
     regular0 = "2e3440"; # Black
     regular1 = "bf616a"; # Red
@@ -18,7 +18,7 @@ in {
       main = {
         title = "Terminal";
         pad = "5x5";
-        font = "Iosevka Nerd Font Mono:size=11";
+        font = "Iosevka Nerd Font Mono:size=12.5";
       };
       cursor = {
         style = "beam";

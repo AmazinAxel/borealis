@@ -1,28 +1,15 @@
 .statusElement {
   background: @dark1;
-  margin: 0.4rem;
-  border: 0.15rem @dark4 solid;
-}
-
-#status .statusElement {
-  border-radius: 0.5rem 0.5rem 0 0;
-}
-
-#status .statusElement#media {
-  border-radius: 0.5rem;
-  border: none;
-}
-
-#workspaces .statusElement {
-  border-radius: 0 0 0.5rem 0.5rem;
+  margin: 0 0 5px 5px;
+  border: 3px solid @dark4;
 }
 
 .statusMenu {
-  padding: 0.5rem 0 1rem 0;
+  padding: 8px 0 16px 0;
 }
 
 .statusMenu image {
-  -gtk-icon-size: 0.9rem;
+  -gtk-icon-size: 14px;
   -gtk-icon-shadow: 0 0 12px @light3;
   color: @light3;
 }
@@ -32,7 +19,7 @@
 }
 
 .batteryPercent {
-  font-size: 0.8rem;
+  font-size: 13px;
   font-weight: bold;
   color: @blue2;
 }
@@ -42,17 +29,17 @@
 }
 
 .timeSection {
-  padding: 0.4rem 0 0.5rem 0;
+  padding: 6px 0 8px 0;
 }
 
 /* Time/date module */
 .time .date,
 .time .day {
   color: @blue2;
-  text-shadow: 0 0 3px @blue3;
+  text-shadow: 0 1px 3px alpha(@dark1, 0.8), 0 0 3px @blue3;
   margin: 0;
   font-style: italic;
-  font-size: 1.1rem;
+  font-size: 18px;
 }
 
 .time {
@@ -60,23 +47,23 @@
 }
 
 .time .time {
-  font-size: 1.5rem;
+  font-size: 24px;
   font-weight: bold;
   letter-spacing: 2px;
   color: @blue2;
-  text-shadow: 0 0 5px @blue3;
+  text-shadow: 0 1px 3px alpha(@dark1, 0.8), 0 0 5px @blue3;
   padding: 4px 5px 2px 5px;
 }
 
 .time .day {
-  font-size: 1.1rem;
+  font-size: 18px;
 }
 
 /* Bluetooth */
 .unpowered {
-  padding: 2rem;
-  margin: 0.5rem;
-  -gtk-icon-size: 3rem;
+  padding: 32px;
+  margin: 8px;
+  -gtk-icon-size: 48px;
 }
 
 #asideStatus button.connecting,
@@ -87,32 +74,44 @@
 
 /* Aside lists */
 #asideStatus button {
-  margin: 0.22rem;
+  margin: 4px;
 }
 
 #asideStatus scrolledwindow>viewport>box {
-  padding: 4.5px;
+  padding: 5px;
 }
 
 /* Recording indicator */
 .recIndicator {
-  color: #bf616a;
-  padding: 0.5rem;
-  -gtk-icon-shadow: 0 0 10px #bf616a;
+  color: @red;
+  padding: 8px;
+  -gtk-icon-shadow: 0 0 10px @red;
 }
 
 /* Media/mpris player */
 #mediaBtn image,
 #media image {
-  -gtk-icon-size: 1.3rem;
+  -gtk-icon-size: 21px;
 }
 
 #status #mediaBtn {
-  border-radius: 0.3rem;
-  padding: 0.5rem;
+  padding: 8px;
 }
 
 #status #mprisBtn {
-  padding: 0.8rem 0;
+  padding: 13px 0;
 }
 
+#media.study { border-color: shade(@red, 1.1); }
+#media.focus { border-color: shade(@blue3, 1.1); }
+#media.synthwave { border-color: shade(@purple, 1.1); }
+#media.liked { border-color: shade(@blue4, 1.1); }
+#media.synthambient { border-color: shade(@yellow, 1.1); }
+#media.ambient { border-color: shade(@blue2, 1.1); }
+
+#media.study #mediaBtn { background-color: @red; }
+#media.focus #mediaBtn { background-color: @blue3; }
+#media.synthwave #mediaBtn { background-color: @purple; }
+#media.liked #mediaBtn { background-color: @blue4; }
+#media.synthambient #mediaBtn { background-color: @yellow; }
+#media.ambient #mediaBtn { background-color: @blue2; }

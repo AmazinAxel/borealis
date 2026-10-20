@@ -1,20 +1,19 @@
 .notification {
-    background-color: @dark1;
-    margin: 0.4rem;
-    border-radius: 0 0 0 0.5rem;
-    padding: 0;
-    min-width: 15rem;
+  background-color: @dark1;
+  margin: 5px 5px 0 0;
+  border: 3px solid @dark4;
+  padding: 0;
+  min-width: 240px;
 }
 
 .notification .header {
-    background-color: @dark2;
-    padding: 0.5rem;
-    margin: 0;
-    border-radius: 4px 4px 0 0;
-    border-bottom: 2.5px solid @blue3;
+  background-color: @dark2;
+  padding: 8px;
+  margin: 0;
+  border-bottom: 3px solid @blue3;
 }
 
-.notification .content { margin-top: 0; padding: 0.7rem; }
-.notification .summary { font-size: 1.1rem; }
-.notification .actions { padding-top: 0.7rem; }
+.notification .content { margin-top: 0; padding: 11px; }
+.notification .summary { font-size: 18px; }
+.notification .actions { padding-top: 11px; }
 .notification .appName, .notification .summary { font-family: 'Hammersmith One'; }

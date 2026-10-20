@@ -1,9 +1,4 @@
-{ pkgs, config, ... }: {
-  services.swayidle = { # lock before suspend on laptop lid close
-    enable = true;
-    events.before-sleep = "${config.home.profileDirectory}/bin/ags request lock; ${pkgs.coreutils}/bin/sleep 1";
-  };
-
+{
   wayland.windowManager.sway = {
     enable = true;
     systemd.dbusImplementation = "broker"; # this needs to match the new nixos default
@@ -123,10 +118,11 @@
         { command = "gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' && gsettings set org.gnome.desktop.interface gtk-theme 'Graphite-Dark-nord'"; } # dark mode on boot
         # { command = "fcitx5 -d"; }
         { command = "wl-gammarelay-rs"; }
-        { command = "sleep 1 && busctl --user set-property rs.wl-gammarelay / rs.wl.gammarelay Temperature q 3500"; }
       ];
     };
-    # Disable middle mouse paste
-    extraConfig = "primary_selection disabled";
+    extraConfig = ''
+      primary_selection disabled
+      swaybg_command -
+    '';
   };
 }

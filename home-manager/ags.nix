@@ -18,14 +18,12 @@
 
       pkgs.webkitgtk_6_0 # webview
       pkgs.glib-networking # TLS stuff for webview
-      pkgs.brightnessctl
       pkgs.sway # swaymsg IPC
       pkgs.iwd # wifi control
       pkgs.mpc # MPD
       pkgs.cliphist
       pkgs.wl-clipboard # wl-copy
       pkgs.swappy
-      pkgs.swaybg
       pkgs.procps # pkill for gpu-screenrec
       pkgs.ffmpeg-headless # clipboard video thumbnails & compression
     ];

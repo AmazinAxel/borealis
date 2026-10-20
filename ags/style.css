@@ -1,6 +1,5 @@
 /* Graphite Nord theme colors: https://github.com/vinceliuice/Graphite-gtk-theme/blob/main/src/sass/gtk/_colors-public.scss */
 
-
 /* For text input placeholders */
 @define-color placeholder_text_color #fff;
 
@@ -30,6 +29,7 @@
 
 * {
   transition: none;
+  border-radius: 0;
 }
 
 button:focus {
@@ -40,6 +40,9 @@ button:focus {
 window {
   background: transparent;
   font-family: 'Sora';
+  font-size: 16px;
+  text-shadow: 0 1px 3px alpha(@dark1, 0.8);
+  -gtk-icon-shadow: 0 1px 3px alpha(@dark1, 0.8);
 }
 
 window,
@@ -63,7 +66,6 @@ window scale {
 window scale trough {
   background: @light1;
   min-height: 5px;
-  border-radius: 5px;
 }
 
 window scale highlight {
@@ -71,8 +73,17 @@ window scale highlight {
 }
 
 window scale slider {
-  background: @dark3;
-  border: 2px solid @blue2;
+  min-width: 9px;
+  min-height: 9px;
+  margin: -7px;
+  background: @light1;
+  border: 5px solid @blue2;
+  box-shadow: 0 0 4px alpha(@dark1, 0.8);
+  transform: rotate(45deg);
+}
+
+window scale slider:hover {
+  background: @blue1;
 }
 
 .clipboardScroll scrollbar {
@@ -80,21 +91,19 @@ window scale slider {
 }
 
 .clipboardScroll list {
-  padding: 0.6rem;
+  padding: 10px;
 }
 
 .asideStatusWidget {
-  border: 0.15em solid @blue2;
-  border-radius: 0 0.5rem 0 0;
+  border: 3px solid @blue3;
   background-color: @dark2;
-  margin: 5px 5px 7.5px 5.5px;
-  padding: 0.8rem;
+  margin: 5px;
+  padding: 13px;
 }
 
 calendar {
   padding: 0;
   margin: 0;
-  border-radius: 0 0.5rem 0 0;
 }
 
 separator {
@@ -109,12 +118,12 @@ separator {
 
 /* Sink selector */
 popover {
-  min-width: 20rem;
+  min-width: 320px;
 }
 
 #emojiPicker entry {
   background-color: @dark3;
-  border-radius: 7px 7px 0 0;
+  border: 3px solid @blue3;
 }
 
 button {
@@ -142,23 +151,23 @@ calendar .today {
 
 #bluetooth,
 #network {
-  padding-right: 1.1rem;
+  padding-right: 18px;
 }
 
 list row:focus,
 .searchableDialog button:focus {
-  transform: translateY(-2px) scale(1.01);
+  transform: translateY(-2px);
 }
 
 .widgetBackground {
   background-color: @dark1;
-  border-radius: 0.5rem;
-  padding: 1rem;
+  border: 3px solid @blue3;
+  padding: 16px;
 }
 
 .backgroundOverlay {
-  padding: 3rem 3rem 3rem 0;
-  min-height: 2rem;
+  padding: 48px 48px 48px 0;
+  min-height: 32px;
 }
 
 .backgroundImage {
@@ -166,8 +175,8 @@ list row:focus,
 }
 
 .backgroundSection {
-  margin: 1rem;
-  line-height: 1.2rem;
+  margin: 16px;
+  line-height: 19px;
 }
 
 .searchableDialog entry,
@@ -177,12 +186,11 @@ window .backgroundSection .header:first-child {
   outline-offset: -3px;
   outline: 2px solid #ffffff1c;
   font-family: 'Hammersmith One';
-  border-radius: 0.4rem;
 }
 
 .backgroundSection .header:first-child {
-  text-shadow: 0 0 10px @light3;
-  font-size: 2rem;
+  text-shadow: 0 1px 3px alpha(@dark1, 0.8), 0 0 10px @light3;
+  font-size: 32px;
 }
 
 .backgroundSection .header.light:first-child,
@@ -192,8 +200,8 @@ window .backgroundSection .header:first-child {
 
 .passGenIcon {
   color: @dark4;
-  -gtk-icon-size: 1rem;
-  margin-right: 0.2rem;
+  -gtk-icon-size: 16px;
+  margin-right: 3px;
 }
 
 .passGenIcon.generated {
@@ -202,7 +210,7 @@ window .backgroundSection .header:first-child {
 
 /* Record menu */
 #recordMenu label {
-  font-size: 2.2rem;
+  font-size: 35px;
 }
 
 #recordMenu image {
@@ -210,52 +218,51 @@ window .backgroundSection .header:first-child {
 }
 
 #focusTask label {
-  margin-top: 6px;
-  border: 0.2rem solid @blue3;
-  border-top: none;
-  font-size: 2rem;
+  margin: 5px 0 0 0;
+  border: 3px solid @dark4;
+  font-size: 32px;
   font-family: 'Hammersmith One';
-  padding: 0.2rem 0.4rem;
+  padding: 3px 6px;
   background-color: @dark1;
 }
 
 /* Workspace preview */
 #workspaces .statusElement {
-  padding: 0.2rem 0;
-  margin: 0.45rem 0.4rem;
+  padding: 3px 0;
+  margin: 5px 0 0 5px;
 }
 
 #workspaces .workspace {
   background-color: @dark2;
-  min-width: 1.32rem;
-  min-height: 1.6rem;
-  border-radius: 5px;
-  margin: 0.3rem 0.5rem;
+  min-width: 21px;
+  min-height: 26px;
+  margin: 5px 8px;
 }
 
 #workspaces .workspace.active {
   background-color: @blue2;
   box-shadow: 0 0 5px @blue3;
-  min-height: 2.1rem;
+  min-height: 34px;
 }
 
 #workspaces .workspace.occupied {
   background-color: @dark4;
-  min-height: 1.9rem;
+  min-height: 30px;
 }
 
 #workspaces .scratchpad {
   color: @light4;
   opacity: 0.5;
-  font-size: 1rem;
-  margin: 0.1rem 0.5rem 0.2rem;
+  font-size: 16px;
+  margin: 2px 8px 3px;
 }
 
 /* Sideview widgets */
 
 #sideview {
-  margin: 0.333rem -1px 0.546rem 0rem;
-  border: 0.2rem solid @dark4;
+  margin: 5px 0;
+  border: 3px solid @dark4;
+  border-right: none;
   background-color: @dark1;
 }
 

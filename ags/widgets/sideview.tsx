@@ -1,10 +1,11 @@
-import { Astal, Gtk } from "ags/gtk4";
-import { createState } from "ags";
-import GLib from "gi://GLib";
-import Gio from "gi://Gio";
-import Gdk from "gi://Gdk";
-import app from "ags/gtk4/app";
-import inputControl from "../lib/inputControl";
+import { Astal, Gtk } from 'ags/gtk4';
+import { createState } from 'ags';
+import GLib from 'gi://GLib';
+import Gio from 'gi://Gio';
+import Gdk from 'gi://Gdk';
+import app from 'ags/gtk4/app';
+import inputControl from '../lib/inputControl';
+import type WebKitT from 'gi://WebKit?version=6.0';
 
 const { TOP, BOTTOM, RIGHT } = Astal.WindowAnchor;
 
@@ -17,25 +18,25 @@ const urls: Record<PageName, string> = {
 };
 
 // Mirrors dark/light mode
-const interfaceSettings = new Gio.Settings({ schema: "org.gnome.desktop.interface" });
+const interfaceSettings = new Gio.Settings({ schema: 'org.gnome.desktop.interface' });
 const applyColorScheme = () => {
-  const dark = interfaceSettings.get_string("color-scheme") === "prefer-dark";
+  const dark = interfaceSettings.get_string('color-scheme') === 'prefer-dark';
   Gtk.Settings.get_default()!.gtk_application_prefer_dark_theme = dark;
 };
 applyColorScheme();
-interfaceSettings.connect("changed::color-scheme", applyColorScheme);
+interfaceSettings.connect('changed::color-scheme', applyColorScheme);
 
 const [ width, setWidth ] = createState(400);
 
-let WebKit: any;
+let WebKit: typeof WebKitT;
 const loadWebKit = async () => {
   if (WebKit) return;
-  WebKit = (await import("gi://WebKit?version=6.0")).default;
+  WebKit = (await import('gi://WebKit?version=6.0')).default;
   WebKit.WebContext.get_default().set_cache_model(WebKit.CacheModel.DOCUMENT_VIEWER);
 };
 
 const dataDir = GLib.get_user_data_dir() + '/ags-sideview';
-let networkSession: any;
+let networkSession: WebKitT.NetworkSession | null = null;
 const getNetworkSession = () => {
   if (networkSession) return networkSession;
   networkSession = new WebKit.NetworkSession({
@@ -43,24 +44,24 @@ const getNetworkSession = () => {
     cache_directory: GLib.get_user_cache_dir() + '/ags-sideview'
   });
   networkSession.get_cookie_manager().set_persistent_storage(
-    dataDir + "/cookies.sqlite",
+    dataDir + '/cookies.sqlite',
     WebKit.CookiePersistentStorage.SQLITE
   );
   return networkSession;
 };
 
 const stack = new Gtk.Stack();
-const webviews: Partial<Record<PageName, any>> = {};
+const webviews: Partial<Record<PageName, WebKitT.WebView>> = {};
 let currentPage: PageName | null = null;
 let pushedAside = false; // better focus behavior
 
-const getWindow = () => app.get_window('sideview') as any; // wish i didnt have to type it as any
+const getWindow = () => app.get_window('sideview') as Astal.Window;
 
 const setFocused = (focused: boolean) => {
   const window = getWindow();
   window.keymode = focused ? Astal.Keymode.EXCLUSIVE : Astal.Keymode.ON_DEMAND;
   window.exclusivity = (focused && !pushedAside) ? Astal.Exclusivity.IGNORE : Astal.Exclusivity.EXCLUSIVE;
-  const dim = app.get_window('sideviewDim') as any;
+  const dim = app.get_window('sideviewDim');
   if (dim) dim.visible = focused;
 };
 
@@ -102,9 +103,9 @@ const ensurePage = (name: PageName) => {
     user_content_manager: contentManager
   });
 
-  webview.get_settings().set_user_agent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15");
+  webview.get_settings().set_user_agent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15');
 
-  webview.connect('permission-request', (_webview: any, request: any) => {
+  webview.connect('permission-request', (_webview, request) => {
     if (request instanceof WebKit.ClipboardPermissionRequest) {
       request.allow(); // allow media pasting!!
       return true;
@@ -143,7 +144,7 @@ export const showPage = async (name: PageName) => {
 
 export const toggleSideviewFocus = () => {
   const window = getWindow();
-  if (!window?.visible) return;
+  if (!window.visible) return;
   const focused = window.keymode === Astal.Keymode.EXCLUSIVE;
   pushedAside = true; // first focus makes it take screen space only
   setFocused(!focused);
@@ -161,26 +162,26 @@ export const closeSideview = () => {
   for (const name of Object.keys(webviews) as PageName[]) {
     const webview = webviews[name]!;
     stack.remove(webview);
-    webview.terminate_web_process?.();
-    webview.run_dispose?.();
+    webview.terminate_web_process();
+    webview.run_dispose();
     delete webviews[name];
-  };
+  }
   currentPage = null;
 
   if (networkSession) {
-    networkSession.run_dispose?.();
+    networkSession.run_dispose();
     networkSession = null;
-  };
+  }
 };
 
 export const toggleSideviewSize = () => {
   const next = (width.peek() == 400) ? 700 : 400;
   setWidth(next);
-  getWindow()?.set_default_size(next, -1);
+  getWindow().set_default_size(next, -1);
 };
 
 export default () => {
-  inputControl('sideviewDim', () => <box/>, { keymode: Astal.Keymode.NONE, layer: Astal.Layer.TOP });
+  inputControl('sideviewDim', () => <box />, { keymode: Astal.Keymode.NONE, layer: Astal.Layer.TOP });
 
   return <window
     name="sideview"
@@ -195,7 +196,7 @@ export default () => {
     <Gtk.EventControllerKey onKeyPressed={(_, key, __, state) => {
       if (Gdk.keyval_to_lower(key) === Gdk.KEY_r && (state & Gdk.ModifierType.CONTROL_MASK) && currentPage)
         webviews[currentPage]?.reload(); // ctrl+R to reload page
-    }}/>
+    }} />
     {stack}
   </window>;
 };

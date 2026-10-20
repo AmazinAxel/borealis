@@ -1,7 +1,7 @@
 import { Gtk } from 'ags/gtk4';
-import app from 'ags/gtk4/app'
-import { execAsync } from 'ags/process';
+import app from 'ags/gtk4/app';
 import inputControl from '../lib/inputControl';
+import { copy } from '../lib/clipboard';
 
 let textBox: Gtk.Entry;
 
@@ -15,7 +15,7 @@ export default () => inputControl('emojiPicker', () =>
     onNotifyText={({ text }) => {
       if (!text || /[:a-z]/.test(text)) return;
       app.get_window('emojiPicker')?.hide();
-      execAsync(['wl-copy', '-t', 'text/plain', text]);
+      copy(text);
     }}
   />,
   { onShow: () => textBox.text = '', focus: () => textBox }

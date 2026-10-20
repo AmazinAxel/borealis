@@ -6,13 +6,13 @@
       export LC_ALL=C.UTF-8
 
       IFS=$'\t' read -r vim ms add del s w sr wr cache ctx < <(jq -r '[
-        (.vim.mode // "-"), (.cost.total_duration_ms // 0 | floor),
+        (.vim.mode // "-"), (.cost.total_api_duration_ms // 0 | floor),
         (.cost.total_lines_added // 0), (.cost.total_lines_removed // 0),
         (.rate_limits.five_hour.used_percentage // -1 | floor),
         (.rate_limits.seven_day.used_percentage // -1 | floor),
         (.rate_limits.five_hour.resets_at // 0 | floor),
         (.rate_limits.seven_day.resets_at // 0 | floor),
-        (.context_window.current_usage.cache_read_input_tokens // 0),
+        (.context_window.current_usage.cache_read_input_tokens // -1),
         (.context_window.used_percentage // 0 | floor)
       ] | @tsv')
 
@@ -26,14 +26,13 @@
 
       r=$'\e[0m'
       dim=$'\e[90m' fg=$'\e[39m' frost=$'\e[36m'
-      green=$'\e[32m' red=$'\e[31m' yellow=$'\e[33m'
+      green=$'\e[32m' red=$'\e[31m'
 
-      # above $4% the time until the window resets is drawn over the bar
+      # from $4% the time until the window resets is drawn over the bar
       bar() {
-        local p=$1 w=$2 t=$(( $3 - now )) n col=$frost i c txt="" o=0 out="$dim▕"
+        local p=$1 w=$2 t=$(( $3 - now )) n i c txt="" o=0 out="$dim▕"
         n=$(( (p * w + 50) / 100 )); (( n > w )) && n=$w
-        if (( p >= 80 )); then col=$red; elif (( p >= 50 )); then col=$yellow; fi
-        if (( p > $4 && t > 0 )); then
+        if (( p >= $4 && t > 0 )); then
           if (( t >= 86400 )); then txt="$(( t / 86400 ))d$(( t % 86400 / 3600 ))h"
           elif (( t >= 3600 )); then txt="$(( t / 3600 ))h$(( t % 3600 / 60 ))m"
           else txt="$(( t / 60 + 1 ))m"; fi
@@ -43,11 +42,11 @@
         for (( i = 0; i < w; i++ )); do
           c=""; (( i >= o && i < o + ''${#txt} )) && c=''${txt:i-o:1}
           if (( i < n )); then
-            if [[ $c ]]; then out+="$col"$'\e[7m'"$c"$'\e[27m'; else out+="$col█"; fi
+            if [[ $c ]]; then out+=$'\e[1;30;46m'"$c"$'\e[0m'; else out+="$frost█"; fi
           elif [[ $c ]]; then out+="$fg$c"
           else out+="$dim░"; fi
         done
-        printf -v b '%s▏ %s%% ' "$out$dim" "$p"; right+=$b
+        printf -v b '%s▏ %s%s%% ' "$out$dim" "$fg" "$p"; right+=$b
       }
 
       sec=$(( ms / 1000 ))
@@ -60,8 +59,9 @@
         NORMAL) mode="''${frost}NOR " ;;
         *) mode="" ;;
       esac
-      (( ctx >= 50 )) && mode+="''${yellow}!! "
-      if (( cache > 0 )); then hit=" ''${green}■"; else hit=" ''${red}■"; fi
+      # cache is -1 before the first reply
+      if (( cache == 0 )); then mode+=$'\e[1;31m[!]\e[22m '
+      elif (( ctx >= 60 )); then mode+=$'\e[1;33m[!]\e[22m '; fi
 
       left="''${mode}''${fg}''${dur} ''${green}+''${add}''${dim}/''${red}-''${del}"
       shopt -s extglob
@@ -92,7 +92,7 @@
       fit $(( cols - ''${#l} - 2 )) || { sep=$'\n'; fit "$cols" || k=0; }
       right=""
       for (( i = 0; i < k; i++ )); do bar "''${pct[i]}" "$bw" "''${rst[i]}" "''${thr[i]}"; done
-      right+="$hit$r"
+      right+="$r"
       rt=''${right//$'\e'\[*([0-9;])m/}
 
       if [[ $sep == "  " ]]; then
@@ -104,12 +104,8 @@
   };
 
 in {
-  home.sessionVariables.CLAUDE_CODE_SANDBOXED = "1"; # trust every folder, no prompt
-
   programs.claude-code = {
     enable = true;
-    package = pkgs.claude-code;
-
     settings = {
       model = "opus";
       effortLevel = "medium";
@@ -178,12 +174,14 @@ in {
       # Terse
 
       Replies:
-      - Lead with the answer or the result. No preamble, recap, or closing offer.
-      - Plain short sentences; fragments fine. Keep code, error text, numbers and technical terms exact.
-      - A question gets an answer, not work: 1-3 sentences, cite file:line, don't paste code back.
+      - Talk caveman. Drop articles, filler, pleasantries, hedges, pronouns where clear. Fragments. Example: "Fixed. Cache check wrong var, claude.nix:60."
+      - Answer first. No preamble, recap, or closing offer.
+      - Code, error text, numbers, paths, technical terms stay exact; caveman only in prose.
+      - A question gets an answer, not work: 1-2 fragments, cite file:line, don't paste code back.
       - A change gets one line: what changed, file:line. Don't restate the diff.
-      - One approach, chosen. No option surveys unless asked.
-      - Ask only when a wrong guess would waste real work.
+      - Never assume. Request ambiguous (meaning, scope, behavior, edge case, which option) → ask before acting. Use AskUserQuestion, short options.
+      - Facts readable in code/files: look, don't ask. Only user intent gets asked.
+      - Intent clear → one approach, no option surveys.
 
       Work:
       - Smallest change that works. Match the file's style; no unrequested refactors, abstractions or comments.

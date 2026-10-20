@@ -1,31 +1,21 @@
-#clipboard {
-  border-radius: 0.4rem;
-}
-
-list {
-  padding: 0.7rem 0.9rem 0rem 0.9rem;
-}
-
 /* Clipboard item */
 list row {
-  padding: 0.5rem;
+  padding: 8px;
   border: 1px solid @dark4;
   background: @dark2;
-  border-radius: 0.4rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 8px;
 }
 
 list row:last-child {
   margin-bottom: 0;
 }
 
-list .image {
-  border-radius: 0.3rem;
-}
-
 list .playIcon {
   background: rgba(0, 0, 0, 0.5);
-  border-radius: 0.5rem;
-  padding: 0.5rem;
+  padding: 8px;
   color: white;
+}
+
+list .image {
+  box-shadow: 0 1px 3px alpha(@dark1, 0.8);
 }

@@ -1,7 +1,7 @@
-import app from "ags/gtk4/app"
-import { Astal, Gtk } from "ags/gtk4"
-import Gdk from "gi://Gdk"
-import wrapFocus from "./wrapFocus"
+import app from 'ags/gtk4/app';
+import { Astal, Gtk } from 'ags/gtk4';
+import Gdk from 'gi://Gdk';
+import wrapFocus from './wrapFocus';
 const { TOP, BOTTOM, LEFT, RIGHT } = Astal.WindowAnchor;
 
 type Options = {
@@ -10,7 +10,7 @@ type Options = {
   onKeyPressed?: (ctrl: Gtk.EventControllerKey, key: number, keycode: number, state: Gdk.ModifierType) => boolean | void,
   keymode?: Astal.Keymode,
   layer?: Astal.Layer,
-  focus?: () => Gtk.Widget | undefined,
+  focus?: () => Gtk.Entry,
 };
 
 export default (windowName: string, Child: () => JSX.Element, {
@@ -28,7 +28,7 @@ export default (windowName: string, Child: () => JSX.Element, {
       const target = focus?.();
       if (!target) return;
       target.grab_focus();
-      (target as Gtk.Entry).set_position?.(-1); // cursor pos
+      target.set_position(-1); // cursor pos
     }}
     cssClasses={searchable ? ['backgroundDim', 'searchableDialog'] : ['backgroundDim']}
   >
@@ -37,6 +37,6 @@ export default (windowName: string, Child: () => JSX.Element, {
       onKeyPressed={(ctrl, key, keycode, state) => {
         if (key == Gdk.KEY_Escape) { app.toggle_window(windowName); return true; }
         return onKeyPressed?.(ctrl, key, keycode, state) || wrapFocus(ctrl, key, keycode, state);
-      }}/>
-    <Child/>
-  </window>
+      }} />
+    <Child />
+  </window>;

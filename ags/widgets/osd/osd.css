@@ -1,25 +1,23 @@
 .osd {
-    background-color: @dark1;
-    padding: 0.5rem;
-    border-radius: 0.3rem;
-    margin-bottom: 2rem;
+  background-color: @dark1;
+  padding: 8px;
+  border: 3px solid @dark4;
+  margin-bottom: 5px;
 }
 
 .osd image {
-    margin-right: 0.5rem;
-    -gtk-icon-size: 1.5rem;
-    -gtk-icon-shadow: 0 0 15px @light3;
+  margin-right: 8px;
+  -gtk-icon-size: 24px;
+  -gtk-icon-shadow: 0 0 15px @light3;
 }
 
 .osd levelbar trough {
-    background-color: @blue2;
-    box-shadow: 0 0 10px @blue3;
-    border-radius: 0.2rem;
+  background-color: @blue2;
+  box-shadow: 0 0 10px @blue3;
 }
 
 .osd levelbar block {
-    border-radius: 0.2rem;
-    margin: 0.2rem;
+  margin: 3px;
 }
 .osd levelbar trough block.filled { background-color: @blue2; box-shadow: 0 0 10px @blue3; }
 .osd levelbar trough block.empty { background-color: @light3; }
