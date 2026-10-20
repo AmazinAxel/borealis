@@ -190,6 +190,7 @@ window .backgroundSection .header:first-child {
 
 .backgroundSection .header:first-child {
   text-shadow: 0 1px 3px alpha(@dark1, 0.8), 0 0 10px @light3;
+  -gtk-icon-shadow: 0 1px 3px alpha(@dark1, 0.8), 0 0 10px @light3;
   font-size: 32px;
 }
 
@@ -214,7 +215,7 @@ window .backgroundSection .header:first-child {
 }
 
 #recordMenu image {
-  -gtk-icon-shadow: 0 0 10px @light3;
+  -gtk-icon-shadow: 0 1px 3px alpha(@dark1, 0.8), 0 0 10px @light3;
 }
 
 #focusTask label {

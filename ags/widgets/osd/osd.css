@@ -8,7 +8,7 @@
 .osd image {
   margin-right: 8px;
   -gtk-icon-size: 24px;
-  -gtk-icon-shadow: 0 0 15px @light3;
+  -gtk-icon-shadow: 0 1px 3px alpha(@dark1, 0.8), 0 0 15px @light3;
 }
 
 .osd levelbar trough {

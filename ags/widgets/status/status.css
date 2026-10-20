@@ -10,7 +10,7 @@
 
 .statusMenu image {
   -gtk-icon-size: 14px;
-  -gtk-icon-shadow: 0 0 12px @light3;
+  -gtk-icon-shadow: 0 1px 3px alpha(@dark1, 0.8), 0 0 12px @light3;
   color: @light3;
 }
 
@@ -85,7 +85,7 @@
 .recIndicator {
   color: @red;
   padding: 8px;
-  -gtk-icon-shadow: 0 0 10px @red;
+  -gtk-icon-shadow: 0 1px 3px alpha(@dark1, 0.8), 0 0 10px @red;
 }
 
 /* Media/mpris player */
