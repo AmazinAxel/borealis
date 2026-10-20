@@ -92,13 +92,13 @@
       fit $(( cols - ''${#l} - 2 )) || { sep=$'\n'; fit "$cols" || k=0; }
       right=""
       for (( i = 0; i < k; i++ )); do bar "''${pct[i]}" "$bw" "''${rst[i]}" "''${thr[i]}"; done
-      right+="$r"
+      right="''${right% }$r"
       rt=''${right//$'\e'\[*([0-9;])m/}
 
       if [[ $sep == "  " ]]; then
-        printf '%s%*s%s' "$left" $(( cols - ''${#l} - ''${#rt} - 1 )) "" "$right"
+        printf '%s%*s%s' "$left" $(( cols - ''${#l} - ''${#rt} )) "" "$right"
       else
-        printf '%s\n%*s%s' "$left$r" $(( cols - ''${#rt} - 1 )) "" "$right"
+        printf '%s\n%*s%s' "$left$r" $(( cols - ''${#rt} )) "" "$right"
       fi
     '';
   };

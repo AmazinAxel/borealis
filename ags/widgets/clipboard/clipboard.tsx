@@ -12,10 +12,14 @@ import inputControl from '../../lib/inputControl';
 import { streamingMode } from '../../lib/streamingMode';
 
 const hide = () => app.get_window('clipboard')?.hide();
-const items = new Map<string, { mime: string, path: string | null, child: Gtk.Widget }>();
-const [ hasItems, setHasItems ] = createState(false);
+const items = new Map<string, { mime: string, path: string | null, search: string, child: Gtk.Widget }>();
+const [ hasResults, setHasResults ] = createState(false);
+
+let textBox: Gtk.Entry;
+let query = '';
 
 const list = new Gtk.ListBox({ canTarget: false });
+list.set_filter_func((row) => !query || !!items.get(row.child!.name)?.search.includes(query));
 list.set_sort_func((a, b) => Number(b.child!.name) - Number(a.child!.name));
 list.connect('row-activated', (_, row) => {
   hide();
@@ -46,7 +50,7 @@ const refreshItems = () => inFlight = inFlight.then(async () => {
     list.append(child);
 
     items.set(id, {
-      path, child, mime:
+      path, child, search: (image ? 'image ' : '') + content.toLowerCase(), mime:
         image ? `image/${image[1]}`
           : content.trim().startsWith('file://') ? 'text/uri-list' // paste the ACTUAL file
             : 'text/plain'
@@ -64,21 +68,44 @@ const refreshItems = () => inFlight = inFlight.then(async () => {
   // Their decodes and thumbnails are dead weight now
   if (stale.length) execAsync(['bash', '-c',
     'rm -f ' + stale.map(([ id ]) => `${cacheDir}/${id}.*`).join(' ')]);
-  setHasItems(items.size > 0);
+  selectTop();
 }).catch(() => { });
 refreshItems();
 
 const cliphistDb = Gio.File.new_for_path(`${GLib.get_user_cache_dir()}/cliphist/db`).monitor_file(Gio.FileMonitorFlags.NONE, null);
 cliphistDb.connect('changed', (_, _file, _other, event) => event == Gio.FileMonitorEvent.CHANGES_DONE_HINT && refreshItems());
 
-const focusTop = () => {
-  const first = list.get_row_at_index(0);
-
-  list.select_row(first);
-  first?.grab_focus();
+const visibleRows = () => {
+  const rows: Gtk.ListBoxRow[] = [];
+  for (let i = 0, row; (row = list.get_row_at_index(i)); i++)
+    if (row.get_child_visible()) rows.push(row);
+  return rows;
 };
 
-const selectedRow = () => list.get_selected_row() ?? list.get_row_at_index(0);
+const select = (row?: Gtk.ListBoxRow) => {
+  list.select_row(row ?? null);
+  if (row) (row.get_ancestor(Gtk.Viewport.$gtype) as Gtk.Viewport | null)?.scroll_to(row, null);
+};
+
+const selectTop = () => {
+  const rows = visibleRows();
+  setHasResults(rows.length > 0);
+  select(rows[0]);
+};
+
+const moveSelection = (delta: number) => {
+  const rows = visibleRows();
+  const i = rows.indexOf(list.get_selected_row()!) + delta;
+  select(rows[Math.max(0, Math.min(rows.length - 1, i))]);
+};
+
+const search = (text: string) => {
+  query = text.toLowerCase();
+  list.invalidate_filter();
+  selectTop();
+};
+
+const selectedRow = () => list.get_selected_row() ?? visibleRows()[0];
 const selectedId = () => selectedRow()?.child?.name ?? '';
 
 const showInFileManager = (file: string) => Gio.DBus.session.call(
@@ -107,8 +134,7 @@ const withFile = (want: ((f: string) => boolean) | null, action: (file: string, 
 };
 
 const actions: Record<number, () => void> = {
-  [Gdk.KEY_Return]: () => selectedRow()?.activate(),
-  [Gdk.KEY_c]: () => list.get_row_at_index(1)?.activate(), // copy 2nd recent entry
+  [Gdk.KEY_c]: () => visibleRows()[1]?.activate(), // copy 2nd recent entry
   [Gdk.KEY_e]: () => withFile((f) => !videoExts.test(f), (f) => execAsync(['swappy', '-f', f])),
   [Gdk.KEY_g]: () => withFile(null, (f) => execAsync(['gthumb', f])),
   [Gdk.KEY_m]: () => withFile((f) => videoExts.test(f), openCompress),
@@ -119,20 +145,33 @@ const actions: Record<number, () => void> = {
   },
 };
 
-const handleKeys = (_ctrl: Gtk.EventControllerKey, key: number) => {
-  const action = actions[key];
+const handleKeys = (_ctrl: Gtk.EventControllerKey, key: number, _keycode: number, state: Gdk.ModifierType) => {
+  if (key == Gdk.KEY_Return) {
+    selectedRow()?.activate();
+    return true;
+  }
+  if (key == Gdk.KEY_Up || key == Gdk.KEY_Down) {
+    moveSelection(key == Gdk.KEY_Down ? 1 : -1);
+    return true;
+  }
+  const action = (state & Gdk.ModifierType.CONTROL_MASK) ? actions[Gdk.keyval_to_lower(key)] : undefined;
   action?.();
   return !!action;
 };
 
 export default () => inputControl('clipboard', () =>
   <BackgroundSection
-    width={500}
-    header={<label $type="overlay" label="Clipboard" />}
+    height={700} width={500}
+    header={<entry
+      $type="overlay"
+      primaryIconName="edit-paste-symbolic"
+      placeholderText="Clipboard"
+      onNotifyText={({ text }) => search(text)}
+      $={(self) => textBox = self} />}
     content={
       <scrolledwindow
         cssClasses={['clipboardScroll']}
-        visible={hasItems}
+        visible={hasResults}
         hscrollbarPolicy={Gtk.PolicyType.NEVER}
         vscrollbarPolicy={Gtk.PolicyType.AUTOMATIC}
         overlayScrolling
@@ -144,8 +183,11 @@ export default () => inputControl('clipboard', () =>
   />,
   {
     onShow: () => {
-      focusTop();
-      refreshItems().then(focusTop);
+      textBox.text = '';
+      selectTop();
+      refreshItems();
     },
     onKeyPressed: handleKeys,
+    searchable: true,
+    focus: () => textBox,
   });

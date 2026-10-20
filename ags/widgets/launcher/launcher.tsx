@@ -18,7 +18,7 @@ const blockable = (a: Apps.Application) =>
 const isBlocked = (a: Apps.Application) => focus.peek() && blockable(a);
 
 const search = (text: string) => setAppsList(
-  text.length < 2 ? [] : apps.fuzzy_query(text).slice(0, 5)
+  !text ? [] : apps.fuzzy_query(text).slice(0, 5)
 );
 
 const launchApp = (selectedApp?: Apps.Application) => {

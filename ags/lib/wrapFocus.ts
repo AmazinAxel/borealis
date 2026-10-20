@@ -26,7 +26,5 @@ export default (ctrl: Gtk.EventControllerKey, key: number, _keycode: number, sta
   if (!win.child_focus(dir[0]))
     for (let i = 0; i < 1000 && win.child_focus(dir[1]); i++);
 
-  const row = win.get_focus()?.get_ancestor(Gtk.ListBoxRow.$gtype) as Gtk.ListBoxRow | null;
-  (row?.get_parent() as Gtk.ListBox | null)?.select_row(row);
   return true;
 };

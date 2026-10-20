@@ -116,7 +116,6 @@ const ensurePage = (name: PageName) => {
   const bg = new Gdk.RGBA();
   bg.parse('#2e3440');
   webview.set_background_color(bg);
-  webview.set_zoom_level(0.95);
   webview.load_uri(urls[name]);
   webviews[name] = webview;
   stack.add_named(webview, name);

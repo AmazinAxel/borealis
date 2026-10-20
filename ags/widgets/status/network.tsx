@@ -1,4 +1,4 @@
-import { createRoot, createState, For, onCleanup } from 'ags';
+import { createComputed, createRoot, createState, For, onCleanup } from 'ags';
 import { Gtk } from 'ags/gtk4';
 import { execAsync } from 'ags/process';
 import Gio from 'gi://Gio';
@@ -8,39 +8,42 @@ import { currentAsideWindow } from '../../lib/asideState';
 import { streamingMode } from '../../lib/streamingMode';
 import { bus, iwdBus, iwdCall, getObjects, onPropertiesChanged, deviceInterface, stationInterface, networkInterface } from '../../lib/iwd';
 
-type WifiNet = { ssid: string; security: string; icon: string; connected: boolean; known: boolean; path: string };
+type WifiNet = { ssid: string, security: string, level: number, known: boolean };
 
 const station = 'wlan0';
+const levels = ['none', 'weak', 'ok', 'good', 'excellent'];
 
-const [ networks, setNetworks ] = createState<WifiNet[]>([]);
+const [ paths, setPaths ] = createState<string[]>([]);
+const [ nets, setNets ] = createState<Record<string, WifiNet>>({});
+const [ connected, setConnected ] = createState('');
+const [ connecting, setConnecting ] = createState('');
 const [ scanning, setScanning ] = createState(false);
 const [ wifiOn, setWifiOn ] = createState(true);
 
 const openPopovers = new Set<Gtk.Popover>();
 const closeAllPopovers = () => { for (const p of openPopovers) p.popdown(); };
 
-const sigIcon = (mbm: number) => {
+const sigLevel = (mbm: number) => { // Signal is in 100*dBm units from iwd
   const dbm = mbm / 100;
-  const n = dbm >= -50 ? 4 : dbm >= -65 ? 3 : dbm >= -75 ? 2 : dbm >= -85 ? 1 : 0; // Signal is in 100*dBm units from iwd
-  return `network-wireless-signal-${['none', 'weak', 'ok', 'good', 'excellent'][n]}-symbolic`;
+  return dbm >= -50 ? 4 : dbm >= -65 ? 3 : dbm >= -75 ? 2 : dbm >= -85 ? 1 : 0;
 };
 
 let stationPath = '';
 let devicePath = '';
+let pending = '';
 
 let listBox: Gtk.Box | null = null;
 let powerButton: Gtk.Widget | null = null;
 let scanButton: Gtk.Widget | null = null;
 
-const rowBySsid = new Map<string, Gtk.Widget>(); // survives For rebuilds
-let focusedSsid: string | null = null; // row to restore after a refresh
+const rowByPath = new Map<string, Gtk.Widget>();
+let focusedPath: string | null = null; // row to restore after a refresh
 const focusTarget = () => {
   if (!wifiOn.peek()) return powerButton;
-  const remembered = focusedSsid ? rowBySsid.get(focusedSsid) : undefined;
-  if (remembered?.get_mapped()) return remembered;
-  const connected = networks.peek().find((n) => n.connected);
-  const connectedRow = connected && rowBySsid.get(connected.ssid);
-  if (connectedRow?.get_mapped()) return connectedRow;
+  for (const path of [focusedPath, connected.peek()]) {
+    const row = path && rowByPath.get(path);
+    if (row && row.get_mapped()) return row;
+  }
   return listBox?.get_first_child() ?? scanButton;
 };
 
@@ -58,12 +61,12 @@ const menuHasFocus = () => {
 };
 
 let subIds: number[] = [];
-let coalesceId = 0;
+let debounceId = 0;
 
 const queueRefresh = () => {
-  if (coalesceId) return;
-  coalesceId = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-    coalesceId = 0;
+  if (debounceId) GLib.source_remove(debounceId);
+  debounceId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 150, () => {
+    debounceId = 0;
     refresh();
     return GLib.SOURCE_REMOVE;
   });
@@ -73,8 +76,7 @@ const watchIwd = () => { // update dynamically
   if (subIds.length) return;
 
   subIds.push(onPropertiesChanged((path, iface, changed) => {
-    if (iface === stationInterface && path === stationPath && 'Scanning' in changed)
-      setScanning(changed.Scanning === true);
+    if (iface === stationInterface && path === stationPath && changed.Scanning === false) setScanning(false);
     queueRefresh();
   }));
 
@@ -88,10 +90,18 @@ const watchIwd = () => { // update dynamically
 const unwatchIwd = () => {
   for (const id of subIds) bus.signal_unsubscribe(id);
   subIds = [];
-  if (coalesceId) {
-    GLib.source_remove(coalesceId);
-    coalesceId = 0;
+  setScanning(false);
+  if (debounceId) {
+    GLib.source_remove(debounceId);
+    debounceId = 0;
   }
+};
+
+const clear = () => {
+  setPaths([]);
+  setNets({});
+  setConnected('');
+  setConnecting('');
 };
 
 let refreshGen = 0;
@@ -111,37 +121,40 @@ const refresh = async () => {
 
     const powered = objects[devicePath]?.[deviceInterface]?.['Powered'] !== false;
     setWifiOn(powered);
-    setScanning(objects[stationPath]?.[stationInterface]?.['Scanning'] === true);
-
-    if (!powered || !stationPath) {
-      setNetworks([]);
-      return;
-    }
+    if (!powered || !stationPath) return clear();
 
     const [ ordered ] = await iwdCall<[[string, number][]]>(stationPath, stationInterface, 'GetOrderedNetworks');
-    if (gen !== refreshGen) return;
+    if (gen !== refreshGen || openPopovers.size) return;
 
-    const next = ordered
-      .map(([ netPath, signalMbm ]): WifiNet | (null) => {
-        const p = objects[netPath]?.[networkInterface];
-        if (!p?.['Name']) return null;
-        const kn = p['KnownNetwork'];
-        return {
-          ssid: p['Name'] as string,
-          security: p['Type'] as string,
-          icon: sigIcon(signalMbm),
-          connected: p['Connected'] as boolean,
-          known: typeof kn === 'string' && kn !== '' && kn !== '/',
-          path: netPath,
-        };
-      })
-      .filter((n): n is WifiNet => n !== null)
-      .sort((a, b) => Number(b.connected) - Number(a.connected));
+    const st = objects[stationPath]?.[stationInterface] ?? {};
+    const current = typeof st['ConnectedNetwork'] === 'string' ? st['ConnectedNetwork'] : '';
+    const joining = st['State'] === 'connecting';
+    setConnected(joining ? '' : current);
+    setConnecting(joining ? current : pending);
 
-    if (openPopovers.size || JSON.stringify(next) === JSON.stringify(networks.peek())) return;
-    setNetworks(next);
+    const next: Record<string, WifiNet> = {};
+    for (const [ path, mbm ] of ordered) {
+      const p = objects[path]?.[networkInterface];
+      if (!p?.['Name']) continue;
+      const kn = p['KnownNetwork'];
+      next[path] = {
+        ssid: p['Name'] as string,
+        security: p['Type'] as string,
+        level: sigLevel(mbm),
+        known: typeof kn === 'string' && kn !== '' && kn !== '/',
+      };
+    }
 
-    if (!menuHasFocus()) focusWifiMenu(); // focus in case of a rebuild
+    const order = Object.keys(next).sort((a, b) =>
+      Number(b === current) - Number(a === current)
+      || next[b].level - next[a].level
+      || next[a].ssid.localeCompare(next[b].ssid));
+
+    if (JSON.stringify(next) !== JSON.stringify(nets.peek())) setNets(next);
+    if (order.join() !== paths.peek().join()) {
+      setPaths(order);
+      if (!menuHasFocus()) focusWifiMenu();
+    }
   } catch { }
 };
 
@@ -152,7 +165,7 @@ const toggleWifi = async () => {
     await iwdCall(devicePath, 'org.freedesktop.DBus.Properties', 'Set',
       new GLib.Variant('(ssv)', [deviceInterface, 'Powered', new GLib.Variant('b', next)]));
     setWifiOn(next);
-    if (!next) setNetworks([]);
+    if (!next) clear();
     else await refresh();
   } catch { }
 };
@@ -165,23 +178,33 @@ const scan = async () => {
     await iwdCall(stationPath, stationInterface, 'Scan').catch((e) => {
       if (!String(e).includes('Operation already in progress')) throw e;
     });
-    refresh();
   } catch {
     setScanning(false);
   }
 };
 
-const NetworkRow = ({ net }: { net: WifiNet }) => {
+const join = (path: string, attempt: Promise<unknown>) => {
+  pending = path;
+  setConnecting(path);
+  attempt.catch(() => { }).finally(() => {
+    if (pending === path) pending = '';
+    refresh();
+  });
+};
+
+const NetworkRow = ({ path }: { path: string }) => {
+  const net = nets((m) => m[path] ?? { ssid: '', security: 'open', level: 0, known: false });
   let entry: Gtk.Entry | null = null;
   let popover: Gtk.Popover | null = null;
   let disposePopover = () => { };
 
   const submit = () => {
+    const { ssid } = net.peek();
     const pw = entry?.text ?? '';
-    const args = pw
-      ? ['iwctl', '--passphrase', pw, 'station', station, 'connect', net.ssid]
-      : ['iwctl', 'station', station, 'connect', net.ssid];
-    execAsync(args).then(() => { popover?.popdown(); refresh(); }).catch(() => { });
+    popover?.popdown();
+    join(path, execAsync(pw
+      ? ['iwctl', '--passphrase', pw, 'station', station, 'connect', ssid]
+      : ['iwctl', 'station', station, 'connect', ssid]));
   };
 
   const removePopover = () => {
@@ -219,36 +242,40 @@ const NetworkRow = ({ net }: { net: WifiNet }) => {
 
   return <button
     canTarget={false}
-    cssClasses={net.connected ? ['active'] : []}
+    cssClasses={createComputed((track) =>
+      track(connecting) === path ? ['connecting']
+        : track(connected) === path ? ['active']
+          : [])}
     onClicked={(self) => {
-      focusedSsid = net.ssid; // keep focus here through the reorder
-      if (net.connected) {
+      focusedPath = path; // keep focus here through the reorder
+      if (connecting.peek() === path) return;
+      const { security, known } = net.peek();
+      if (connected.peek() === path) {
         iwdCall(stationPath, stationInterface, 'Disconnect')
           .then(refresh).catch(() => { });
-      } else if (net.security !== 'open' && !net.known) {
+      } else if (security !== 'open' && !known) {
         if (popover) return popover.popdown();
         closeAllPopovers();
         openPasswordPopover(self);
       } else {
-        iwdCall(net.path, networkInterface, 'Connect')
-          .then(refresh).catch(() => { });
+        join(path, iwdCall(path, networkInterface, 'Connect'));
       }
     }}
     onStateFlagsChanged={(self) => {
-      if (self.has_focus) focusedSsid = net.ssid; // remember across refreshes
+      if (self.has_focus) focusedPath = path; // remember across refreshes
     }}
     $={(self) => {
-      rowBySsid.set(net.ssid, self);
+      rowByPath.set(path, self);
       onCleanup(() => {
-        if (rowBySsid.get(net.ssid) === self) rowBySsid.delete(net.ssid);
+        if (rowByPath.get(path) === self) rowByPath.delete(path);
         removePopover();
       });
     }}
   >
     <box spacing={10}>
-      <image iconName={net.icon} />
-      <label hexpand halign={Gtk.Align.START} label={net.ssid} ellipsize={Pango.EllipsizeMode.END} />
-      {net.security !== 'open' && <image iconName="network-wireless-encrypted-symbolic" />}
+      <image iconName={net((n) => `network-wireless-signal-${levels[n.level]}-symbolic`)} />
+      <label hexpand halign={Gtk.Align.START} label={net((n) => n.ssid)} ellipsize={Pango.EllipsizeMode.END} />
+      <image visible={net((n) => n.security !== 'open')} iconName="network-wireless-encrypted-symbolic" />
     </box>
   </button>;
 };
@@ -295,8 +322,8 @@ export default () =>
         visible={wifiOn}
       >
         <box orientation={Gtk.Orientation.VERTICAL} $={(self) => listBox = self}>
-          <For each={networks}>
-            {(net: WifiNet) => <NetworkRow net={net} />}
+          <For each={paths}>
+            {(path: string) => <NetworkRow path={path} />}
           </For>
         </box>
       </scrolledwindow>

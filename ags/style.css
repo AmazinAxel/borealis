@@ -83,7 +83,11 @@ window scale slider {
 }
 
 window scale slider:hover {
-  background: @blue1;
+  box-shadow: 0 0 4px alpha(@dark1, 0.8), 0 0 0 4px alpha(@dark1, 0.35);
+}
+
+window scale slider:active {
+  transform: rotate(45deg) scale(0.8);
 }
 
 .clipboardScroll scrollbar {
@@ -136,7 +140,7 @@ button {
 
 button.active,
 .button:focus,
-list row:focus,
+list row:selected,
 calendar button:focus,
 calendar .today {
   background-color: @blue2;
@@ -154,7 +158,7 @@ calendar .today {
   padding-right: 18px;
 }
 
-list row:focus,
+list row:selected,
 .searchableDialog button:focus {
   transform: translateY(-2px);
 }

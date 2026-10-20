@@ -5,7 +5,7 @@
 }
 
 .statusMenu {
-  padding: 8px 0 16px 0;
+  padding: 8px 0 14px 0;
 }
 
 .statusMenu image {
@@ -29,7 +29,7 @@
 }
 
 .timeSection {
-  padding: 6px 0 8px 0;
+  padding: 6px 0;
 }
 
 /* Time/date module */
@@ -39,7 +39,8 @@
   text-shadow: 0 1px 3px alpha(@dark1, 0.8), 0 0 3px @blue3;
   margin: 0;
   font-style: italic;
-  font-size: 18px;
+  font-size: 22px;
+  line-height: 26px;
 }
 
 .time {
@@ -52,11 +53,7 @@
   letter-spacing: 2px;
   color: @blue2;
   text-shadow: 0 1px 3px alpha(@dark1, 0.8), 0 0 5px @blue3;
-  padding: 4px 5px 2px 5px;
-}
-
-.time .day {
-  font-size: 18px;
+  padding: 0 5px;
 }
 
 /* Bluetooth */

@@ -11,8 +11,7 @@
 }
 
 .searchableDialog button:focus,
-.searchableDialog row:selected,
-.searchableDialog row:focus {
+.searchableDialog row:selected {
   border: 1px solid @blue1;
 }
 
@@ -28,4 +27,8 @@
 
 .searchableDialog button label.description {
   color: @light3;
+}
+
+.searchableDialog entry image {
+  margin-bottom: 2px;
 }
