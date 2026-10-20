@@ -30,7 +30,7 @@ let
 
       makeWrapper ${lib.getExe pkgs.openjdk25} "$out/bin/minecraft-server" \
         --append-flags "-jar $out/share/purpurmc/purpurmc.jar nogui" \
-        ${lib.optionalString pkgs.stdenvNoCC.hostPlatform.isLinux "--prefix LD_LIBRARY_PATH : ${lib.makeLibraryPath [ pkgs.udev ]}"}
+        --prefix LD_LIBRARY_PATH : ${lib.makeLibraryPath [ pkgs.udev ]}
 
       runHook postInstall
     '';

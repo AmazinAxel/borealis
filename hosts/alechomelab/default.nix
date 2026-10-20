@@ -1,4 +1,4 @@
-{ pkgs, ... }: {
+{
   imports = [
     ./services.nix
     ./books.nix
@@ -41,6 +41,13 @@
   networking = {
     hostName = "alechomelab";
     firewall.allowedTCPPorts = [ 80 ];
+    useNetworkd = false; # use nm
+    networkmanager = {
+      enable = true;
+      wifi.powersave = false; # Stops network drops
+      settings.device."wifi.scan-rand-mac-address" = "no"; # helps with drops
+    };
+    wireless.iwd.enable = false; # use nm
   };
 
   # must run 'sudo smbpasswd -a alec' to log in!!
@@ -69,8 +76,14 @@
       };
     };
     openssh.settings.Macs = [ "hmac-sha2-512" ]; # fix ios pass
-    avahi = {
-      publish.userServices = true; # NAS
+    avahi = { # need for my iot services and wintergreen!
+      enable = true;
+      openFirewall = true;
+      publish = {
+        enable = true;
+        addresses = true;
+        userServices = true; # NAS
+      };
 
       extraServiceFiles.smb = ''
         <?xml version="1.0" standalone='no'?>
@@ -97,12 +110,11 @@
   };
 
   environment = {
-    systemPackages = [(pkgs.writeScriptBin "nx-gc" (builtins.readFile ../../scripts/nx-gc.fish))];
-
     persistence."/persist" = {
       directories = [
         "/var/lib/samba" # NAS login
         "/etc/homelab" # Airnow token
+        "/etc/NetworkManager/system-connections" # networkmanager wifi
       ];
       users.alec.files = [ "GithubToken" ]; # githubBackup
     };

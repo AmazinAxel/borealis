@@ -33,7 +33,7 @@ in {
   };
 
   systemd.services.book-convert = {
-    path = [ epub2wgb pkgs.fish pkgs.coreutils ];
+    path = [ epub2wgb pkgs.fish ];
     # Backstop against a retrigger loop: converting is idempotent and skips
     # up-to-date books, so a few redundant runs are harmless, but they should
     # never be able to spin. Without this a mistake in the path unit becomes a

@@ -3,12 +3,21 @@ import { createBinding, createComputed, createState, For, onCleanup } from 'ags'
 import { Gtk } from 'ags/gtk4';
 import Wp from 'gi://AstalWp';
 import GLib from 'gi://GLib';
+import Gio from 'gi://Gio';
 import Pango from 'gi://Pango';
 import Gdk from 'gi://Gdk';
 import { currentAsideWindow } from '../../lib/asideState';
 import { timeout } from 'ags/time';
 
 const bluetooth = BluetoothService.get_default();
+
+const bluez = (path: string, iface: string, method: string, args: GLib.Variant | null = null) =>
+    Gio.DBus.system.call('org.bluez', path, iface, method, args, null, Gio.DBusCallFlags.NONE, 60000, null, (conn, res) => {
+        try { conn!.call_finish(res); } catch {}
+    });
+const devicePath = (d: BluetoothService.Device) => `${d.adapter}/dev_${d.address.replace(/:/g, '_')}`;
+const trust = (d: BluetoothService.Device) => bluez(devicePath(d), 'org.freedesktop.DBus.Properties', 'Set',
+    new GLib.Variant('(ssv)', ['org.bluez.Device1', 'Trusted', new GLib.Variant('b', true)]));
 const audio = Wp.get_default()?.audio; // for auto-sink switching
 const bluetoothOn = createBinding(bluetooth, 'isPowered');
 
@@ -199,9 +208,9 @@ const DeviceRow = ({ device }: { device: BluetoothService.Device }) => {
                 return device.disconnect_device((_, res) => { try { device.disconnect_device_finish(res); } catch {}; });
 
             stickyAdd(device.address);
-            if (bluetooth.adapter?.discovering) bluetooth.adapter.stop_discovery();
+            if (bluetooth.adapter?.discovering) bluez(device.adapter, 'org.bluez.Adapter1', 'StopDiscovery');
             if (device.paired) {
-                device.trusted = true;
+                trust(device);
                 return connectAndSwitch();
             }
 
@@ -209,12 +218,12 @@ const DeviceRow = ({ device }: { device: BluetoothService.Device }) => {
             const id = pairId = device.connect('notify::paired', () => {
                 if (!device.paired) return;
                 stopPairWatch();
-                device.trusted = true;
+                trust(device);
                 saveOrder(knownDevices().map(d => d.address));
                 connectAndSwitch();
             });
             timeout(30000, () => pairId === id && stopPairWatch());
-            device.pair();
+            bluez(devicePath(device), 'org.bluez.Device1', 'Pair');
         }}
     >
         <Gtk.EventControllerKey onKeyPressed={(ctrl, key, _, state) => {

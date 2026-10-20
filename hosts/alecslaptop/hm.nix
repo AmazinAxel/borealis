@@ -37,8 +37,5 @@
       { workspace = "8"; output = "DP-1"; }
       { workspace = "9"; output = "DP-1"; }
     ];
-
-    # Side mouse key screenshot
-    keybindings."Mod4+D" = "exec screenshot";
   };
 }

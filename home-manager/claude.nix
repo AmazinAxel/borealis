@@ -1,57 +1,144 @@
 { pkgs, lib, ... }: let
-  trim = { name, src, hookDir, keep, ruleset }: pkgs.runCommand "claude-code-${name}" { } ''
-    mkdir -p $out/skills
-    cp -r ${src}/.claude-plugin $out/
-    mkdir -p $out/${hookDir}
-    cp -r ${src}/${hookDir}/. $out/${hookDir}/
-    ${lib.concatMapStringsSep "\n" (s: "cp -r ${src}/skills/${s} $out/skills/${s}") keep}
-    chmod -R u+w $out
-    cp ${ruleset} $out/skills/${name}/SKILL.md
-    find $out -name '*.json' -exec sed -i 's|"node |"${pkgs.bun}/bin/bun |' {} +
-  '';
+  statusline = pkgs.writeShellApplication {
+    name = "claude-statusline";
+    runtimeInputs = [ pkgs.jq ];
+    text = ''
+      export LC_ALL=C.UTF-8
+
+      IFS=$'\t' read -r vim ms add del s w sr wr cache ctx < <(jq -r '[
+        (.vim.mode // "-"), (.cost.total_duration_ms // 0 | floor),
+        (.cost.total_lines_added // 0), (.cost.total_lines_removed // 0),
+        (.rate_limits.five_hour.used_percentage // -1 | floor),
+        (.rate_limits.seven_day.used_percentage // -1 | floor),
+        (.rate_limits.five_hour.resets_at // 0 | floor),
+        (.rate_limits.seven_day.resets_at // 0 | floor),
+        (.context_window.current_usage.cache_read_input_tokens // 0),
+        (.context_window.used_percentage // 0 | floor)
+      ] | @tsv')
+
+      # rate limits arrive with the first reply; show the last known until then
+      f=''${XDG_CACHE_HOME:-$HOME/.cache}/claude-statusline
+      read -r cs cw csr cwr 2>/dev/null <"$f" || cs=0 cw=0 csr=0 cwr=0
+      (( s < 0 )) && s=$cs sr=$csr
+      (( w < 0 )) && w=$cw wr=$cwr
+      [[ "$s $w $sr $wr" == "$cs $cw $csr $cwr" ]] || echo "$s $w $sr $wr" >"$f"
+      printf -v now '%(%s)T' -1
+
+      r=$'\e[0m'
+      dim=$'\e[90m' fg=$'\e[39m' frost=$'\e[36m'
+      green=$'\e[32m' red=$'\e[31m' yellow=$'\e[33m'
+
+      # above $4% the time until the window resets is drawn over the bar
+      bar() {
+        local p=$1 w=$2 t=$(( $3 - now )) n col=$frost i c txt="" o=0 out="$dim▕"
+        n=$(( (p * w + 50) / 100 )); (( n > w )) && n=$w
+        if (( p >= 80 )); then col=$red; elif (( p >= 50 )); then col=$yellow; fi
+        if (( p > $4 && t > 0 )); then
+          if (( t >= 86400 )); then txt="$(( t / 86400 ))d$(( t % 86400 / 3600 ))h"
+          elif (( t >= 3600 )); then txt="$(( t / 3600 ))h$(( t % 3600 / 60 ))m"
+          else txt="$(( t / 60 + 1 ))m"; fi
+          (( ''${#txt} > w )) && txt=""
+          o=$(( (w - ''${#txt}) / 2 ))
+        fi
+        for (( i = 0; i < w; i++ )); do
+          c=""; (( i >= o && i < o + ''${#txt} )) && c=''${txt:i-o:1}
+          if (( i < n )); then
+            if [[ $c ]]; then out+="$col"$'\e[7m'"$c"$'\e[27m'; else out+="$col█"; fi
+          elif [[ $c ]]; then out+="$fg$c"
+          else out+="$dim░"; fi
+        done
+        printf -v b '%s▏ %s%% ' "$out$dim" "$p"; right+=$b
+      }
+
+      sec=$(( ms / 1000 ))
+      if (( sec >= 3600 )); then printf -v dur '%dh%02dm' $(( sec / 3600 )) $(( sec % 3600 / 60 ))
+      elif (( sec >= 60 )); then dur="$(( sec / 60 ))m$(( sec % 60 ))s"
+      else dur="''${sec}s"; fi
+
+      case $vim in
+        INSERT) mode="''${green}INS " ;;
+        NORMAL) mode="''${frost}NOR " ;;
+        *) mode="" ;;
+      esac
+      (( ctx >= 50 )) && mode+="''${yellow}!! "
+      if (( cache > 0 )); then hit=" ''${green}■"; else hit=" ''${red}■"; fi
+
+      left="''${mode}''${fg}''${dur} ''${green}+''${add}''${dim}/''${red}-''${del}"
+      shopt -s extglob
+      l=''${left//$'\e'\[*([0-9;])m/}
+
+      size=""; [[ ''${COLUMNS:-} && ''${LINES:-} ]] || size=$({ stty size </dev/tty; } 2>/dev/null) || true
+      rows=''${LINES:-''${size% *}} cols=''${COLUMNS:-''${size#* }}
+      (( ''${rows:-99} < 20 )) && exit 0
+      cols=$(( ''${cols:-80} - 4 )) # room Claude keeps around the line
+
+      # bars under 1% are hidden; weekly is dropped first when space runs out
+      pct=() rst=() thr=()
+      (( s >= 1 )) && pct+=("$s") rst+=("$sr") thr+=(50)
+      (( w >= 1 )) && pct+=("$w") rst+=("$wr") thr+=(80)
+
+      # sets k bars of width bw that fit $1 columns; fails if none fit
+      fit() {
+        local sum i
+        for (( k = ''${#pct[@]}; k > 0; k-- )); do
+          sum=0; for (( i = 0; i < k; i++ )); do (( sum += 5 + ''${#pct[i]} )); done
+          bw=$(( ($1 - 2 - sum) / k ))
+          (( bw >= (k > 1 ? 6 : 3) )) && { (( bw > 16 )) && bw=16; return 0; }
+        done
+        (( ''${#pct[@]} == 0 ))
+      }
+
+      sep="  "
+      fit $(( cols - ''${#l} - 2 )) || { sep=$'\n'; fit "$cols" || k=0; }
+      right=""
+      for (( i = 0; i < k; i++ )); do bar "''${pct[i]}" "$bw" "''${rst[i]}" "''${thr[i]}"; done
+      right+="$hit$r"
+      rt=''${right//$'\e'\[*([0-9;])m/}
+
+      if [[ $sep == "  " ]]; then
+        printf '%s%*s%s' "$left" $(( cols - ''${#l} - ''${#rt} - 1 )) "" "$right"
+      else
+        printf '%s\n%*s%s' "$left$r" $(( cols - ''${#rt} - 1 )) "" "$right"
+      fi
+    '';
+  };
 
 in {
+  home.sessionVariables.CLAUDE_CODE_SANDBOXED = "1"; # trust every folder, no prompt
+
   programs.claude-code = {
     enable = true;
     package = pkgs.claude-code;
 
-    plugins = {
-      caveman = trim {
-        name = "caveman";
-        hookDir = "src/hooks";
-        keep = [ "caveman" "caveman-commit" "caveman-review" ];
-        ruleset = ./claude/caveman.md;
-        src = pkgs.fetchFromGitHub {
-          owner = "JuliusBrussee"; repo = "caveman";
-          rev = "v2.3.1";
-          hash = "sha256-zQJ5fVaEuUjQoboJm9SvStwHI8kmqwyxecOSYvzuVBQ=";
-        };
-      };
-      ponytail = trim {
-        name = "ponytail";
-        hookDir = "hooks";
-        keep = [ "ponytail" "ponytail-review" ];
-        ruleset = ./claude/ponytail.md;
-        src = pkgs.fetchFromGitHub {
-          owner = "DietrichGebert"; repo = "ponytail";
-          rev = "v4.9.0";
-          hash = "sha256-8cYggVltBAlZ/Zj4pl1bOu7mQdZFXCmDGW4RSpvRA+w=";
-        };
-      };
-    };
-
     settings = {
       model = "opus";
       effortLevel = "medium";
+      outputStyle = "terse";
       theme = "auto";
       tui = "fullscreen";
       skipDangerousModePermissionPrompt = true;
-      enabledPlugins."typescript-lsp@claude-plugins-official" = true;
+      disableClaudeAiConnectors = true;
 
       alwaysThinkingEnabled = false; # think only when the turn needs it
       todoFeatureEnabled = false;
       spinnerTipsEnabled = false;
-      includeCoAuthoredBy = false;
+      promptSuggestionEnabled = false; # no model call per turn for ghost-text
+      awaySummaryEnabled = false; # no recap call after idling
+      autoDreamEnabled = false; # no background memory consolidation
+      precomputeCompactionEnabled = false; # summarize only when compacting
+      disableAgentView = true; # no background daemon
+      prefersReducedMotion = true;
+      showTurnDuration = false;
+      emojiCompletionEnabled = false;
+      feedbackSurveyRate = 0;
+      attribution = { commit = ""; pr = ""; sessionUrl = false; };
+      statusLine = {
+        type = "command";
+        command = lib.getExe statusline;
+        padding = 0;
+        refreshInterval = 2; # redraw on resize
+        hideVimModeIndicator = true; # shown in the line
+      };
       autoCompactEnabled = true; # cheaper than blowing the window
       autoUpdates = false; # the store is read-only
       cleanupPeriodDays = 7; # trim old transcripts
@@ -69,10 +156,6 @@ in {
         DISABLE_AUTOUPDATER = "1";
         DISABLE_INSTALLATION_CHECKS = "1";
         CLAUDE_CODE_DISABLE_TERMINAL_TITLE = "1";
-        CAVEMAN_DEFAULT_MODE = "full"; # off|lite|full|ultra
-        CAVEMAN_QUIET_STARTUP = "1";
-        PONYTAIL_DEFAULT_MODE = "full"; # off|lite|full|ultra
-        PONYTAIL_QUIET_STARTUP = "1";
       };
 
       permissions.deny = [ # never pull these into context
@@ -84,65 +167,34 @@ in {
       ];
     };
 
-    # always in context, so keep it short
-    context = ''
-      - Answer directly. No preamble, no plan-of-attack, no closing summary.
-      - Read only what you need: rg/grep with line numbers, sed -n ranges. Never cat a large file whole.
-      - Batch independent tool calls into one block.
-      - Never re-read a file to confirm an edit landed.
-      - Report a change as file:line and stop. Don't restate the diff.
-      - One approach, chosen. Don't survey alternatives unless asked.
+    # lives in the cached system prompt, so it costs once per session
+    outputStyles.terse = ''
+      ---
+      name: terse
+      description: Short, direct, token-frugal replies
+      keep-coding-instructions: true
+      ---
+
+      # Terse
+
+      Replies:
+      - Lead with the answer or the result. No preamble, recap, or closing offer.
+      - Plain short sentences; fragments fine. Keep code, error text, numbers and technical terms exact.
+      - A question gets an answer, not work: 1-3 sentences, cite file:line, don't paste code back.
+      - A change gets one line: what changed, file:line. Don't restate the diff.
+      - One approach, chosen. No option surveys unless asked.
       - Ask only when a wrong guess would waste real work.
+
+      Work:
+      - Smallest change that works. Match the file's style; no unrequested refactors, abstractions or comments.
+      - Search narrow: rg -n, read ranges with sed -n, cap with head. Stop at the first answer.
+      - Batch independent tool calls. Never re-read a file to check an edit.
+      - No subagents unless asked. Think hard only when the problem needs it.
+    '';
+
+    context = ''
       - Never run nixos-rebuild or home-manager switch; I build myself.
       - Shell is fish: no bash <(...), use psub or /dev/stdin.
     '';
-
-    skills = {
-      answer-directly = ''
-        ---
-        name: answer-directly
-        description: Use when the user asks a question rather than requesting a change - "how does X work", "why is X", "can I", "what's the difference", "is X possible". Not for tasks that edit files.
-        ---
-
-        # Answer directly
-
-        - Lead with the answer in the first sentence. Three sentences is usually the whole reply.
-        - Point at evidence as `file:line`. Don't paste the code back unless the shape is the answer.
-        - One or two targeted reads, then answer. If two reads didn't settle it, say what's unclear and ask.
-        - No options table, no trade-off survey, no "would you like me to...".
-        - Don't start work the user didn't ask for. A question is not a task.
-      '';
-
-      narrow-search = ''
-        ---
-        name: narrow-search
-        description: Use before locating something in a codebase - "where is", "find the", "which file", "does this repo have", or any grep/search sweep across unfamiliar files.
-        ---
-
-        # Narrow search
-
-        - `rg -n 'pattern'` first. Add `-l` when you only need filenames, `-c` when you only need counts.
-        - Read the hit with `sed -n 'START,ENDp' file`, not the whole file. Widen only if the range was too tight.
-        - Cap output: pipe through `head`. A search that returns 200 lines was the wrong search.
-        - Prefer one precise pattern over three broad ones. Refine the regex instead of re-reading.
-        - Don't spawn a subagent to search a single repo; it re-derives context you already have.
-        - Stop at the first hit that answers the question.
-      '';
-
-      small-change = ''
-        ---
-        name: small-change
-        description: Use when the user has already specified the change - a fix, rename, config toggle, option addition, or small feature. Not for open-ended design work.
-        ---
-
-        # Small change
-
-        - The request is the spec. Implement it; don't plan it first.
-        - Touch the fewest lines that do the job. No drive-by refactors, no renames not asked for.
-        - Match the surrounding file's style, comment density, and idiom.
-        - Edit tools fail loudly, so skip verification reads. Run a build or test only if the user asked or the change is non-obvious.
-        - Report in one line: what changed, where. Then stop.
-      '';
-    };
   };
 }

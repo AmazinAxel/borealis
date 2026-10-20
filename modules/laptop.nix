@@ -36,6 +36,46 @@
     };
   };
 
+  systemd.sleep.settings.Sleep = { # hibernation is broken on laptops
+    AllowHibernation = "no";
+    AllowSuspendThenHibernate = "no";
+    AllowHybridSleep = "no";
+  };
+  systemd.network.wait-online.enable = false; # nothing here needs network-online
+
+  # logs drain per suspend; on battery wakes hourly and powers off at 10% so it never dies asleep
+  systemd.services.sleep-guard = {
+    wantedBy = [ "suspend.target" ];
+    before = [ "systemd-suspend.service" ];
+    unitConfig.StopWhenUnneeded = true;
+    serviceConfig = { Type = "oneshot"; RemainAfterExit = true; };
+    script = ''
+      bat=$(echo /sys/class/power_supply/BAT*)
+      rtc=$(dirname $(echo /sys/class/rtc/*/wakealarm | cut -d' ' -f1))
+      armed=0
+      echo 0 > $rtc/wakealarm
+      [ "$(cat $bat/status)" = Discharging ] && echo +3600 > $rtc/wakealarm && armed=1
+      echo "$(date +%s) $(cat $bat/charge_now) $(cat /sys/power/suspend_stats/total_hw_sleep) $armed" > /run/sleep-guard
+    '';
+    preStop = ''
+      bat=$(echo /sys/class/power_supply/BAT*)
+      rtc=$(dirname $(echo /sys/class/rtc/*/wakealarm | cut -d' ' -f1))
+      read t0 c0 h0 armed < /run/sleep-guard
+      dt=$(( $(date +%s) - t0 ))
+      [ $dt -gt 0 ] || dt=1
+      hw=$(( ($(cat /sys/power/suspend_stats/total_hw_sleep) - h0) / 10000 / dt ))
+      mah=$(( (c0 - $(cat $bat/charge_now)) / 1000 ))
+      echo "slept ''${dt}s, ''${hw}% in hardware sleep, drained ''${mah}mAh ($(( mah * 3600 / dt ))mA avg), now $(cat $bat/capacity)%"
+      fired=0 # alarm went off rather than lid/power key
+      [ $armed = 1 ] && [ -z "$(cat $rtc/wakealarm)" ] && [ $dt -ge 3590 ] && [ $dt -le 3700 ] && fired=1
+      echo 0 > $rtc/wakealarm
+      if [ $fired = 1 ]; then
+        if [ "$(cat $bat/capacity)" -le 10 ]; then systemd-run --on-active=5 systemctl poweroff
+        else systemd-run --on-active=5 systemctl suspend; fi
+      fi
+    '';
+  };
+
   services = {
     udev = {
       packages = [ pkgs.platformio-core.udev ];

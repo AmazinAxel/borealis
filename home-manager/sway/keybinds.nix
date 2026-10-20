@@ -5,17 +5,15 @@
   moveItemToWorkspace = direction: "exec sh -c 'current=${currentWorkspace}; target=$((current ${direction} 1)); [ $target -lt 1 ] && target=1; [ $target -gt 9 ] && target=9; [ $target -ne $current ] && swaymsg move container to workspace number $target && swaymsg workspace number $target'";
   # True iff the focused workspace has apps other than foot/nemo
   shouldFloat = pkgs.writeShellScript "should-float" ''
-    ws=$(swaymsg -t get_workspaces | ${pkgs.jq}/bin/jq -r '.[] | select(.focused) | .name')
-    others=$(swaymsg -t get_tree | ${pkgs.jq}/bin/jq -r --arg ws "$ws" '
-      ([.. | objects | select(.type? == "workspace" and .name? == $ws)][0] // {}) |
+    swaymsg -t get_tree | ${pkgs.jq}/bin/jq -e '
+      ([.. | objects | select(.type? == "workspace" and ([.. | objects | .focused?] | any))][0] // {}) |
       [.. | objects | select(
         (.type? == "con" or .type? == "floating_con") and
         (.nodes? // [] | length) == 0 and
         (((.app_id? // "") | startswith("foot")) | not) and
         ((.app_id? // "") != "nemo")
-      )] | length
-    ')
-    [ "''${others:-0}" -gt 0 ]
+      )] | length > 0
+    ' >/dev/null
   '';
   openFoot = pkgs.writeShellScript "open-foot" ''
     if ${shouldFloat}; then
@@ -153,8 +151,8 @@ in {
       "control+${mod}+shift+j" = moveItemToWorkspace "+";
       "control+${mod}+shift+k" = moveItemToWorkspace "-";
 
-      "${mod}+minus" = "move scratchpad";
-      "${mod}+equal" = "scratchpad show, resize set 1800 960, move position center";
+      "${mod}+minus" = "floating enable, resize set 1800 960, move scratchpad, move position center";
+      "${mod}+equal" = "scratchpad show";
 
       "${mod}+F" = "floating toggle";
       "F11" = "fullscreen toggle";

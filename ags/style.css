@@ -256,6 +256,7 @@ window .backgroundSection .header:first-child {
 #sideview {
   margin: 0.333rem -1px 0.546rem 0rem;
   border: 0.2rem solid @dark4;
+  background-color: @dark1;
 }
 
 #sideview:focus-within {

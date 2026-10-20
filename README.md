@@ -1,4 +1,6 @@
-# Flake
+# decidious
+
+#
 
 A hyperfocused, keyboard-oriented configuration flake.
 

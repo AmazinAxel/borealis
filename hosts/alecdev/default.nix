@@ -1,9 +1,10 @@
-{ pkgs, inputs, ... }: {
+{ pkgs, ... }: {
   imports = [
     ../../modules/mcscripts.nix
     ../common.nix
     ../../modules/pi.nix
     ../../modules/mcdev.nix
+    ../../modules/home-manager.nix
   ];
 
   systemd.tmpfiles.rules = [
@@ -11,18 +12,12 @@
     "w /sys/class/leds/PWR/trigger - - - - none"
   ]; # no power or act LEDs
 
-  environment.systemPackages = [
-    (pkgs.writeScriptBin "fetch" (builtins.readFile ../../scripts/fetch.fish)) # called by fish
-    (pkgs.writeScriptBin "nx-gc" (builtins.readFile ../../scripts/nx-gc.fish))
-  ];
-
   programs.fish = {
     enable = true; # enable ssh shell
     shellAliases.pf = "hx /var/lib/minecraft/plugins/Skript/scripts";
   };
   users.users.alec.shell = pkgs.fish; # use shell
 
-  home-manager.extraSpecialArgs = { inherit inputs; };
   home-manager.users.alec = {
     imports = [
       ../../home-manager/fish.nix
@@ -38,6 +33,7 @@
   };
 
   environment.persistence."/persist".directories = [ "/var/lib/minecraft" ];
+  powerManagement.cpuFreqGovernor = "performance"; # better performance
 
   # Networking
   networking.hostName = "alecdev";

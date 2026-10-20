@@ -6,17 +6,8 @@
   };
 
   boot = {
-    loader = {
-      systemd-boot = {
-        enable = lib.mkDefault true;
-        configurationLimit = 2;
-        editor = false;
-      };
-      efi.canTouchEfiVariables = true;
-      timeout = lib.mkForce 0; # Hold down space on boot to access
-    };
+    loader.timeout = lib.mkForce 0; # Hold down space on boot to access
     tmp.useTmpfs = true;
-    kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
     kernelParams = [ "nowatchdog" "nmi_watchdog=0" ];
     blacklistedKernelModules = [ "sp5100_tco" ]; # speeds up shutdown on amd stop since it doesnt wait for watchdog
     kernelModules = [ "tcp_bbr" ];
@@ -41,24 +32,19 @@
   };
 
   networking = {
-    dhcpcd.enable = false;
+    nftables.enable = true; # native firewall, no iptables compat layer
     useNetworkd = lib.mkDefault true; # newer
     wireless.iwd = {
       enable = lib.mkDefault true;
-      settings = {
-        IPv6.Enabled = true;
-        Settings.AutoConnect = true;
-        General.EnableNetworkConfiguration = false; # networkd handles DHCP now
-        Network.NameResolvingService = "systemd";
-        Scan.InitialPeriodicScanInterval = 10;
-        Scan.MaximumPeriodicScanInterval = 300; # low value caused roam flapping between mesh APs
-        Scan.DisablePeriodicScan = true; # only scan when disconnected
+      settings.Scan = { # periodic scans only run while disconnected
+        InitialPeriodicScanInterval = 10;
+        MaximumPeriodicScanInterval = 300; # low value caused roam flapping between mesh APs
       };
     };
   };
 
+  systemd.services.tailscaled.environment.TS_DEBUG_FIREWALL_MODE = "nftables"; # skip iptables detection
   systemd.network = {
-    enable = lib.mkDefault true;
     networks."20-default" = {
       matchConfig.Type = "ether wlan";
       networkConfig = {
@@ -135,20 +121,11 @@
       openFirewall = true;
     };
 
-    avahi = {
-      enable = true;
-      nssmdns4 = true; # .local resolution
-      nssmdns6 = true;
-      openFirewall = true; # UDP5353
-      publish = { # announce our own hostname (off by default!) so <host>.local resolves
-        enable = true;
-        addresses = true;
-      };
-    };
     resolved = {
       enable = true;
       settings.Resolve = {
-        MulticastDNS = "no"; # avahi owns mDNS; resolved does unicast DNS only
+        MulticastDNS = "no"; # hosts resolve via tailscale MagicDNS
+        LLMNR = "no";
         DNS = "1.1.1.1#cloudflare-dns.com 1.0.0.1#cloudflare-dns.com";
         DNSOverTLS = "opportunistic";
         Domains = "~."; # override DHCP-provided DNS (ISP)
@@ -159,6 +136,7 @@
   documentation.enable = false;
   documentation.man.enable = false; # faster rebuilds, even if docs off
   environment.defaultPackages = lib.mkForce [];
+  environment.systemPackages = [ (pkgs.writeShellScriptBin "nx-gc" (builtins.readFile ../scripts/nx-gc.sh)) ];
 
   system.stateVersion = lib.mkDefault "24.05";
 }

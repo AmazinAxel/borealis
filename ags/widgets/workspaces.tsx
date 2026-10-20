@@ -14,21 +14,17 @@ const [ scratchpad, setScratchpad ] = createState(0);
 const { visible, reveal, show, onHidden } = createFlash(400);
 
 const updateWorkspaces = () =>
-  execAsync(['swaymsg', '-t', 'get_workspaces', '-r'])
-    .then((out) => {
-      const list: { num: number, focused: boolean }[] = JSON.parse(out);
-      setOccupied(new Set(list.map((w) => w.num).filter((n) => IDS.includes(n))));
-
-      setFocused(list.find((w) => w.focused)?.num ?? 0);
-    })
-    .catch(() => {});
-
-const updateScratchpad = () =>
   execAsync(['swaymsg', '-t', 'get_tree', '-r'])
     .then((out) => {
-      const scratch = JSON.parse(out).nodes
-        ?.find((o: any) => o.name === '__i3')
-        ?.nodes?.find((w: any) => w.name === '__i3_scratch');
+      const tree = JSON.parse(out);
+      const outputs: any[] = tree.nodes ?? [];
+      const workspaces = outputs.flatMap((o) => o.nodes ?? []);
+      setOccupied(new Set(workspaces.map((w) => w.num).filter((n) => IDS.includes(n))));
+
+      const output = outputs.find((o) => o.id === tree.focus?.[0]);
+      setFocused(output?.nodes?.find((w: any) => w.id === output.focus?.[0])?.num ?? 0);
+
+      const scratch = workspaces.find((w) => w.name === '__i3_scratch');
       setScratchpad(scratch?.floating_nodes?.length ?? 0);
     })
     .catch(() => {});
@@ -36,11 +32,9 @@ const updateScratchpad = () =>
 const eventStream = createSubprocess('', ['swaymsg', '-t', 'subscribe', '-m', '["workspace"]']);
 eventStream.subscribe(() => { // Show workspaces on workspace change
   updateWorkspaces();
-  updateScratchpad();
   show();
 });
 updateWorkspaces();
-updateScratchpad();
 
 export default () =>
   <For each={monitors}>

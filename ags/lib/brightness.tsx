@@ -4,8 +4,10 @@ import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
 
 const readNum = (path: string) => {
-    const [ ok, contents ] = GLib.file_get_contents(path);
-    return ok ? Number(new TextDecoder().decode(contents).trim()) : 0;
+    try {
+        const [ ok, contents ] = GLib.file_get_contents(path);
+        return ok ? Number(new TextDecoder().decode(contents).trim()) : 0;
+    } catch { return 0; }
 };
 
 const backlightDir = '/sys/class/backlight';
@@ -43,7 +45,7 @@ export const monitorBrightness = () =>
     );
 
 export const BrightnessSlider = () =>
-    <box>
+    <box visible={!!screen}>
         <image iconName="display-brightness-symbolic"/>
         <slider
             hexpand

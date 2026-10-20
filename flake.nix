@@ -58,61 +58,19 @@
     };
   };
 
-  outputs = { home-manager, nixpkgs, ... }@inputs: {
-    nixosConfigurations = {
-
-      # Primary laptop
-      "alecslaptop" = nixpkgs.lib.nixosSystem {
-        specialArgs = { inherit inputs; };
-        modules = [
-          ./hosts/alecslaptop/default.nix
-          home-manager.nixosModules.home-manager
-        ];
-      };
-
-      # Old laptop
-      "alecolaptop" = nixpkgs.lib.nixosSystem {
-        specialArgs = { inherit inputs; };
-        modules = [
-          ./hosts/alecolaptop/default.nix
-          home-manager.nixosModules.home-manager
-        ];
-      };
-
-      # Desktop/compute server
-      "alecpc" = nixpkgs.lib.nixosSystem {
-        specialArgs = { inherit inputs; };
-        modules = [
-          ./hosts/alecpc/default.nix
-          home-manager.nixosModules.home-manager
-        ];
-      };
-
-      # headless devices
-      # nixos-rebuild switch --flake .#<hostname> --sudo --ask-sudo-password --build-host alec@alecpc --target-host alec@<hostname>
-
-      # Homelab (Zero 2W)
-      "alechomelab" = nixpkgs.lib.nixosSystem {
-        specialArgs = { inherit inputs; };
-        modules = [ ./hosts/alechomelab/default.nix ];
-      };
-
-      # Pi 4B dev server
-      "alecdev" = nixpkgs.lib.nixosSystem {
-        specialArgs = { inherit inputs; };
-        modules = [
-          ./hosts/alecdev/default.nix
-          home-manager.nixosModules.home-manager
-        ];
-      };
-
-      # VPS
-      "alecvps" = nixpkgs.lib.nixosSystem {
-        specialArgs = { inherit inputs; };
-        modules = [
-          ./hosts/alecvps/default.nix
-        ];
-      };
-    };
+  outputs = { nixpkgs, ... }@inputs: {
+    # headless devices
+    # nixos-rebuild switch --flake .#<hostname> --sudo --ask-sudo-password --build-host alec@alecpc --target-host alec@<hostname>
+    nixosConfigurations = nixpkgs.lib.genAttrs [
+      "alecslaptop" # Primary laptop
+      "alecolaptop" # Old laptop
+      "alecpc" # Desktop/compute server
+      "alechomelab" # Homelab (Zero 2W)
+      "alecdev" # Pi 4B dev server
+      "alecvps" # VPS
+    ] (host: nixpkgs.lib.nixosSystem {
+      specialArgs = { inherit inputs; };
+      modules = [ ./hosts/${host}/default.nix ];
+    });
   };
 }

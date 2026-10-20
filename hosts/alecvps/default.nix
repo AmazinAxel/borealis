@@ -1,4 +1,4 @@
-{ modulesPath, pkgs, lib, inputs, ... }:
+{ modulesPath, pkgs, lib, ... }:
 let
   key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICh1nH79rMAd7qEySygClFNsnGRsHRabisFZCD7nKYEz axel@amazinaxel.com";
 in {
@@ -15,9 +15,7 @@ in {
 
   users.users.alec.initialPassword = "nixos"; # change with passwd
   networking.wireless.iwd.enable = false; # no wifi in a container
-  boot.loader.systemd-boot.enable = false; # fix boot eval
   zramSwap.enable = false; # cant use in proxmox
-  services.avahi.enable = lib.mkForce false; # no mDNS in LXC
   services.tailscale.interfaceName = "userspace-networking"; # no /dev/net/tun in unprivileged LXC
 
   services = {
@@ -63,6 +61,6 @@ in {
 
   # Networking
   networking.hostName = "alecvps";
-  systemd.network.networks."20-default".matchConfig.Type = lib.mkForce "wlan";
+  systemd.network.networks."20-default".enable = false; # Proxmox has ethernet!
   system.stateVersion = "25.11";
 }

@@ -10,6 +10,7 @@
 in {
   imports = [
     ./tmpfs-root.nix
+    ./home-manager.nix
     inputs.lanzaboote.nixosModules.lanzaboote
   ];
 
@@ -25,7 +26,7 @@ in {
     # more ram on desktops so use more zram
     kernel.sysctl."vm.swappiness" = 180;
 
-    loader.systemd-boot.enable = lib.mkForce false; # use lanzaboote
+    loader.efi.canTouchEfiVariables = true;
     lanzaboote = {
       enable = true;
       pkiBundle = "/var/lib/sbctl";
@@ -34,11 +35,8 @@ in {
   };
 
   home-manager = {
-    extraSpecialArgs = { inherit inputs; };
     users.alec.imports = [ ../home-manager/home.nix ];
     backupFileExtension = "backup2";
-    useGlobalPkgs = true; # Faster eval
-    useUserPackages = true; # skip nix-env profile install on boot
   };
   users.users.alec.shell = pkgs.fish; # default shell for ssh and foot
 
@@ -80,14 +78,11 @@ in {
       bun
 
       # Scripts
-      (writeScriptBin "fetch" (builtins.readFile ../scripts/fetch.fish))
       (writeScriptBin "sys-sync" (builtins.readFile ../scripts/sys-sync.fish))
       (writeScriptBin "homelab-update" (builtins.readFile ../scripts/homelab-update.fish))
-      (writeScriptBin "nx-gc" (builtins.readFile ../scripts/nx-gc.fish))
     ];
     persistence."/persist" = {
       directories = [
-        "/var/lib/iwd" # saved wifi networks
         "/var/lib/systemd" # backlight
         "/var/lib/sbctl" # secure boot keys
       ];
@@ -115,7 +110,7 @@ in {
           ".bun"
           ".config/valent"
           ".local/share/PrismLauncher"
-          ".claude"
+          ".claude/projects" # transcripts, memory
           ".config/zen"
           ".config/spotify"
           ".cache/spotify"
@@ -134,6 +129,8 @@ in {
         ];
         files = [
           ".claude.json" # claude login
+          ".claude/.credentials.json"
+          ".claude/history.jsonl"
         ];
       };
     };

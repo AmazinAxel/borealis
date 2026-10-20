@@ -19,13 +19,10 @@
     ./zen.nix
   ];
 
-  programs.home-manager.enable = true;
   systemd.user.startServices = "sd-switch"; # Better system unit reloads
 
   home = {
     stateVersion = "26.05";
-    username = "alec";
-    homeDirectory = "/home/alec";
 
     # Global cursor
     pointerCursor = {

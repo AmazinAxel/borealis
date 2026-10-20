@@ -20,11 +20,11 @@
       package = pkgs.morewaita-icon-theme;
     };
     theme = {
-    name = "Graphite-Dark-nord";
-    package = pkgs.callPackage ./graphite-gtk-theme.nix {
-      tweaks = [ "nord" ];
-      colorVariants = [ "light" "dark" ];
-    };
+      name = "Graphite-Dark-nord";
+      package = pkgs.callPackage ./graphite-gtk-theme.nix {
+        tweaks = [ "nord" ];
+        colorVariants = [ "light" "dark" ];
+      };
     };
     # gtk3.extraConfig.gtk-im-module = "fcitx";
     gtk4 = {

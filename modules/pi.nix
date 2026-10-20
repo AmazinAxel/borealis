@@ -2,7 +2,7 @@
   imports = [ ./tmpfs-root.nix ];
 
   boot = {
-    kernelPackages = lib.mkForce pkgs.linuxPackages; # LTS
+    kernelPackages = pkgs.linuxPackages; # LTS
 
     loader = { # Raspi boot
       systemd-boot.enable = false;
@@ -18,16 +18,10 @@
     initrd.supportedFilesystems = lib.mkForce [ "ext4" ];
   };
 
-  networking = {
-    useNetworkd = false; # use nm
-    networkmanager = {
-      enable = true;
-      wifi.powersave = false; # Stops network drops
-      settings.device."wifi.scan-rand-mac-address" = "no"; # helps with drops
-    };
-    wireless.iwd.enable = false; # use nm
+  networking.wireless.iwd.settings.DriverQuirks = {
+    DefaultInterface = "brcmfmac"; # don't recreate wlan0
+    PowerSaveDisable = "brcmfmac"; # stops network drops
   };
-  systemd.network.enable = false; # no networkd
 
   # help with wifi drops
   boot.extraModprobeConfig = "options brcmfmac roamoff=1 feature_disable=0x82000";
@@ -42,14 +36,13 @@
     setFlakeRegistry = false;
   };
 
-  # avahi .local publishing comes from common.nix
   services.openssh.enable = true;
 
   fileSystems."/persist" = {
     device = "/dev/disk/by-label/NIXOS_SD";
     fsType = "ext4";
     neededForBoot = true;
-    options = [ "noatime" "nodiratime" "commit=600" "data=ordered" "errors=remount-ro" ];
+    options = [ "noatime" "commit=600" "errors=remount-ro" ];
   };
   fileSystems."/boot" = { # extlinux kernels
     device = "/persist/boot";
@@ -59,9 +52,6 @@
     depends = [ "/persist" ];
   };
 
-  environment.persistence."/persist".directories = [
-    "/etc/NetworkManager/system-connections" # networkmanager wifi
-  ];
 
   services.journald.settings.Journal.Storage = "volatile";
   nixpkgs.hostPlatform = "aarch64-linux";

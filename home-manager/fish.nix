@@ -1,4 +1,6 @@
 { lib, pkgs, ... }: {
+  home.packages = [ (pkgs.writeScriptBin "fetch" (builtins.readFile ../scripts/fetch.fish)) ]; # shell start even thru ssh
+
   programs = {
     fish = {
       enable = true;
@@ -23,17 +25,20 @@
         nb = "nix build";
         nd = "nix develop";
         nfc = "nix flake check";
-
-        c = "claude --dangerously-skip-permissions";
-        cdp = "cd /home/alec/Projects/";
       };
       functions = {
         gcm = ''git commit -m "$argv"'';
         gacm = ''git add -A && git commit -m "$argv"'';
+        cdp = "cd ~/Projects/$argv[1]";
+        h = "if set -q argv[1]; cdp $argv[1]; or return; end; hx .";
+        c = "if set -q argv[1]; cdp $argv[1]; or return; end; claude --dangerously-skip-permissions $argv[2..]";
+        cr = "if set -q argv[1]; cdp $argv[1]; or return; end; claude --dangerously-skip-permissions --resume $argv[2..]";
+        __proj_dirs = "for d in ~/Projects/(commandline -ct)*/; string replace ~/Projects/ '' $d; end";
       };
       interactiveShellInit = ''
         set fish_greeting
         fetch
+        complete -c cdp -c h -c c -c cr -f -a "(__proj_dirs)"
 
         set nord0 2e3440
         set nord1 3b4252
