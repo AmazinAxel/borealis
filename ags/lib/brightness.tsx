@@ -1,27 +1,16 @@
 import { subprocess } from 'ags/process';
+import { readFile } from 'ags/file';
 import { createState } from 'ags';
 import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
+import listDir from './listDir';
 
 const readNum = (path: string) => {
-  try {
-    const [ ok, contents ] = GLib.file_get_contents(path);
-    return ok ? Number(new TextDecoder().decode(contents).trim()) : 0;
-  } catch { return 0; }
+  try { return Number(readFile(path).trim()); } catch { return 0; }
 };
 
 const backlightDir = '/sys/class/backlight';
-const listScreens = () => {
-  const names: string[] = [];
-  try {
-    const e = Gio.File.new_for_path(backlightDir)
-      .enumerate_children('standard::name', Gio.FileQueryInfoFlags.NONE, null);
-    for (let i = e.next_file(null); i; i = e.next_file(null)) names.push(i.get_name());
-  } catch { }
-  return names.sort();
-};
-
-const screen = listScreens()[0] ?? '';
+const screen = listDir(backlightDir).map((i) => i.get_name()).sort()[0] ?? '';
 const brightnessPath = `${backlightDir}/${screen}/brightness`;
 
 const screenMax = readNum(`${backlightDir}/${screen}/max_brightness`);

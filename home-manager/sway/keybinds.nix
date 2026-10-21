@@ -1,8 +1,17 @@
-{ pkgs, config, ... }: let
+{ pkgs, lib, config, ... }: let
   mod = "Mod4";
   currentWorkspace = "$(swaymsg -p -t get_workspaces | grep focused | grep -oE '[0-9]+')";
-  workspace = direction: "exec sh -c 'current=${currentWorkspace}; target=$((current ${direction} 1)); [ $target -lt 1 ] && target=1; [ $target -gt 9 ] && target=9; [ $target -eq $current ] || swaymsg workspace number $target'";
-  moveItemToWorkspace = direction: "exec sh -c 'current=${currentWorkspace}; target=$((current ${direction} 1)); [ $target -lt 1 ] && target=1; [ $target -gt 9 ] && target=9; [ $target -ne $current ] && swaymsg move container to workspace number $target && swaymsg workspace number $target'";
+  stepWorkspace = cmd: direction: "exec sh -c 'current=${currentWorkspace}; target=$((current ${direction} 1)); [ $target -lt 1 ] && target=1; [ $target -gt 9 ] && target=9; [ $target -eq $current ] || { ${cmd}; }'";
+  workspace = stepWorkspace "swaymsg workspace number $target";
+  moveItemToWorkspace = stepWorkspace "swaymsg move container to workspace number $target && swaymsg workspace number $target";
+  # arrows and hjkl: focus, move window, switch workspace, move window to workspace
+  directionBinds = lib.concatMapAttrs (dir: vim: let step = if dir == "left" || dir == "up" then "-" else "+"; in
+    lib.mergeAttrsList (map (key: {
+      "${mod}+${key}" = "focus ${dir}";
+      "${mod}+shift+${key}" = "move ${dir}";
+      "control+${mod}+${key}" = workspace step;
+      "control+${mod}+shift+${key}" = moveItemToWorkspace step;
+    }) [ dir vim ])) { left = "h"; right = "l"; up = "k"; down = "j"; };
   # True iff the focused workspace has apps other than foot/nemo
   shouldFloat = pkgs.writeShellScript "should-float" ''
     swaymsg -t get_tree | ${pkgs.jq}/bin/jq -e '
@@ -25,6 +34,7 @@
   toggleTheme = pkgs.writeShellScript "toggle-theme" ''
     gs=${pkgs.glib}/bin/gsettings
     pk=${pkgs.procps}/bin/pkill
+    temp="${pkgs.systemd}/bin/busctl --user set-property rs.wl-gammarelay / rs.wl.gammarelay Temperature q"
     themes=${config.gtk.theme.package}/share/themes
     gtk4css=$HOME/.config/gtk-4.0/gtk.css
     if [ "$($gs get org.gnome.desktop.interface color-scheme)" = "'prefer-dark'" ]; then
@@ -32,16 +42,18 @@
       $gs set org.gnome.desktop.interface gtk-theme 'Graphite-Light-nord'
       ln -sfn "$themes/Graphite-Light-nord/gtk-4.0/gtk.css" "$gtk4css"
       $pk -USR2 -f "foot --server" || true # SIGUSR2 = [colors-light]
+      $temp 6500 # filter off
     else
       $gs set org.gnome.desktop.interface color-scheme 'prefer-dark'
       $gs set org.gnome.desktop.interface gtk-theme 'Graphite-Dark-nord'
       ln -sfn "$themes/Graphite-Dark-nord/gtk-4.0/gtk.css" "$gtk4css"
       $pk -USR1 -f "foot --server" || true # SIGUSR1 = [colors-dark]
+      $temp 3500 # filter on
     fi
   '';
 in {
   wayland.windowManager.sway = {
-    config.keybindings = {
+    config.keybindings = directionBinds // {
       # Volume
       "XF86AudioRaiseVolume" = "exec wpctl set-volume @DEFAULT_SINK@ .05+";
       "XF86AudioLowerVolume" = "exec wpctl set-volume @DEFAULT_SINK@ .05-";
@@ -82,7 +94,7 @@ in {
       "shift+${mod}+M" = "exec ags request 'invokeOldestNotif 1'"; # 2nd action
       "control+${mod}+M" = "exec ags request 'invokeOldestNotif 2'"; # 3rd action
       "${mod}+S" = "exec ags request toggleStreamingMode";
-      "${mod}+O" = "exec ${toggleTheme}";
+      "${mod}+B" = "exec ${toggleTheme}";
       "${mod}+T" = "exec ags request toggleFocus";
       "${mod}+Z" = "exec ags request toggleInfoArea";
 
@@ -101,9 +113,6 @@ in {
       "control+${mod}+D" = ''exec "playerctl --player=spotify,%any next"''; # next track
       "control+${mod}+A" = ''exec "playerctl --player=spotify,%any previous"''; # previous track
 
-      # blue light filter toggle
-      "${mod}+b" = "exec ags request toggleFilter";
-
       # Ags MPD controls
       "${mod}+control+period" = "exec ags request 'media next'";
       "${mod}+control+comma" = "exec ags request 'media prev'";
@@ -112,44 +121,6 @@ in {
       "${mod}+slash" = "exec ags request 'media toggle'";
 
       "Print" = "exec screenshot"; # Screenshot
-
-      # Move focus in a workspace
-      "${mod}+left" = "focus left";
-      "${mod}+right" = "focus right";
-      "${mod}+up" = "focus up";
-      "${mod}+down" = "focus down";
-      "${mod}+h" = "focus left";
-      "${mod}+l" = "focus right";
-      "${mod}+k" = "focus up";
-      "${mod}+j" = "focus down";
-
-      # Move window in a workspace
-      "${mod}+shift+left" = "move left";
-      "${mod}+shift+right" = "move right";
-      "${mod}+shift+up" = "move up";
-      "${mod}+shift+down" = "move down";
-      "${mod}+shift+h" = "move left";
-      "${mod}+shift+l" = "move right";
-      "${mod}+shift+k" = "move up";
-      "${mod}+shift+j" = "move down";
-
-      # Move through workspaces
-      "control+${mod}+right" = workspace "+";
-      "control+${mod}+left" = workspace "-";
-      "control+${mod}+l" = workspace "+";
-      "control+${mod}+h" = workspace "-";
-      "control+${mod}+shift+right" = moveItemToWorkspace "+";
-      "control+${mod}+shift+left" = moveItemToWorkspace "-";
-      "control+${mod}+shift+l" = moveItemToWorkspace "+";
-      "control+${mod}+shift+h" = moveItemToWorkspace "-";
-      "control+${mod}+down" = workspace "+";
-      "control+${mod}+up" = workspace "-";
-      "control+${mod}+j" = workspace "+";
-      "control+${mod}+k" = workspace "-";
-      "control+${mod}+shift+down" = moveItemToWorkspace "+";
-      "control+${mod}+shift+up" = moveItemToWorkspace "-";
-      "control+${mod}+shift+j" = moveItemToWorkspace "+";
-      "control+${mod}+shift+k" = moveItemToWorkspace "-";
 
       "${mod}+minus" = "floating enable, resize set 1800 960, move scratchpad, move position center";
       "${mod}+equal" = "scratchpad show";

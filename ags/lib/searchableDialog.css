@@ -4,15 +4,8 @@
   outline: none;
 }
 
-.searchableDialog button,
-.searchableDialog row {
+.searchableDialog button {
   padding: 8px;
-  border: 1px solid @dark4;
-}
-
-.searchableDialog button:focus,
-.searchableDialog row:selected {
-  border: 1px solid @blue1;
 }
 
 .searchableDialog button image {
@@ -23,10 +16,6 @@
 .searchableDialog label.name {
   color: @light3;
   font-weight: bold;
-}
-
-.searchableDialog button label.description {
-  color: @light3;
 }
 
 .searchableDialog entry image {

@@ -1,4 +1,6 @@
-{ lib, pkgs, ... }: {
+{ lib, pkgs, ... }: let
+  nord = import ../nord.nix;
+in {
   home.packages = [ (pkgs.writeScriptBin "fetch" (builtins.readFile ../scripts/fetch.fish)) ]; # shell start even thru ssh
 
   programs = {
@@ -40,22 +42,7 @@
         fetch
         complete -c cdp -c h -c c -c cr -f -a "(__proj_dirs)"
 
-        set nord0 2e3440
-        set nord1 3b4252
-        set nord2 434c5e
-        set nord3 4c566a
-        set nord4 d8dee9
-        set nord5 e5e9f0
-        set nord6 eceff4
-        set nord7 8fbcbb
-        set nord8 88c0d0
-        set nord9 81a1c1
-        set nord10 5e81ac
-        set nord11 bf616a
-        set nord12 d08770
-        set nord13 ebcb8b
-        set nord14 a3be8c
-        set nord15 b48ead
+        ${lib.concatLines (lib.mapAttrsToList (n: v: "set ${n} ${v}") nord)}
 
         set fish_color_normal normal
         set fish_color_command $nord9
@@ -90,12 +77,12 @@
       enable = true;
       settings = {
         format = lib.concatStrings [
-          "[ $hostname ](bg:#d8dee9 fg:#4c566a)"
-          "[](bg:#5e81ac fg:#d8dee9)"
-          "[](bg:#81a1c1 fg:#5e81ac)"
+          "[ $hostname ](bg:#${nord.nord4} fg:#${nord.nord3})"
+          "[](bg:#${nord.nord10} fg:#${nord.nord4})"
+          "[](bg:#${nord.nord9} fg:#${nord.nord10})"
           "$directory"
           "$git_branch"
-          "[ ](fg:#81a1c1)"
+          "[ ](fg:#${nord.nord9})"
         ];
 
         hostname = {
@@ -103,11 +90,11 @@
           format = "$hostname"; # messes up coloring otherwise
         };
         directory = {
-          format = "[ $path ](fg:#2e3440 bg:#81a1c1)";
+          format = "[ $path ](fg:#${nord.nord0} bg:#${nord.nord9})";
           truncation_length = 4;
           truncation_symbol = "../";
         };
-        git_branch.format = "[\\($branch\\)](fg:#2e3440 bg:#81a1c1)";
+        git_branch.format = "[\\($branch\\)](fg:#${nord.nord0} bg:#${nord.nord9})";
       };
     };
   };

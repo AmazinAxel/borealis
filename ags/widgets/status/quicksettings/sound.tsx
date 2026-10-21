@@ -1,17 +1,14 @@
 import Wp from 'gi://AstalWp';
-import { createBinding, createComputed, createState, For } from 'ags';
+import { createBinding, createState, For } from 'ags';
 import { Gtk } from 'ags/gtk4';
 import Gdk from 'gi://Gdk';
 import { execAsync } from 'ags/process';
-import GLib from 'gi://GLib';
-
-const wp = Wp.get_default()!;
-const audio = wp.audio;
+import { wp, audio, volumeIcon } from '../../../lib/audio';
+import idle from '../../../lib/idle';
 
 const defaultSpeaker = createBinding(audio, 'defaultSpeaker');
 
 const volume = createBinding(audio, 'defaultSpeaker', 'volume')((v) => v ?? 0);
-const volumeIcon = createBinding(audio, 'defaultSpeaker', 'volumeIcon')((i) => i ?? 'audio-volume-muted-symbolic');
 
 export const VolumeSlider = () =>
   <box>
@@ -95,10 +92,9 @@ let queued = false;
 const reconcile = () => {
   if (queued) return;
   queued = true;
-  GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+  idle(() => {
     queued = false;
     reconcileNow();
-    return GLib.SOURCE_REMOVE;
   });
 };
 

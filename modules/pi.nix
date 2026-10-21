@@ -37,6 +37,7 @@
   };
 
   services.openssh.enable = true;
+  systemd.tmpfiles.rules = [ "w /sys/class/leds/ACT/trigger - - - - none" ]; # no activity LED
 
   fileSystems."/persist" = {
     device = "/dev/disk/by-label/NIXOS_SD";
@@ -60,7 +61,6 @@
     "vm.dirty_background_bytes" = 32 * 1024 * 1024; # start background writeback
     "vm.dirty_bytes" = 96 * 1024 * 1024; # only block the writer here
     "vm.dirty_expire_centisecs" = 6000; # a page may sit dirty 60s before forced out
-    "vm.swappiness" = 180;
     "vm.vfs_cache_pressure" = 50; # keep dentry/inode cache, avoids re-reads
   };
 

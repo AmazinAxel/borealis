@@ -24,7 +24,6 @@
       pkgs.cliphist
       pkgs.wl-clipboard # wl-copy
       pkgs.swappy
-      pkgs.procps # pkill for gpu-screenrec
       pkgs.ffmpeg-headless # clipboard video thumbnails & compression
     ];
   };

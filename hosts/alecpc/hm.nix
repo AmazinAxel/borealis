@@ -1,4 +1,4 @@
-{
+{ lib, ... }: {
   wayland.windowManager.sway = {
     extraOptions = [ "--unsupported-gpu" ];
     config = {
@@ -10,17 +10,10 @@
         };
       };
 
-      workspaceOutputAssign = [
-        { workspace = "1"; output = "HDMI-A-1"; }
-        { workspace = "2"; output = "HDMI-A-1"; }
-        { workspace = "3"; output = "HDMI-A-1"; }
-        { workspace = "4"; output = "DP-1"; }
-        { workspace = "5"; output = "DP-1"; }
-        { workspace = "6"; output = "DP-1"; }
-        { workspace = "7"; output = "DP-1"; }
-        { workspace = "8"; output = "DP-1"; }
-        { workspace = "9"; output = "DP-1"; }
-      ];
+      workspaceOutputAssign = map (n: {
+        workspace = toString n;
+        output = if n <= 3 then "HDMI-A-1" else "DP-1";
+      }) (lib.range 1 9);
 
       startup = [
         { command = ''swaymsg "workspace 1; exec discord"''; }

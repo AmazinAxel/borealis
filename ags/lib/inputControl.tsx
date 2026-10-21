@@ -27,8 +27,8 @@ export default (windowName: string, Child: () => JSX.Element, {
       onShow?.();
       const target = focus?.();
       if (!target) return;
+      target.text = '';
       target.grab_focus();
-      target.set_position(-1); // cursor pos
     }}
     cssClasses={searchable ? ['backgroundDim', 'searchableDialog'] : ['backgroundDim']}
   >

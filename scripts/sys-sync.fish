@@ -1,10 +1,8 @@
 #!/usr/bin/env fish
 
 set mntPoint /mnt/alechomelab
-if not set -q passwd # caller (eg homelab-update) may have already asked
-    read -g -P "[Sync] Enter password: " passwd --silent
-    echo
-end
+read -g -P "[Sync] Enter password: " passwd --silent
+echo
 
 function s --inherit-variable passwd
     echo $passwd | sudo -S -p '' $argv
@@ -29,13 +27,8 @@ else
     echo \n"[Sync] NAS mount failed - skipping music and wallpapers"
 end
 
-echo \n"[Sync] Pulling passwords"
-pass git pull --rebase
-
-if test (pass git rev-list '@{u}..HEAD' --count) -gt 0
-    echo \n"[Sync] Passwords modified"
-    pass git push
-end
+echo \n"[Sync] Syncing passwords"
+pass-sync
 
 set sshDir /home/alec/.ssh
 mkdir -p $sshDir

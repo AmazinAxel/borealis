@@ -1,9 +1,9 @@
 import { Astal, Gtk } from 'ags/gtk4';
-import { createComputed, createState, For, This, onCleanup } from 'ags';
+import { createComputed, createState } from 'ags';
 import { createSubprocess, execAsync } from 'ags/process';
 const { TOP, LEFT } = Astal.WindowAnchor;
 import app from 'ags/gtk4/app';
-import { monitors } from '../lib/monitors';
+import perMonitor from '../lib/perMonitor';
 import OutTransition, { createFlash } from '../lib/outTransition';
 
 const IDS = [...Array(9).keys()].map((i) => i + 1);
@@ -39,35 +39,30 @@ eventStream.subscribe(() => { // Show workspaces on workspace change
 });
 updateWorkspaces();
 
-export default () =>
-  <For each={monitors}>
-    {(monitor) => <This this={app}>
-      <window
-        name="workspaces"
-        anchor={TOP | LEFT}
-        layer={Astal.Layer.OVERLAY}
-        gdkmonitor={monitor}
-        application={app}
-        visible={visible}
-        $={(self) => onCleanup(() => self.destroy())}
-        resizable={false}
-      >
-        <OutTransition duration={150} reveal={reveal} onHidden={onHidden} type={Gtk.RevealerTransitionType.SLIDE_RIGHT}>
-          <box orientation={Gtk.Orientation.VERTICAL} cssClasses={['statusElement']}>
-            {IDS.map((id) =>
-              <box cssClasses={createComputed((track) => track(focused) === id
-                ? ['workspace', 'active']
-                : track(occupied).has(id)
-                  ? ['workspace', 'occupied']
-                  : ['workspace'])} />
-            )}
-            <label
-              cssClasses={['scratchpad']}
-              visible={scratchpad((c) => c > 0)}
-              label={scratchpad(String)}
-            />
-          </box>
-        </OutTransition>
-      </window>
-    </This>}
-  </For>;
+export default () => perMonitor((monitor) =>
+  <window
+    name="workspaces"
+    anchor={TOP | LEFT}
+    layer={Astal.Layer.OVERLAY}
+    gdkmonitor={monitor}
+    application={app}
+    visible={visible}
+    resizable={false}
+  >
+    <OutTransition duration={150} reveal={reveal} onHidden={onHidden} type={Gtk.RevealerTransitionType.SLIDE_RIGHT}>
+      <box orientation={Gtk.Orientation.VERTICAL} cssClasses={['statusElement']}>
+        {IDS.map((id) =>
+          <box cssClasses={createComputed((track) => track(focused) === id
+            ? ['workspace', 'active']
+            : track(occupied).has(id)
+              ? ['workspace', 'occupied']
+              : ['workspace'])} />
+        )}
+        <label
+          cssClasses={['scratchpad']}
+          visible={scratchpad((c) => c > 0)}
+          label={scratchpad(String)}
+        />
+      </box>
+    </OutTransition>
+  </window>);

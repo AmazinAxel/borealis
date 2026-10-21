@@ -1,16 +1,15 @@
 import app from 'ags/gtk4/app';
 import Gdk from 'gi://Gdk';
 import { Gtk } from 'ags/gtk4';
-import { lockScreen } from '../lockscreen/lockscreen';
-import { suspend, hibernate, poweroff, reboot } from '../../lib/power';
+import { lockScreen, lockDisplayOff } from '../lockscreen/lockscreen';
+import { powerKeys, reboot } from '../../lib/power';
 import inputControl from '../../lib/inputControl';
 
 const actions: Record<number, () => void> = {
-  [Gdk.KEY_s]: suspend,
-  [Gdk.KEY_h]: hibernate,
-  [Gdk.KEY_q]: poweroff,
+  ...powerKeys,
   [Gdk.KEY_r]: reboot,
   [Gdk.KEY_l]: lockScreen,
+  [Gdk.KEY_d]: lockDisplayOff,
 };
 
 const handleKeys = (_ctrl: Gtk.EventControllerKey, key: number) => {

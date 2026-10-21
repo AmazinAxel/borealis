@@ -2,8 +2,8 @@ import { Astal, Gtk } from 'ags/gtk4';
 import app from 'ags/gtk4/app';
 import Notifd from 'gi://AstalNotifd';
 import { notificationItem, invokeAction } from './notificationItem';
-import { createState, For, This, onCleanup } from 'ags';
-import { monitors } from '../../lib/monitors';
+import { createState, For } from 'ags';
+import perMonitor from '../../lib/perMonitor';
 import { focus } from '../focus';
 
 const { TOP, RIGHT } = Astal.WindowAnchor;
@@ -28,27 +28,22 @@ notifd.connect('notified', (_, id) => {
 });
 notifd.connect('resolved', (_, id) => map.delete(id) && notify());
 
-export const notifications = () =>
-  <For each={monitors}>
-    {(monitor) => <This this={app}>
-      <window
-        name="notifications"
-        anchor={TOP | RIGHT}
-        application={app}
-        layer={Astal.Layer.TOP}
-        gdkmonitor={monitor}
-        $={(self) => onCleanup(() => self.destroy())}
-        resizable={false}
-        visible={notificationlist((n) => n.length != 0)}
-      >
-        <box orientation={Gtk.Orientation.VERTICAL} widthRequest={200}>
-          <For each={notificationlist}>
-            {notificationItem}
-          </For>
-        </box>
-      </window>
-    </This>}
-  </For>;
+export const notifications = () => perMonitor((monitor) =>
+  <window
+    name="notifications"
+    anchor={TOP | RIGHT}
+    application={app}
+    layer={Astal.Layer.TOP}
+    gdkmonitor={monitor}
+    resizable={false}
+    visible={notificationlist((n) => n.length != 0)}
+  >
+    <box orientation={Gtk.Orientation.VERTICAL} widthRequest={200}>
+      <For each={notificationlist}>
+        {notificationItem}
+      </For>
+    </box>
+  </window>);
 
 export const clearOldestNotification = () =>
   map.values().next().value?.dismiss();

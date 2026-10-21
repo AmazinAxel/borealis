@@ -3,30 +3,24 @@ import app from 'ags/gtk4/app';
 import Gdk from 'gi://Gdk';
 import GdkPixbuf from 'gi://GdkPixbuf';
 import Gio from 'gi://Gio';
-import { createState, For, This, onCleanup } from 'ags';
-import { monitors } from './monitors';
+import cairo from 'cairo';
+import { createState } from 'ags';
+import perMonitor from './perMonitor';
+import listDir from './listDir';
 
 const { TOP, BOTTOM, LEFT, RIGHT } = Astal.WindowAnchor;
-const wallpaperDir = '/home/alec/Wallpapers';
 
 export const [ wallpaperTexture, setWallpaperTexture ] = createState<Gdk.Paintable>(Gdk.Paintable.new_empty(1, 1));
 export const [ wallpaperLight, setWallpaperLight ] = createState(false);
 
-const listFiles = (dir: string): string[] => {
-  const files: string[] = [];
-  try {
-    const e = Gio.File.new_for_path(dir).enumerate_children('standard::name,standard::type', Gio.FileQueryInfoFlags.NONE, null);
-    for (let i = e.next_file(null); i; i = e.next_file(null)) {
-      const path = `${dir}/${i.get_name()}`;
-      files.push(...(i.get_file_type() == Gio.FileType.DIRECTORY ? listFiles(path) : [path]));
-    }
-  } catch { }
-  return files;
-};
+const listFiles = (dir: string): string[] => listDir(dir).flatMap((i) => {
+  const path = `${dir}/${i.get_name()}`;
+  return i.get_file_type() == Gio.FileType.DIRECTORY ? listFiles(path) : [path];
+});
 
 let current = '';
 export const randomWallpaper = () => {
-  const files = listFiles(wallpaperDir).filter((f) => f != current);
+  const files = listFiles('/home/alec/Wallpapers').filter((f) => f != current);
   if (!files.length) return;
   current = files[Math.floor(Math.random() * files.length)];
   try {
@@ -48,21 +42,17 @@ export const randomWallpaper = () => {
   } catch { }
 };
 
-export default () =>
-  <For each={monitors}>
-    {(monitor) => <This this={app}>
-      <window
-        name="wallpaper"
-        namespace="wallpaper"
-        anchor={TOP | BOTTOM | LEFT | RIGHT}
-        exclusivity={Astal.Exclusivity.IGNORE}
-        layer={Astal.Layer.BACKGROUND}
-        gdkmonitor={monitor}
-        application={app}
-        visible
-        $={(self) => onCleanup(() => self.destroy())}
-      >
-        <Gtk.Picture paintable={wallpaperTexture} contentFit={Gtk.ContentFit.COVER} />
-      </window>
-    </This>}
-  </For>;
+export default () => perMonitor((monitor) =>
+  <window
+    name="wallpaper"
+    namespace="wallpaper"
+    anchor={TOP | BOTTOM | LEFT | RIGHT}
+    exclusivity={Astal.Exclusivity.IGNORE}
+    layer={Astal.Layer.BACKGROUND}
+    gdkmonitor={monitor}
+    application={app}
+    visible
+    $={(self) => self.get_surface()?.set_input_region(new cairo.Region())}
+  >
+    <Gtk.Picture paintable={wallpaperTexture} contentFit={Gtk.ContentFit.COVER} />
+  </window>);

@@ -17,9 +17,5 @@ list .playIcon {
 }
 
 list .image {
-  box-shadow: 0 1px 3px alpha(@dark1, 0.8);
-}
-
-#clipboard entry image {
-  margin-bottom: 4px;
+  box-shadow: var(--shadow);
 }

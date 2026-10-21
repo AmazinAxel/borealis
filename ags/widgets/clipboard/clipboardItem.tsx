@@ -3,14 +3,17 @@ import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
 import GdkPixbuf from 'gi://GdkPixbuf';
 import Gdk from 'gi://Gdk';
+import Pango from 'gi://Pango';
 import { Gtk } from 'ags/gtk4';
 import { streamingMode } from '../../lib/streamingMode';
 
-export const cacheDir = '/tmp/ags/cliphist';
+export const tmpDir = '/tmp/ags';
+export const cacheDir = `${tmpDir}/cliphist`;
 GLib.mkdir_with_parents(cacheDir, 0o755);
+export const decode = (id: string, path: string) => execAsync(['bash', '-c', `cliphist decode ${id} > ${path}`]);
 export const videoExts = /\.(mp4|mkv|webm|mov|m4v|avi)$/i;
 
-const maxWidth = 400, maxHeight = 150;
+const maxWidth = 380, maxHeight = 150;
 let produceQueue: Promise<unknown> = Promise.resolve();
 export const binaryData = /\[\[ binary data \d+ (?:B|KiB|MiB|GiB) (\w+) (\d+)x(\d+) \]\]/;
 
@@ -28,10 +31,10 @@ export const entryPath = (id: string, content: string) => {
   return path.startsWith('/') ? path : null;
 };
 
-const Thumbnail = (id: string, file: string, produce: string[], video = false) => {
+const Thumbnail = (id: string, file: string, produce: () => Promise<unknown>, fallback: () => Gtk.Widget, video = false) => {
   const picture = new Gtk.Picture({ contentFit: Gtk.ContentFit.CONTAIN });
 
-  const container = <box cssClasses={['image']} name={id} overflow={Gtk.Overflow.HIDDEN}
+  const container = <box cssClasses={['image']} name={id} overflow={Gtk.Overflow.HIDDEN} visible={false}
     valign={Gtk.Align.CENTER} halign={Gtk.Align.CENTER}>
     <overlay>
       {picture}
@@ -41,25 +44,30 @@ const Thumbnail = (id: string, file: string, produce: string[], video = false) =
     </overlay>
   </box> as Gtk.Box;
 
-  const load = () => {
-    try {
-      const stream = Gio.File.new_for_path(file).read(null);
-      GdkPixbuf.Pixbuf.new_from_stream_at_scale_async(stream, maxWidth, maxHeight, true, null, (_, res) => {
-        try {
-          const pixbuf = GdkPixbuf.Pixbuf.new_from_stream_finish(res);
-          picture.set_paintable(Gdk.Texture.new_for_pixbuf(pixbuf));
-          container.set_size_request(pixbuf.get_width(), pixbuf.get_height());
-        } catch { } finally {
-          stream.close_async(0, null, null);
-        }
-      });
-    } catch { }
+  const fail = () => {
+    (container.get_parent() as Gtk.ListBoxRow | null)?.set_child(fallback());
+    container.visible = true;
   };
 
-  if (GLib.file_test(file, GLib.FileTest.EXISTS))
-    load();
-  else
-    produceQueue = produceQueue.then(() => execAsync(produce)).then(load).catch(() => { }); // producer can fail on odd media
+  const load = () => {
+    const stream = Gio.File.new_for_path(file).read(null);
+    GdkPixbuf.Pixbuf.new_from_stream_at_scale_async(stream, maxWidth, maxHeight, true, null, (_, res) => {
+      try {
+        const pixbuf = GdkPixbuf.Pixbuf.new_from_stream_finish(res);
+        picture.set_paintable(Gdk.Texture.new_for_pixbuf(pixbuf));
+        container.set_size_request(pixbuf.get_width(), pixbuf.get_height());
+        container.visible = true;
+      } catch {
+        fail();
+      } finally {
+        stream.close_async(0, null, null);
+      }
+    });
+  };
+
+  const ready = GLib.file_test(file, GLib.FileTest.EXISTS) ? Promise.resolve('')
+    : (produceQueue = produceQueue.catch(() => { }).then(produce));
+  ready.then(load).catch(fail);
 
   return container;
 };
@@ -67,22 +75,24 @@ const Thumbnail = (id: string, file: string, produce: string[], video = false) =
 export const ClipboardItem = (id: string, content: string, path: string | null, image: RegExpMatchArray | null) => {
   const video = path !== null && videoExts.test(path) && GLib.file_test(path, GLib.FileTest.EXISTS);
 
-  if (streamingMode.peek()) // describe
-    return <label xalign={0} name={id} label={
-      image ? `Image (${image[2]}x${image[3]})`
-        : video ? `Video (${path.split('/').pop()})`
-          : `Text (${content.length} chars)`
-    } />;
+  const describe = () => <label xalign={0} name={id} label={
+    image ? `Image (${image[2]}x${image[3]})`
+      : video ? `Video (${path.split('/').pop()})`
+        : `Text (${content.length} chars)`
+  } /> as Gtk.Widget;
+
+  if (streamingMode.peek())
+    return describe();
 
   if (image)
-    return Thumbnail(id, path!, ['bash', '-c', `cliphist decode ${id} > ${path}`]);
+    return Thumbnail(id, path!, () => decode(id, path!), describe);
 
   if (video) {
     const thumb = `${cacheDir}/${id}.jpg`;
-    return Thumbnail(id, thumb, ['ffmpeg', '-v', 'error', '-i', path, '-vf',
-      `thumbnail,scale=w=${maxWidth}:h=${maxHeight}:force_original_aspect_ratio=decrease`,
-      '-frames:v', '1', '-y', thumb], true);
+    return Thumbnail(id, thumb, () => execAsync(['ffmpeg', '-v', 'error', '-skip_frame', 'nokey', '-i', path, '-vf',
+      `scale=w=${maxWidth}:h=${maxHeight}:force_original_aspect_ratio=decrease`,
+      '-frames:v', '1', '-y', thumb]), describe, true);
   }
 
-  return <label label={content} xalign={0} wrap name={id} />;
+  return <label label={content} xalign={0} wrap wrapMode={Pango.WrapMode.WORD_CHAR} maxWidthChars={1} name={id} />;
 };

@@ -30,7 +30,6 @@ import { lockScreen } from './widgets/lockscreen/lockscreen';
 import { monitorBrightness } from './lib/brightness';
 import { initMedia, updTrack, playPause, chngPlaylist } from './lib/mediaPlayer';
 import wallpaper, { randomWallpaper } from './lib/wallpaper';
-import { toggleNightLight } from './lib/nightLight';
 import { readFileAsync } from 'ags/file';
 import { streamingMode, setStreamingMode } from './lib/streamingMode';
 import workspaces from './widgets/workspaces';
@@ -71,7 +70,6 @@ const requests: Record<string, (arg?: string) => void> = {
   },
   toggleStreamingMode: () => setStreamingMode(!streamingMode.peek()),
   toggleFocus,
-  toggleFilter: toggleNightLight,
 };
 
 const reminders = async () => {

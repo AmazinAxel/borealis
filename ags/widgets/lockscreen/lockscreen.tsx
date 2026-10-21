@@ -4,11 +4,12 @@ import SessionLock from 'gi://Gtk4SessionLock';
 import Gdk from 'gi://Gdk';
 import GLib from 'gi://GLib';
 import { timeout } from 'ags/time';
+import idle from '../../lib/idle';
 import { execAsync } from 'ags/process';
 import { createState, createRoot } from 'ags';
 import { wallpaperTexture, randomWallpaper } from '../../lib/wallpaper';
 import { formatNow } from '../../lib/time';
-import { suspend, hibernate, poweroff, reboot } from '../../lib/power';
+import { powerKeys, reboot } from '../../lib/power';
 import { sleeping, inhibitSleep, releaseSleep } from '../../lib/logind';
 
 const [ authFailed, setAuthFailed ] = createState(false);
@@ -18,6 +19,7 @@ let busy = false;
 let failures = 0;
 let failFlash: ReturnType<typeof timeout> | null = null;
 let displayOff = false;
+let displayOffOnLock = false;
 
 const setDisplay = (on: boolean) => {
   displayOff = !on;
@@ -35,10 +37,7 @@ const checkLogin = (entry: Gtk.Entry) => {
       Auth.Pam.authenticate_finish(task);
       unlockScreen();
       failures = 0;
-      GLib.idle_add(GLib.PRIORITY_LOW, () => {
-        randomWallpaper();
-        return GLib.SOURCE_REMOVE;
-      });
+      idle(randomWallpaper, GLib.PRIORITY_LOW);
     } catch { // Wrong password
       if (++failures >= 5) return reboot();
       setAuthFailed(true);
@@ -51,9 +50,7 @@ const checkLogin = (entry: Gtk.Entry) => {
 };
 
 const lockKeys: Record<number, () => void> = {
-  [Gdk.KEY_s]: suspend,
-  [Gdk.KEY_h]: hibernate,
-  [Gdk.KEY_q]: poweroff,
+  ...powerKeys,
   [Gdk.KEY_d]: () => setDisplay(false),
   [Gdk.KEY_c]: () => { }, // clear input
 };
@@ -115,12 +112,21 @@ const lock = SessionLock.Instance.new();
 lock.connect('monitor', (_, monitor: Gdk.Monitor) => assignLockWindow(monitor));
 lock.connect('locked', () => {
   if (sleeping.peek()) releaseSleep();
+  if (displayOffOnLock) setDisplay(false);
+  displayOffOnLock = false;
   // move cursor up a pixel so that it updates and disappears
   execAsync('swaymsg -- seat - cursor move 1 1, seat - cursor move -1 -1').catch(() => { });
 });
-lock.connect('failed', () => sleeping.peek() && releaseSleep());
+lock.connect('failed', () => {
+  displayOffOnLock = false;
+  if (sleeping.peek()) releaseSleep();
+});
 
 export const lockScreen = () => lock.lock();
+export const lockDisplayOff = () => {
+  displayOffOnLock = true;
+  lockScreen();
+};
 const unlockScreen = () => lock.unlock();
 
 const inhibitReason = 'Lock screen before sleep';

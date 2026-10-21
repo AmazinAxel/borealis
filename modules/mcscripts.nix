@@ -1,22 +1,20 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 let
-  serverDir = "/var/lib/minecraft";
+  git = "sudo -u alec git -C ${config.mcdev.serverDir}";
 in {
   environment.systemPackages = [
     (pkgs.writeShellScriptBin "mc-sync" ''
       set -euo pipefail
 
-      if systemctl is-active --quiet minecraft-server; then
-        sudo systemctl stop minecraft-server
-      fi
+      sudo systemctl stop minecraft-server
 
       # stash only in case of something bad
-      sudo -u alec git -C ${serverDir} stash clear
-      sudo -u alec git -C ${serverDir} stash
+      ${git} stash clear
+      ${git} stash
 
-      #sudo -u alec git -C ${serverDir} reset --hard HEAD
-      #sudo -u alec git -C ${serverDir} clean -fd
-      sudo -u alec git -C ${serverDir} pull --rebase
+      #${git} reset --hard HEAD
+      #${git} clean -fd
+      ${git} pull --rebase
 
       sudo systemctl start minecraft-server
     '')
@@ -24,19 +22,17 @@ in {
     (pkgs.writeShellScriptBin "mc-stop" ''
       set -euo pipefail
 
-      if systemctl is-active --quiet minecraft-server; then
-        sudo systemctl stop minecraft-server
-      fi
+      sudo systemctl stop minecraft-server
 
-      sudo -u alec git -C ${serverDir} pull --rebase || true
-      sudo -u alec git -C ${serverDir} add -A
-      sudo -u alec git -C ${serverDir} reset -q -- 'Permafrost' 'Permafrost/*' 'world' 'world/*' 'server.properties' 2>/dev/null || true
+      ${git} pull --rebase || true
+      ${git} add -A
+      ${git} reset -q -- 'Permafrost' 'Permafrost/*' 'world' 'world/*' 'server.properties' 2>/dev/null || true
 
       # commit message
-      if ! sudo -u alec git -C ${serverDir} diff --cached --quiet; then
+      if ! ${git} diff --cached --quiet; then
         date_str=$(date +%-m/%-d/%y)
 
-        top_files=$(sudo -u alec git -C ${serverDir} diff --cached --numstat \
+        top_files=$(${git} diff --cached --numstat \
           | awk '$1 != "-" { print $1+$2"\t"$3 }' \
           | sort -rn \
           | head -3 \
@@ -44,15 +40,15 @@ in {
           | xargs -n1 basename \
           | paste -sd ', ')
 
-        description=$(sudo -u alec git -C ${serverDir} diff --cached --numstat \
+        description=$(${git} diff --cached --numstat \
           | awk '$1 != "-" { printf "%d\t- %s (+%s/-%s)\n", $1+$2, $3, $1, $2 }' \
           | sort -rn \
           | cut -f2-)
 
         msg="sync $date_str $top_files"
 
-        sudo -u alec git -C ${serverDir} commit -m "$msg" -m "$description"
-        sudo -u alec git -C ${serverDir} push
+        ${git} commit -m "$msg" -m "$description"
+        ${git} push
       fi
 
       sudo systemctl poweroff

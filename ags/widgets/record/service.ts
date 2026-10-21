@@ -1,8 +1,8 @@
 import { createState } from 'ags';
 import { execAsync } from 'ags/process';
+import { timeout } from 'ags/time';
 import AstalIO from 'gi://AstalIO';
 import GLib from 'gi://GLib';
-import Gio from 'gi://Gio';
 import Battery from 'gi://AstalBattery';
 import { notifySend } from '../../lib/notifySend';
 import { copyUri } from '../../lib/clipboard';
@@ -47,15 +47,13 @@ export const startClippingService = (): Promise<void> => {
   return getFocusedMonitor().then((monitor) => {
     if (gen != clipperGen || isRec.peek()) return;
     const p = AstalIO.Process.subprocessv(['gpu-screen-recorder', '-a', 'default_output|default_input',
-      '-q', 'medium', '-w', monitor, '-o', `${clipsDir}/`, '-f', '30', '-r', '30', '-c', 'mp4']);
+      '-q', 'medium', '-w', monitor, '-o', clipsDir, '-f', '30', '-r', '30', '-c', 'mp4']);
     clipper = p;
+    p.connect('stdout', (_, path) => copyUri(path));
     p.connect('exit', () => {
       if (clipper != p) return;
       clipper = null;
-      GLib.timeout_add(GLib.PRIORITY_DEFAULT, 5000, () => {
-        if (gen == clipperGen && !isRec.peek()) startClippingService();
-        return GLib.SOURCE_REMOVE;
-      });
+      timeout(5000, () => gen == clipperGen && !isRec.peek() && startClippingService());
     });
   }).catch(() => { });
 };
@@ -75,22 +73,14 @@ export const startRec = () => {
   }).catch(() => setIsRec(false));
 };
 
-let savingClip = false;
-const clipsMonitor = Gio.File.new_for_path(clipsDir).monitor_directory(Gio.FileMonitorFlags.NONE, null);
-clipsMonitor.connect('changed', (_, changed, _other, event) => {
-  const path = changed.get_path();
-  if (!savingClip || event != Gio.FileMonitorEvent.CHANGES_DONE_HINT || !path?.endsWith('.mp4')) return;
-  savingClip = false;
-  copyUri(path);
-});
-
 export const saveClip = () => {
   if (!clipper) return startClippingService();
-  savingClip = true;
   clipper.signal(10);
 };
 
 export const stopRec = () => {
+  const saved = file;
+  rec?.connect('exit', () => copyUri(saved));
   rec?.signal(2); // Send SIGINT to stop recording
   rec = null;
   setIsRec(false);
@@ -103,8 +93,6 @@ export const stopRec = () => {
       { id: 2, label: 'View', command: `xdg-open ${quote(file)}` },
     ],
   });
-
-  copyUri(file);
 
   startClippingService(); // Restart screen clipping
 };

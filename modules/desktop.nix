@@ -23,9 +23,6 @@ in {
     bcache.enable = false; # dont need
     initrd.systemd.tpm2.enable = false; # no TPM unlock! dont need
 
-    # more ram on desktops so use more zram
-    kernel.sysctl."vm.swappiness" = 180;
-
     loader.efi.canTouchEfiVariables = true;
     lanzaboote = {
       enable = true;
@@ -81,6 +78,9 @@ in {
       # Scripts
       (writeScriptBin "sys-sync" (builtins.readFile ../scripts/sys-sync.fish))
       (writeScriptBin "homelab-update" (builtins.readFile ../scripts/homelab-update.fish))
+      (writeShellScriptBin "pass-sync" ''
+        pass git pull --rebase && if [ "$(pass git rev-list '@{u}..HEAD' --count)" -gt 0 ]; then pass git push; fi
+      '')
     ];
     persistence."/persist" = {
       directories = [
@@ -221,23 +221,23 @@ in {
   #   };
   # };
 
-  console.colors = [ # TTY
+  console.colors = with import ../nord.nix; [ # TTY
     "000000" # black (background)
-    "bf616a" # red
-    "a3be8c" # green
-    "ebcb8b" # yellow
-    "81a1c1" # blue
-    "b48ead" # magenta
-    "88c0d0" # cyan
-    "e5e9f0" # white
-    "4c566a" # bright black
-    "bf616a" # bright red
-    "a3be8c" # bright green
-    "ebcb8b" # bright yellow
-    "81a1c1" # bright blue
-    "b48ead" # bright magenta
-    "8fbcbb" # bright cyan
-    "eceff4" # bright white
+    nord11 # red
+    nord14 # green
+    nord13 # yellow
+    nord9 # blue
+    nord15 # magenta
+    nord8 # cyan
+    nord5 # white
+    nord3 # bright black
+    nord11 # bright red
+    nord14 # bright green
+    nord13 # bright yellow
+    nord9 # bright blue
+    nord15 # bright magenta
+    nord7 # bright cyan
+    nord6 # bright white
   ];
 
   services = {

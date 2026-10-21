@@ -1,8 +1,5 @@
 .notification {
-  background-color: @dark1;
   margin: 5px 5px 0 0;
-  border: 3px solid @dark4;
-  padding: 0;
   min-width: 240px;
 }
 

@@ -1,4 +1,10 @@
 { pkgs, ... }: {
+  boot.initrd = {
+    includeDefaultModules = false;
+    compressor = "zstd";
+    compressorArgs = [ "-19" "-T0" ];
+  };
+
   environment.systemPackages = with pkgs; [
     flashprint
     aseprite

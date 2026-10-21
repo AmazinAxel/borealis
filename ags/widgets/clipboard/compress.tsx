@@ -8,9 +8,8 @@ import BackgroundSection from '../../lib/backgroundSection';
 import inputControl from '../../lib/inputControl';
 import { notifySend } from '../../lib/notifySend';
 import { copyUri } from '../../lib/clipboard';
+import { tmpDir } from './clipboardItem';
 
-export const tmpDir = '/tmp/ags';
-GLib.mkdir_with_parents(tmpDir, 0o755);
 const targets = [10, 20, 50, 100, 500]; // MB
 const quote = GLib.shell_quote;
 

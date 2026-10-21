@@ -7,8 +7,6 @@
   ];
 
   systemd.tmpfiles.rules = [
-    "w /sys/class/leds/ACT/trigger - - - - none" # no LED
-
     "d /run/samba/lock 0755 root root -"
     "d /run/samba/cache 0755 root root -"
     "d /run/samba/state 0755 root root -"

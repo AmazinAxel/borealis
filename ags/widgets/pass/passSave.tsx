@@ -42,7 +42,6 @@ const generate = () => {
 };
 
 const reset = () => {
-  siteBox.text = '';
   userBox.text = '';
   passBox.text = '';
   setGenerated(false);
@@ -60,7 +59,7 @@ const save = async () => {
   copyLogin(user, password);
 
   // Sync with homelab
-  execAsync(['bash', '-c', `pass git pull --rebase && { [ "$(pass git rev-list '@{u}..HEAD' --count)" -gt 0 ] && pass git push || true; }`])
+  execAsync('pass-sync')
     .catch(() => notifySend({ appName: 'Pass', title: 'Pass sync to homelab failed' }));
 };
 export default () => inputControl('passSave', () =>

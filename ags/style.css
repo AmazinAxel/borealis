@@ -27,12 +27,18 @@
 @define-color blue3 #5e81ac;
 @define-color blue4 #8fbcbb;
 
+:root {
+  --shadow: 0 1px 3px alpha(@dark1, 0.8);
+}
+
 * {
   transition: none;
   border-radius: 0;
 }
 
-button:focus {
+button:focus,
+.button.selected,
+list row:selected {
   outline: @blue2 solid 2px;
   outline-offset: 1px;
 }
@@ -41,8 +47,8 @@ window {
   background: transparent;
   font-family: 'Sora';
   font-size: 16px;
-  text-shadow: 0 1px 3px alpha(@dark1, 0.8);
-  -gtk-icon-shadow: 0 1px 3px alpha(@dark1, 0.8);
+  text-shadow: var(--shadow);
+  -gtk-icon-shadow: var(--shadow);
 }
 
 window,
@@ -134,12 +140,13 @@ button {
   border: 1px solid @dark4;
 }
 
-.button.blocked {
+.button:disabled {
   opacity: 0.35;
 }
 
 button.active,
 .button:focus,
+.button.selected,
 list row:selected,
 calendar button:focus,
 calendar .today {
@@ -153,13 +160,10 @@ calendar .today {
   opacity: 0.8;
 }
 
-#bluetooth,
-#network {
-  padding-right: 18px;
-}
 
 list row:selected,
-.searchableDialog button:focus {
+.searchableDialog button:focus,
+.searchableDialog .button.selected {
   transform: translateY(-2px);
 }
 
@@ -193,8 +197,8 @@ window .backgroundSection .header:first-child {
 }
 
 .backgroundSection .header:first-child {
-  text-shadow: 0 1px 3px alpha(@dark1, 0.8), 0 0 10px @light3;
-  -gtk-icon-shadow: 0 1px 3px alpha(@dark1, 0.8), 0 0 10px @light3;
+  text-shadow: var(--shadow), 0 0 10px @light3;
+  -gtk-icon-shadow: var(--shadow), 0 0 10px @light3;
   font-size: 32px;
 }
 
@@ -219,12 +223,13 @@ window .backgroundSection .header:first-child {
 }
 
 #recordMenu image {
-  -gtk-icon-shadow: 0 1px 3px alpha(@dark1, 0.8), 0 0 10px @light3;
+  -gtk-icon-shadow: var(--shadow), 0 0 10px @light3;
 }
 
 #focusTask label {
   margin: 5px 0 0 0;
-  border: 3px solid @dark4;
+  border: 3px solid @blue3;
+  border-top-width: 0;
   font-size: 32px;
   font-family: 'Hammersmith One';
   padding: 3px 6px;
@@ -256,7 +261,6 @@ window .backgroundSection .header:first-child {
 }
 
 #workspaces .scratchpad {
-  color: @light4;
   opacity: 0.5;
   font-size: 16px;
   margin: 2px 8px 3px;

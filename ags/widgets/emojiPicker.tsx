@@ -18,5 +18,5 @@ export default () => inputControl('emojiPicker', () =>
       copy(text);
     }}
   />,
-  { onShow: () => textBox.text = '', focus: () => textBox }
+  { focus: () => textBox }
 );

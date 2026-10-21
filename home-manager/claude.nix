@@ -16,11 +16,11 @@
         (.context_window.used_percentage // 0 | floor)
       ] | @tsv')
 
-      # rate limits arrive with the first reply; show the last known until then
+      # limits only update on this session's replies; take the newest seen by any session
       f=''${XDG_CACHE_HOME:-$HOME/.cache}/claude-statusline
       read -r cs cw csr cwr 2>/dev/null <"$f" || cs=0 cw=0 csr=0 cwr=0
-      (( s < 0 )) && s=$cs sr=$csr
-      (( w < 0 )) && w=$cw wr=$cwr
+      (( sr < csr || (sr == csr && s < cs) )) && s=$cs sr=$csr
+      (( wr < cwr || (wr == cwr && w < cw) )) && w=$cw wr=$cwr
       [[ "$s $w $sr $wr" == "$cs $cw $csr $cwr" ]] || echo "$s $w $sr $wr" >"$f"
       printf -v now '%(%s)T' -1
 
@@ -30,23 +30,18 @@
 
       # from $4% the time until the window resets is drawn over the bar
       bar() {
-        local p=$1 w=$2 t=$(( $3 - now )) n i c txt="" o=0 out="$dim▕"
+        local p=$1 w=$2 t=$(( $3 - now )) n txt="" o b
         n=$(( (p * w + 50) / 100 )); (( n > w )) && n=$w
         if (( p >= $4 && t > 0 )); then
           if (( t >= 86400 )); then txt="$(( t / 86400 ))d$(( t % 86400 / 3600 ))h"
           elif (( t >= 3600 )); then txt="$(( t / 3600 ))h$(( t % 3600 / 60 ))m"
           else txt="$(( t / 60 + 1 ))m"; fi
           (( ''${#txt} > w )) && txt=""
-          o=$(( (w - ''${#txt}) / 2 ))
         fi
-        for (( i = 0; i < w; i++ )); do
-          c=""; (( i >= o && i < o + ''${#txt} )) && c=''${txt:i-o:1}
-          if (( i < n )); then
-            if [[ $c ]]; then out+=$'\e[1;30;46m'"$c"$'\e[0m'; else out+="$frost█"; fi
-          elif [[ $c ]]; then out+="$fg$c"
-          else out+="$dim░"; fi
-        done
-        printf -v b '%s▏ %s%s%% ' "$out$dim" "$fg" "$p"; right+=$b
+        o=$(( (w - ''${#txt}) / 2 ))
+        printf -v b '%*s%s%*s' $o "" "$txt" $(( w - o - ''${#txt} )) ""
+        right+=$'\e[1;37;44m'"''${b:0:n}"$'\e[100m'"''${b:n}$r$fg $p% "
+        (( rw += w + 3 + ''${#p} ))
       }
 
       sec=$(( ms / 1000 ))
@@ -81,7 +76,7 @@
       fit() {
         local sum i
         for (( k = ''${#pct[@]}; k > 0; k-- )); do
-          sum=0; for (( i = 0; i < k; i++ )); do (( sum += 5 + ''${#pct[i]} )); done
+          sum=0; for (( i = 0; i < k; i++ )); do (( sum += 3 + ''${#pct[i]} )); done
           bw=$(( ($1 - 2 - sum) / k ))
           (( bw >= (k > 1 ? 6 : 3) )) && { (( bw > 16 )) && bw=16; return 0; }
         done
@@ -90,15 +85,14 @@
 
       sep="  "
       fit $(( cols - ''${#l} - 2 )) || { sep=$'\n'; fit "$cols" || k=0; }
-      right=""
+      right="" rw=0
       for (( i = 0; i < k; i++ )); do bar "''${pct[i]}" "$bw" "''${rst[i]}" "''${thr[i]}"; done
-      right="''${right% }$r"
-      rt=''${right//$'\e'\[*([0-9;])m/}
+      right="''${right% }$r"; (( rw && rw-- ))
 
       if [[ $sep == "  " ]]; then
-        printf '%s%*s%s' "$left" $(( cols - ''${#l} - ''${#rt} )) "" "$right"
+        printf '%s%*s%s' "$left" $(( cols - ''${#l} - rw )) "" "$right"
       else
-        printf '%s\n%*s%s' "$left$r" $(( cols - ''${#rt} )) "" "$right"
+        printf '%s\n%*s%s' "$left$r" $(( cols - rw )) "" "$right"
       fi
     '';
   };
@@ -187,6 +181,7 @@ in {
       - Smallest change that works. Match the file's style; no unrequested refactors, abstractions or comments.
       - Search narrow: rg -n, read ranges with sed -n, cap with head. Stop at the first answer.
       - Batch independent tool calls. Never re-read a file to check an edit.
+      - Change files with Edit/Write only, never sed/awk/heredoc/redirects in Bash.
       - No subagents unless asked. Think hard only when the problem needs it.
     '';
 

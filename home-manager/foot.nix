@@ -1,14 +1,14 @@
 let
-  nordColors = {
-    regular0 = "2e3440"; # Black
-    regular1 = "bf616a"; # Red
-    regular2 = "a3be8c"; # Green
-    regular3 = "ebcb8b"; # Yellow
-    regular4 = "5e81ac"; # Blue
-    regular5 = "b48ead"; # Magenta
-    regular6 = "81a1c1"; # Cyan
-    regular7 = "eceff4"; # White
-    # urls = "5e81ac"; # Blue (regular4)
+  nord = import ../nord.nix;
+  nordColors = with nord; {
+    regular0 = nord0; # Black
+    regular1 = nord11; # Red
+    regular2 = nord14; # Green
+    regular3 = nord13; # Yellow
+    regular4 = nord10; # Blue
+    regular5 = nord15; # Magenta
+    regular6 = nord9; # Cyan
+    regular7 = nord6; # White
   };
 in {
   programs.foot = {
@@ -30,7 +30,7 @@ in {
 
       colors-dark = nordColors // {
         alpha = 0.95;
-        foreground = "d8dee9"; # darkest white
+        foreground = nord.nord4; # darkest white
         background = nordColors.regular0; # black
       };
 

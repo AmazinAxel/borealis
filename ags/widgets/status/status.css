@@ -10,7 +10,7 @@
 
 .statusMenu image {
   -gtk-icon-size: 14px;
-  -gtk-icon-shadow: 0 1px 3px alpha(@dark1, 0.8), 0 0 12px @light3;
+  -gtk-icon-shadow: var(--shadow), 0 0 12px @light3;
   color: @light3;
 }
 
@@ -36,11 +36,23 @@
 .time .date,
 .time .day {
   color: @blue2;
-  text-shadow: 0 1px 3px alpha(@dark1, 0.8), 0 0 3px @blue3;
+  text-shadow: var(--shadow), 0 0 3px @blue3;
   margin: 0;
-  font-style: italic;
   font-size: 22px;
   line-height: 26px;
+}
+
+.time .date {
+  line-height: 26px;
+}
+
+.time .date.bottom {
+  margin-bottom: 6px;
+}
+
+.time .day {
+  font-size: 18px;
+  margin-top: 1px;
 }
 
 .time {
@@ -52,7 +64,7 @@
   font-weight: bold;
   letter-spacing: 2px;
   color: @blue2;
-  text-shadow: 0 1px 3px alpha(@dark1, 0.8), 0 0 5px @blue3;
+  text-shadow: var(--shadow), 0 0 5px @blue3;
   padding: 0 5px;
 }
 
@@ -81,8 +93,9 @@
 /* Recording indicator */
 .recIndicator {
   color: @red;
-  padding: 8px;
-  -gtk-icon-shadow: 0 1px 3px alpha(@dark1, 0.8), 0 0 10px @red;
+  padding: 8px 0;
+  -gtk-icon-size: 23px;
+  -gtk-icon-shadow: var(--shadow), 0 0 10px @red;
 }
 
 /* Media/mpris player */
@@ -99,16 +112,50 @@
   padding: 13px 0;
 }
 
-#media.study { border-color: shade(@red, 1.1); }
-#media.focus { border-color: shade(@blue3, 1.1); }
-#media.synthwave { border-color: shade(@purple, 1.1); }
-#media.liked { border-color: shade(@blue4, 1.1); }
-#media.synthambient { border-color: shade(@yellow, 1.1); }
-#media.ambient { border-color: shade(@blue2, 1.1); }
+#media.study {
+  border-color: shade(@red, 1.1);
+}
 
-#media.study #mediaBtn { background-color: @red; }
-#media.focus #mediaBtn { background-color: @blue3; }
-#media.synthwave #mediaBtn { background-color: @purple; }
-#media.liked #mediaBtn { background-color: @blue4; }
-#media.synthambient #mediaBtn { background-color: @yellow; }
-#media.ambient #mediaBtn { background-color: @blue2; }
+#media.focus {
+  border-color: shade(@blue3, 1.1);
+}
+
+#media.synthwave {
+  border-color: shade(@purple, 1.1);
+}
+
+#media.liked {
+  border-color: shade(@blue4, 1.1);
+}
+
+#media.synthambient {
+  border-color: shade(@yellow, 1.1);
+}
+
+#media.ambient {
+  border-color: shade(@blue2, 1.1);
+}
+
+#media.study #mediaBtn {
+  background-color: @red;
+}
+
+#media.focus #mediaBtn {
+  background-color: @blue3;
+}
+
+#media.synthwave #mediaBtn {
+  background-color: @purple;
+}
+
+#media.liked #mediaBtn {
+  background-color: @blue4;
+}
+
+#media.synthambient #mediaBtn {
+  background-color: @yellow;
+}
+
+#media.ambient #mediaBtn {
+  background-color: @blue2;
+}

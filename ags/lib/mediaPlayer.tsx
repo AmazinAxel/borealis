@@ -1,5 +1,5 @@
 import { Gtk } from 'ags/gtk4';
-import Gdk from 'gi://Gdk';
+import scrollStep from './scrollStep';
 import { execAsync } from 'ags/process';
 import { createState } from 'ags';
 
@@ -50,7 +50,7 @@ export const Media = () =>
     <Gtk.EventControllerScroll
       flags={Gtk.EventControllerScrollFlags.VERTICAL}
       onScroll={(self, _dx, dy) => {
-        scrollAcc -= self.get_unit() == Gdk.ScrollUnit.WHEEL ? Math.sign(dy) * 5 : dy * 0.2;
+        scrollAcc -= scrollStep(self, dy, 5, 0.2);
         const n = Math.trunc(scrollAcc);
         if (!n) return;
         scrollAcc -= n;

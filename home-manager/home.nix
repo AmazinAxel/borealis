@@ -16,6 +16,7 @@
     ./spicetify.nix
     ./swappy.nix
     ./vscode.nix
+    ./yazi.nix
     ./zen.nix
   ];
 

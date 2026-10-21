@@ -1,25 +1,26 @@
 import { execAsync } from 'ags/process';
+import { monitorFile } from 'ags/file';
 import { Gtk } from 'ags/gtk4';
 import { createState } from 'ags';
 import app from 'ags/gtk4/app';
 import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
 import Gdk from 'gi://Gdk';
-import { ClipboardItem, entryPath, cacheDir, videoExts, binaryData } from './clipboardItem';
+import { ClipboardItem, entryPath, cacheDir, videoExts, binaryData, decode } from './clipboardItem';
 import { openCompress } from './compress';
 import BackgroundSection from '../../lib/backgroundSection';
 import inputControl from '../../lib/inputControl';
 import { streamingMode } from '../../lib/streamingMode';
 
 const hide = () => app.get_window('clipboard')?.hide();
-const items = new Map<string, { mime: string, path: string | null, search: string, child: Gtk.Widget }>();
+const items = new Map<string, { mime: string, path: string | null, search: string, row: Gtk.Widget }>();
 const [ hasResults, setHasResults ] = createState(false);
 
 let textBox: Gtk.Entry;
 let query = '';
 
 const list = new Gtk.ListBox({ canTarget: false });
-list.set_filter_func((row) => !query || !!items.get(row.child!.name)?.search.includes(query));
+list.set_filter_func((row) => row.child!.visible && (!query || !!items.get(row.child!.name)?.search.includes(query)));
 list.set_sort_func((a, b) => Number(b.child!.name) - Number(a.child!.name));
 list.connect('row-activated', (_, row) => {
   hide();
@@ -47,10 +48,14 @@ const refreshItems = () => inFlight = inFlight.then(async () => {
     const image = content.match(binaryData);
     const path = entryPath(id, content);
     const child = ClipboardItem(id, content, path, image) as Gtk.Widget;
+    child.connect('notify::visible', () => {
+      list.invalidate_filter();
+      selectTop(true);
+    });
     list.append(child);
 
     items.set(id, {
-      path, child, search: (image ? 'image ' : '') + content.toLowerCase(), mime:
+      path, row: child.get_parent()!, search: (image ? 'image ' : '') + content.toLowerCase(), mime:
         image ? `image/${image[1]}`
           : content.trim().startsWith('file://') ? 'text/uri-list' // paste the ACTUAL file
             : 'text/plain'
@@ -60,20 +65,19 @@ const refreshItems = () => inFlight = inFlight.then(async () => {
   const current = new Set(entries.map(([ id ]) => id));
   const stale = [...items].filter(([ id ]) => !current.has(id));
 
-  stale.forEach(([ id, { child } ]) => {
-    list.remove(child.get_parent() as Gtk.Widget); // ListBoxRow parent
+  stale.forEach(([ id, { row } ]) => {
+    list.remove(row);
     items.delete(id);
   });
 
   // Their decodes and thumbnails are dead weight now
   if (stale.length) execAsync(['bash', '-c',
     'rm -f ' + stale.map(([ id ]) => `${cacheDir}/${id}.*`).join(' ')]);
-  selectTop();
+  selectTop(true);
 }).catch(() => { });
 refreshItems();
 
-const cliphistDb = Gio.File.new_for_path(`${GLib.get_user_cache_dir()}/cliphist/db`).monitor_file(Gio.FileMonitorFlags.NONE, null);
-cliphistDb.connect('changed', (_, _file, _other, event) => event == Gio.FileMonitorEvent.CHANGES_DONE_HINT && refreshItems());
+monitorFile(`${GLib.get_user_cache_dir()}/cliphist/db`, (_, event) => event == Gio.FileMonitorEvent.CHANGES_DONE_HINT && refreshItems());
 
 const visibleRows = () => {
   const rows: Gtk.ListBoxRow[] = [];
@@ -87,10 +91,11 @@ const select = (row?: Gtk.ListBoxRow) => {
   if (row) (row.get_ancestor(Gtk.Viewport.$gtype) as Gtk.Viewport | null)?.scroll_to(row, null);
 };
 
-const selectTop = () => {
+const selectTop = (keep = false) => {
   const rows = visibleRows();
   setHasResults(rows.length > 0);
-  select(rows[0]);
+  const current = list.get_selected_row();
+  if (!keep || !current || !rows.includes(current)) select(rows[0]);
 };
 
 const moveSelection = (delta: number) => {
@@ -130,7 +135,7 @@ const withFile = (want: ((f: string) => boolean) | null, action: (file: string, 
 
   if (GLib.file_test(path, GLib.FileTest.EXISTS) || !mime?.startsWith('image/')) return run();
 
-  execAsync(['bash', '-c', `cliphist decode ${id} > ${path}`]).then(run).catch(() => { });
+  decode(id, path).then(run).catch(() => { });
 };
 
 const actions: Record<number, () => void> = {
@@ -164,7 +169,7 @@ export default () => inputControl('clipboard', () =>
     height={700} width={500}
     header={<entry
       $type="overlay"
-      primaryIconName="edit-paste-symbolic"
+      primaryIconName="system-search-symbolic"
       placeholderText="Clipboard"
       onNotifyText={({ text }) => search(text)}
       $={(self) => textBox = self} />}
@@ -175,18 +180,14 @@ export default () => inputControl('clipboard', () =>
         hscrollbarPolicy={Gtk.PolicyType.NEVER}
         vscrollbarPolicy={Gtk.PolicyType.AUTOMATIC}
         overlayScrolling
-        maxContentHeight={500}
+        maxContentHeight={460}
         propagateNaturalHeight
       >
         {list}
       </scrolledwindow>}
   />,
   {
-    onShow: () => {
-      textBox.text = '';
-      selectTop();
-      refreshItems();
-    },
+    onShow: selectTop,
     onKeyPressed: handleKeys,
     searchable: true,
     focus: () => textBox,

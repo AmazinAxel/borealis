@@ -1,4 +1,4 @@
-{ pkgs, ... }: {
+{ pkgs, config, ... }: {
   imports = [
     ../../modules/mcscripts.nix
     ../common.nix
@@ -7,14 +7,11 @@
     ../../modules/home-manager.nix
   ];
 
-  systemd.tmpfiles.rules = [
-    "w /sys/class/leds/ACT/trigger - - - - none"
-    "w /sys/class/leds/PWR/trigger - - - - none"
-  ]; # no power or act LEDs
+  systemd.tmpfiles.rules = [ "w /sys/class/leds/PWR/trigger - - - - none" ]; # no power LED
 
   programs.fish = {
     enable = true; # enable ssh shell
-    shellAliases.pf = "hx /var/lib/minecraft/plugins/Skript/scripts";
+    shellAliases.pf = "hx ${config.mcdev.serverDir}/plugins/Skript/scripts";
   };
   users.users.alec.shell = pkgs.fish; # use shell
 
@@ -32,7 +29,7 @@
     heapMB = 2048;
   };
 
-  environment.persistence."/persist".directories = [ "/var/lib/minecraft" ];
+  environment.persistence."/persist".directories = [ config.mcdev.serverDir ];
   powerManagement.cpuFreqGovernor = "performance"; # better performance
 
   # Networking

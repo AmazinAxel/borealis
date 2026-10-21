@@ -18,12 +18,5 @@
 
   environment.systemPackages = [ pkgs.platformio-core ];
 
-  boot = {
-    initrd = {
-      kernelModules = [ "amdgpu" ];
-      includeDefaultModules = false;
-      compressor = "zstd";
-      compressorArgs = [ "-19" "-T0" ];
-    };
-  };
+  boot.initrd.kernelModules = [ "amdgpu" ];
 }

@@ -40,6 +40,6 @@ export default () => inputControl('recordMenu', () =>
 export const RecordingIndicator = () =>
   <image
     visible={isRec}
-    halign={Gtk.Align.END}
+    halign={Gtk.Align.CENTER}
     cssClasses={['recIndicator']}
     iconName="media-record-symbolic" />

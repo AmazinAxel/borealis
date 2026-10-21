@@ -7,6 +7,9 @@ import Pango from 'gi://Pango';
 import { currentAsideWindow } from '../../lib/asideState';
 import { streamingMode } from '../../lib/streamingMode';
 import { bus, iwdBus, iwdCall, getObjects, onPropertiesChanged, deviceInterface, stationInterface, networkInterface } from '../../lib/iwd';
+import { timeout, type Timer } from 'ags/time';
+import idle from '../../lib/idle';
+import DeviceMenu from '../../lib/deviceMenu';
 
 type WifiNet = { ssid: string, security: string, level: number, known: boolean };
 
@@ -47,12 +50,10 @@ const focusTarget = () => {
   return listBox?.get_first_child() ?? scanButton;
 };
 
-const focusWifiMenu = () => GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-  if (currentAsideWindow.peek() === 'wifi') {
-    const target = focusTarget();
-    if (target?.get_mapped()) target.grab_focus();
-  }
-  return GLib.SOURCE_REMOVE;
+const focusWifiMenu = () => idle(() => {
+  if (currentAsideWindow.peek() !== 'wifi') return;
+  const target = focusTarget();
+  if (target?.get_mapped()) target.grab_focus();
 });
 
 const menuHasFocus = () => {
@@ -61,14 +62,13 @@ const menuHasFocus = () => {
 };
 
 let subIds: number[] = [];
-let debounceId = 0;
+let debounce: Timer | null = null;
 
 const queueRefresh = () => {
-  if (debounceId) GLib.source_remove(debounceId);
-  debounceId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 150, () => {
-    debounceId = 0;
+  debounce?.cancel();
+  debounce = timeout(150, () => {
+    debounce = null;
     refresh();
-    return GLib.SOURCE_REMOVE;
   });
 };
 
@@ -91,10 +91,8 @@ const unwatchIwd = () => {
   for (const id of subIds) bus.signal_unsubscribe(id);
   subIds = [];
   setScanning(false);
-  if (debounceId) {
-    GLib.source_remove(debounceId);
-    debounceId = 0;
-  }
+  debounce?.cancel();
+  debounce = null;
 };
 
 const clear = () => {
@@ -219,10 +217,9 @@ const NetworkRow = ({ path }: { path: string }) => {
     const p: Gtk.Popover = popover = createRoot((dispose) => {
       disposePopover = dispose;
       return <popover
-        onClosed={() => GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+        onClosed={() => idle(() => {
           if (popover === p) removePopover();
           queueRefresh();
-          return GLib.SOURCE_REMOVE;
         })}
       >
         <entry
@@ -287,45 +284,25 @@ export default () =>
       label="Streaming mode enabled"
       halign={Gtk.Align.CENTER}
     />
-    <box visible={streamingMode((d) => !d)} orientation={Gtk.Orientation.VERTICAL}>
-      <box>
-        <button
-          canTarget={false}
-          hexpand halign={Gtk.Align.START}
-          cssClasses={wifiOn((on) => [on ? 'active' : 'unpowered'])}
-          onClicked={toggleWifi}
-          onMap={() => { watchIwd(); refresh(); focusWifiMenu(); }}
-          onUnmap={unwatchIwd}
-          $={(self) => powerButton = self}
-        >
-          <image iconName={wifiOn((on) =>
-            on ? 'network-wireless-symbolic' : 'network-wireless-offline-symbolic'
-          )} />
-        </button>
-        <button
-          canTarget={false}
-          onClicked={scan}
-          sensitive={scanning((s) => !s)}
-          visible={wifiOn}
-          cssClasses={scanning((s) => s ? ['active'] : [])}
-          $={(self) => scanButton = self}
-        >
-          <image iconName="view-refresh-symbolic" />
-        </button>
-      </box>
-      <Gtk.Separator visible={wifiOn} />
-      <scrolledwindow
-        hscrollbarPolicy={Gtk.PolicyType.NEVER}
-        hexpand vexpand
-        propagateNaturalWidth propagateNaturalHeight
-        maxContentHeight={500}
-        visible={wifiOn}
+    <box visible={streamingMode((d) => !d)}>
+      <DeviceMenu
+        powered={wifiOn}
+        powerIcon={wifiOn((on) => on ? 'network-wireless-symbolic' : 'network-wireless-offline-symbolic')}
+        scanning={scanning}
+        scanSensitive={scanning((s) => !s)}
+        onPower={toggleWifi}
+        onScan={scan}
+        power={(self) => {
+          powerButton = self;
+          self.connect('map', () => { watchIwd(); refresh(); focusWifiMenu(); });
+          self.connect('unmap', unwatchIwd);
+        }}
+        scan={(self) => scanButton = self}
+        list={(self) => listBox = self}
       >
-        <box orientation={Gtk.Orientation.VERTICAL} $={(self) => listBox = self}>
-          <For each={paths}>
-            {(path: string) => <NetworkRow path={path} />}
-          </For>
-        </box>
-      </scrolledwindow>
+        <For each={paths}>
+          {(path: string) => <NetworkRow path={path} />}
+        </For>
+      </DeviceMenu>
     </box>
-  </box>
+  </box>;

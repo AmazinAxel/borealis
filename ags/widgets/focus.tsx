@@ -1,7 +1,7 @@
 import { Astal, Gtk } from 'ags/gtk4';
 import app from 'ags/gtk4/app';
-import { createState, For, This, onCleanup } from 'ags';
-import { monitors } from '../lib/monitors';
+import { createState } from 'ags';
+import perMonitor from '../lib/perMonitor';
 import BackgroundSection from '../lib/backgroundSection';
 import inputControl from '../lib/inputControl';
 
@@ -31,22 +31,17 @@ export const focusMenu = () => inputControl('focusMenu', () =>
       maxLength={60}
       onActivate={startFocus}
       $={(self) => textBox = self} />} />,
-  { onShow: () => textBox.text = '', searchable: true, focus: () => textBox });
+  { searchable: true, focus: () => textBox });
 
-export const focusTask = () =>
-  <For each={monitors}>
-    {(monitor) => <This this={app}>
-      <window
-        name="focusTask"
-        namespace="focusTask"
-        anchor={TOP} // fullscreen cant cover this!!
-        layer={Astal.Layer.TOP}
-        gdkmonitor={monitor}
-        application={app}
-        visible={focus}
-        $={(self) => onCleanup(() => self.destroy())}
-      >
-        <label cssClasses={['statusElement']} label={focusText} />
-      </window>
-    </This>}
-  </For>;
+export const focusTask = () => perMonitor((monitor) =>
+  <window
+    name="focusTask"
+    namespace="focusTask"
+    anchor={TOP} // fullscreen cant cover this!!
+    layer={Astal.Layer.TOP}
+    gdkmonitor={monitor}
+    application={app}
+    visible={focus}
+  >
+    <label cssClasses={['statusElement']} label={focusText} />
+  </window>);

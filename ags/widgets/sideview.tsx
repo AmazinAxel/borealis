@@ -5,6 +5,7 @@ import Gio from 'gi://Gio';
 import Gdk from 'gi://Gdk';
 import app from 'ags/gtk4/app';
 import inputControl from '../lib/inputControl';
+import idle from '../lib/idle';
 import type WebKitT from 'gi://WebKit?version=6.0';
 
 const { TOP, BOTTOM, RIGHT } = Astal.WindowAnchor;
@@ -135,10 +136,7 @@ export const showPage = async (name: PageName) => {
 
   // grab focus
   const webview = webviews[name]!;
-  GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-    if (currentPage === name && window.visible) webview.grab_focus();
-    return GLib.SOURCE_REMOVE;
-  });
+  idle(() => currentPage === name && window.visible && webview.grab_focus());
 };
 
 export const toggleSideviewFocus = () => {

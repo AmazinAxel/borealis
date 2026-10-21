@@ -1,7 +1,10 @@
 import BluetoothService from 'gi://AstalBluetooth';
-import { createBinding, createComputed, createState, For, onCleanup } from 'ags';
+import { createBinding, createComputed, createState, For, onCleanup, type Accessor } from 'ags';
 import { Gtk } from 'ags/gtk4';
-import Wp from 'gi://AstalWp';
+import { audio } from '../../lib/audio';
+import { readFile, writeFile } from 'ags/file';
+import idle from '../../lib/idle';
+import DeviceMenu from '../../lib/deviceMenu';
 import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
 import Pango from 'gi://Pango';
@@ -19,7 +22,6 @@ const bluez = (path: string, iface: string, method: string, args: GLib.Variant |
 const devicePath = (d: BluetoothService.Device) => `${d.adapter}/dev_${d.address.replace(/:/g, '_')}`;
 const trust = (d: BluetoothService.Device) => bluez(devicePath(d), 'org.freedesktop.DBus.Properties', 'Set',
   new GLib.Variant('(ssv)', ['org.bluez.Device1', 'Trusted', new GLib.Variant('b', true)]));
-const audio = Wp.get_default()?.audio; // for auto-sink switching
 
 const hook = <T extends { connect(s: string, cb: () => void): number; disconnect(id: number): void }>(
   obj: T | null | undefined, signal: string, cb: () => void,
@@ -30,7 +32,6 @@ const hook = <T extends { connect(s: string, cb: () => void): number; disconnect
 
 let pendingSinkId = 0;
 const switchToBluetoothSink = (address: string) => {
-  if (!audio) return;
   const wanted = address.replaceAll(':', '_');
   const take = () => {
     const sink = (audio.speakers ?? []).find((s) =>
@@ -77,17 +78,13 @@ const menuOpen = currentAsideWindow((a) => a === 'bluetooth');
 
 const orderPath = GLib.get_user_state_dir() + '/ags/bluetooth-order.json';
 const loadOrder = (): string[] => {
-  try {
-    const [ ok, contents ] = GLib.file_get_contents(orderPath);
-    return ok ? JSON.parse(new TextDecoder().decode(contents)) : [];
-  } catch { return []; }
+  try { return JSON.parse(readFile(orderPath)); } catch { return []; }
 };
 const [ order, setOrder ] = createState<string[]>(loadOrder());
 const saveOrder = (addresses: string[]) => {
   const next = [...addresses, ...order.peek().filter((a) => !addresses.includes(a))];
   setOrder(next);
-  GLib.mkdir_with_parents(GLib.path_get_dirname(orderPath), 0o755);
-  GLib.file_set_contents(orderPath, JSON.stringify(next));
+  writeFile(orderPath, JSON.stringify(next));
 };
 
 const isKnown = (d: BluetoothService.Device) => d.paired || d.trusted;
@@ -134,10 +131,7 @@ const focusDevice = () => (focusedDevice && listed(focusedDevice) ? focusedDevic
 const focusOnOpen = (self: Gtk.Widget, when: () => boolean) =>
   onCleanup(currentAsideWindow.subscribe(() => {
     if (currentAsideWindow.peek() !== 'bluetooth') return;
-    GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-      if (currentAsideWindow.peek() === 'bluetooth' && when()) self.grab_focus();
-      return GLib.SOURCE_REMOVE;
-    });
+    idle(() => currentAsideWindow.peek() === 'bluetooth' && when() && self.grab_focus());
   }));
 
 const wireMenuLifecycle = () =>
@@ -155,10 +149,10 @@ const DeviceRow = ({ device }: { device: BluetoothService.Device }) => {
   const trusted = createBinding(device, 'trusted');
   const alias = createBinding(device, 'alias');
 
-  const visible = createComputed((track) =>
-    hasName(track(alias), device.address)
-    && (track(paired) || track(trusted) || track(connected)
-      || track(discovering) || track(stickyKeys).has(device.address)));
+  const visible = createComputed((track) => {
+    ([alias, paired, trusted, connected, discovering, stickyKeys] as Accessor<unknown>[]).forEach((a) => track(a));
+    return listed(device);
+  });
 
   let pairId = 0;
   const stopPairWatch = () => {
@@ -174,11 +168,10 @@ const DeviceRow = ({ device }: { device: BluetoothService.Device }) => {
     } catch { }
   });
 
-  const refocusLater = (self: Gtk.Widget) => GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+  const refocusLater = (self: Gtk.Widget) => idle(() => {
     if (currentAsideWindow.peek() === 'bluetooth'
       && focusDevice() === device && self.get_mapped())
       self.grab_focus();
-    return GLib.SOURCE_REMOVE;
   });
 
   return <button hexpand
@@ -231,10 +224,7 @@ const DeviceRow = ({ device }: { device: BluetoothService.Device }) => {
         bluetooth.adapter?.remove_device(device);
       const delta = { [Gdk.KEY_Up]: -1, [Gdk.KEY_k]: -1, [Gdk.KEY_Down]: 1, [Gdk.KEY_j]: 1 }[Gdk.keyval_to_lower(key)];
       if (!delta || !(state & Gdk.ModifierType.SHIFT_MASK)) return false;
-      if (moveDevice(device, delta)) GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-        ctrl.get_widget()?.grab_focus();
-        return GLib.SOURCE_REMOVE;
-      });
+      if (moveDevice(device, delta)) idle(() => ctrl.get_widget()?.grab_focus());
       return true;
     }} />
     <box hexpand valign={Gtk.Align.CENTER} spacing={10}>
@@ -251,54 +241,33 @@ const DeviceRow = ({ device }: { device: BluetoothService.Device }) => {
 
 export default () => {
   let listBox: Gtk.Box | null = null;
+  wireMenuLifecycle();
+  hook(bluetooth, 'notify::is-powered', () => {
+    if (bluetooth.isPowered && !focusDevice()) listBox?.get_first_child()?.grab_focus();
+  });
 
-  return <box orientation={Gtk.Orientation.VERTICAL} $={wireMenuLifecycle}>
-    <box>
-      <button
-        canTarget={false}
-        hexpand halign={Gtk.Align.START}
-        onClicked={() => bluetooth.toggle()}
-        cssClasses={btPowered((power) => [power ? 'active' : 'unpowered'])}
-        $={(self) => focusOnOpen(self, () => !bluetooth.isPowered)}
-      >
-        <image iconName="bluetooth-active-symbolic" />
-      </button>
-      <button
-        canTarget={false}
-        onClicked={() => {
-          const adapter = bluetooth.adapter;
-          if (!adapter) return;
-          if (adapter.discovering) return adapter.stop_discovery();
-          adapter.start_discovery();
-          const token = ++scanToken;
-          timeout(60000, () => {
-            if (token === scanToken && bluetooth.adapter?.discovering)
-              bluetooth.adapter.stop_discovery();
-          });
-        }}
-        visible={btPowered}
-        cssClasses={discovering((d) => d ? ['active'] : [])}
-        $={(self) => focusOnOpen(self, () => bluetooth.isPowered && !focusDevice())}
-      >
-        <image iconName="view-refresh-symbolic" />
-      </button>
-    </box>
-    <Gtk.Separator visible={btPowered} />
-    <scrolledwindow
-      hscrollbarPolicy={Gtk.PolicyType.NEVER}
-      hexpand vexpand
-      propagateNaturalWidth propagateNaturalHeight
-      maxContentHeight={500}
-      visible={btPowered}
-      $={() => hook(bluetooth, 'notify::is-powered', () => {
-        if (bluetooth.isPowered && !focusDevice()) listBox?.get_first_child()?.grab_focus();
-      })}
-    >
-      <box orientation={Gtk.Orientation.VERTICAL} $={(self) => listBox = self}>
-        <For each={visibleDevices}>
-          {(device: BluetoothService.Device) => <DeviceRow device={device} />}
-        </For>
-      </box>
-    </scrolledwindow>
-  </box>;
+  return <DeviceMenu
+    powered={btPowered}
+    powerIcon="bluetooth-active-symbolic"
+    scanning={discovering}
+    onPower={() => bluetooth.toggle()}
+    onScan={() => {
+      const adapter = bluetooth.adapter;
+      if (!adapter) return;
+      if (adapter.discovering) return adapter.stop_discovery();
+      adapter.start_discovery();
+      const token = ++scanToken;
+      timeout(60000, () => {
+        if (token === scanToken && bluetooth.adapter?.discovering)
+          bluetooth.adapter.stop_discovery();
+      });
+    }}
+    power={(self) => focusOnOpen(self, () => !bluetooth.isPowered)}
+    scan={(self) => focusOnOpen(self, () => bluetooth.isPowered && !focusDevice())}
+    list={(self) => listBox = self}
+  >
+    <For each={visibleDevices}>
+      {(device: BluetoothService.Device) => <DeviceRow device={device} />}
+    </For>
+  </DeviceMenu>;
 };

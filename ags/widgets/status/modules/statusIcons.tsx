@@ -2,11 +2,10 @@ import { Gtk } from 'ags/gtk4';
 import { createBinding, createState } from 'ags';
 import { streamingMode } from '../../../lib/streamingMode';
 import { btPowered } from '../../../lib/bluetooth';
-import Wp from 'gi://AstalWp';
+import { volumeIcon } from '../../../lib/audio';
 import Battery from 'gi://AstalBattery';
 import { getObjects, onPropertiesChanged, stationInterface } from '../../../lib/iwd';
 
-const audio = Wp.get_default()!.audio;
 const battery = Battery.get_default();
 
 const batPercentageBind = createBinding(battery, 'percentage');
@@ -24,7 +23,7 @@ getObjects().then((objects) => applyState(Object.values(objects).find((i) => i[s
 
 export const Status = () =>
   <box orientation={Gtk.Orientation.VERTICAL} spacing={7} cssClasses={['statusMenu']}>
-    <image iconName={createBinding(audio, 'defaultSpeaker', 'volumeIcon')} />
+    <image iconName={volumeIcon} />
     <overlay visible={Boolean(battery.percentage)}>
       <image
         cssClasses={batLowBind((low) => low ? ['batteryIcon', 'dimmed'] : ['batteryIcon'])}

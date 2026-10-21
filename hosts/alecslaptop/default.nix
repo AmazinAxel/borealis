@@ -25,12 +25,6 @@
   boot = {
     kernelParams = [ "pm_debug_messages" ]; # log s2idle wake irqs
     consoleLogLevel = 3; # Suppress ACPI BIOS firmware bug spam
-
-    initrd = {
-      includeDefaultModules = false;
-      compressor = "zstd";
-      compressorArgs = [ "-19" "-T0" ];
-    };
   };
 
   swapDevices = [{ device = "/persist/swapfile"; size = 18 * 1024; }];

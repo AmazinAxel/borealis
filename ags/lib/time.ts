@@ -1,20 +1,16 @@
 import { createState } from 'ags';
+import { timeout, type Timer } from 'ags/time';
 import GLib from 'gi://GLib';
 import { sleeping } from './logind';
 
 const [ now, setNow ] = createState(GLib.DateTime.new_now_local());
 
-let tick = 0;
+let tick: Timer | null = null;
 const update = () => {
-  if (tick) GLib.source_remove(tick);
+  tick?.cancel();
   const t = GLib.DateTime.new_now_local();
   setNow(t);
-  const msToNextMinute = (60 - t.get_second()) * 1000 - Math.floor(t.get_microsecond() / 1000);
-  tick = GLib.timeout_add(GLib.PRIORITY_DEFAULT, msToNextMinute, () => {
-    tick = 0;
-    update();
-    return GLib.SOURCE_REMOVE;
-  });
+  tick = timeout((60 - t.get_second()) * 1000 - Math.floor(t.get_microsecond() / 1000), update);
 };
 update();
 sleeping.subscribe(() => !sleeping.peek() && update());

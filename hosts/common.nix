@@ -25,6 +25,7 @@
 
     # zram is enabled on a lot of hosts, this optimizes it
     } // lib.optionalAttrs config.zramSwap.enable {
+      "vm.swappiness" = 180;
       "vm.page-cluster" = 0;
       "vm.watermark_boost_factor" = 0;
       "vm.watermark_scale_factor" = 125;

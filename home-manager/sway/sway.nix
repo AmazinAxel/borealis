@@ -1,4 +1,4 @@
-{
+{ pkgs, lib, ... }: {
   wayland.windowManager.sway = {
     enable = true;
     systemd.dbusImplementation = "broker"; # this needs to match the new nixos default
@@ -34,62 +34,45 @@
         };
       };
 
-      colors = let # Color vars
-        dark0 = "#2e3440";
-        dark4 = "#4c566a";
-        white0 = "#d8dee9";
-        white1 = "#e5e9f0";
-        white2 = "#eceff4";
-
-        blue0 = "#5e81ac";
-        blue1 = "#81a1c1";
-        blue2 = "#88c0d0";
-        blue3 = "#8fbcbb";
-
-        purple = "#b48ead";
-        green = "#a3be8c";
-        yellow = "#ebcb8b";
-        orange = "#d08770";
-        red = "#bf616a";
-      in {
+      colors = with lib.mapAttrs (_: v: "#${v}") (import ../../nord.nix); {
         focused = { # focused window
-          background = blue0;
-          border = blue0;
-          childBorder = blue0;
-          indicator = blue0;
-          text = white2;
+          background = nord10;
+          border = nord10;
+          childBorder = nord10;
+          indicator = nord10;
+          text = nord6;
         };
 
         focusedInactive = {
-          background = blue0;
-          border = blue0;
-          childBorder = blue0;
-          indicator = blue0;
-          text = white1;
+          background = nord10;
+          border = nord10;
+          childBorder = nord10;
+          indicator = nord10;
+          text = nord5;
         };
 
         placeholder = {
-          background = dark0;
-          border = dark4;
-          childBorder = dark4;
-          indicator = dark0;
-          text = white1;
+          background = nord0;
+          border = nord3;
+          childBorder = nord3;
+          indicator = nord0;
+          text = nord5;
         };
 
         unfocused = {
-          background = dark0;
-          border = dark4;
-          childBorder = dark4;
-          indicator = dark0;
-          text = white0;
+          background = nord0;
+          border = nord3;
+          childBorder = nord3;
+          indicator = nord0;
+          text = nord4;
         };
 
         urgent = {
-          background = red;
-          border = orange;
-          childBorder = orange;
-          indicator = dark4;
-          text = white2;
+          background = nord11;
+          border = nord12;
+          childBorder = nord12;
+          indicator = nord3;
+          text = nord6;
         };
       };
 
@@ -115,9 +98,8 @@
 
       startup = [
         { command = "dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=sway XDG_DATA_DIRS PATH"; }
-        { command = "gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' && gsettings set org.gnome.desktop.interface gtk-theme 'Graphite-Dark-nord'"; } # dark mode on boot
         # { command = "fcitx5 -d"; }
-        { command = "wl-gammarelay-rs"; }
+        { command = "wl-gammarelay-rs & ${pkgs.glib}/bin/gdbus wait --session rs.wl-gammarelay && busctl --user set-property rs.wl-gammarelay / rs.wl.gammarelay Temperature q 3500"; } # blue light filter
       ];
     };
     extraConfig = ''

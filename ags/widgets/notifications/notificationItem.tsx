@@ -21,7 +21,7 @@ export const invokeAction = (n: Notifd.Notification, i = 0) => {
 };
 
 export const notificationItem = (n: Notifd.Notification) =>
-  <box orientation={Gtk.Orientation.VERTICAL} cssClasses={['notification']}>
+  <box orientation={Gtk.Orientation.VERTICAL} cssClasses={['statusElement', 'notification']}>
     <box cssClasses={['header']}>
       <label
         cssClasses={['appName']}

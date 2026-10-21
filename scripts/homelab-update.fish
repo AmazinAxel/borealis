@@ -1,7 +1,6 @@
 #!/usr/bin/env fish
 
 set musicDir /home/alec/Music
-set mntPoint /mnt/alechomelab
 set playlists \
     "Synthwave https://open.spotify.com/playlist/1YIe34rcmLjCYpY9wJoM2p" \
     "Focus https://open.spotify.com/playlist/3Qk9br14pjEo2aRItDhb2f" \
@@ -10,15 +9,8 @@ set playlists \
     "SynthAmbient https://open.spotify.com/playlist/4murW7FWRb0LFbG7eUwDy0" \
     "Ambient https://open.spotify.com/playlist/07lYUEyTkWP3NqIa7Kzyqx"
 
-read -lx -P "Enter password: " passwd --silent
-echo
-
-function s --inherit-variable passwd
-    echo $passwd | sudo -S -p '' $argv
-end
-
-set -x NAS_KEEP_MOUNT 1 # sys-sync leaves the NAS mounted for the push
-sys-sync
+set NAS_KEEP_MOUNT 1 # sys-sync leaves the NAS mounted for the push
+source (command -s sys-sync) # shares its password, s and mntPoint
 mountpoint -q $mntPoint
 or begin
     echo \n"[Homelab] NAS not mounted"
@@ -40,5 +32,4 @@ rsync -av --ignore-existing $musicDir/ "$mntPoint/Music/"
 s umount $mntPoint
 
 echo \n"[Homelab] Rebuilding"
-cd /home/alec/Projects/flake # sys-sync already pulled
-and nixos-rebuild boot --flake .#alechomelab --sudo --build-host alec@alecpc --target-host alec@alechomelab
+nixos-rebuild boot --flake .#alechomelab --sudo --build-host alec@alecpc --target-host alec@alechomelab
