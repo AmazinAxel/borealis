@@ -21,7 +21,7 @@ const mpc = (...args: string[][]) => {
 const loadPlaylist = () => mpc(['clear'], ['add', `${playlists[playlistIndex.peek()]}/`], ['shuffle']);
 
 export const updTrack = (direction: MusicAction) => {
-  mpc(['pause'], [direction], ['play']);
+  mpc([direction], ['play']);
   setIsPlaying(true);
 };
 
