@@ -330,6 +330,26 @@
         "type": "github"
       }
     },
+    "plan": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1792705109,
+        "narHash": "sha256-r4KSk9dPMEZRQ13ZYpb0sucJdP+sRhi2EBTkIyNWg5Q=",
+        "owner": "AmazinAxel",
+        "repo": "plan",
+        "rev": "9ebc821d30e80b6bbfa79731e492720d130ea22f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "AmazinAxel",
+        "repo": "plan",
+        "type": "github"
+      }
+    },
     "playit": {
       "inputs": {
         "flake-parts": "flake-parts_2",
@@ -385,6 +405,7 @@
         "lanzaboote": "lanzaboote",
         "nix-cachyos-kernel": "nix-cachyos-kernel",
         "nixpkgs": "nixpkgs_3",
+        "plan": "plan",
         "playit": "playit",
         "spicetify-nix": "spicetify-nix",
         "wintergreen": "wintergreen",
