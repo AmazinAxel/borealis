@@ -13,7 +13,7 @@ const { TOP, BOTTOM, RIGHT } = Astal.WindowAnchor;
 export type PageName = 'plan' | 'claude' | 'custom';
 
 const urls: Record<PageName, string> = {
-  plan: 'https://plan.amazinaxel.com/',
+  plan: 'https://alechomelab.jerboa-frog.ts.net/',
   claude: 'https://claude.ai/new/',
   custom: 'https://beta-docs.skriptlang.org/syntaxes/'
 };

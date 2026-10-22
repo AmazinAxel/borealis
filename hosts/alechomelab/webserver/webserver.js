@@ -7,6 +7,8 @@ import { handleSync, handleBookFile } from "./booksync.js";
 try { execSync("mountpoint -q /media"); }
 catch { process.exit(1); }
 
+await import(process.env.PLAN_SERVER); // host plan
+
 const db = new Database('/media/airQuality.db');
 
 db.run(`

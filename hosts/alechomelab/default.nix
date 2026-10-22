@@ -4,13 +4,9 @@
     ./books.nix
     ../common.nix
     ../../modules/pi.nix
-    inputs.plan.nixosModules.default
   ];
 
-  services.plan = {
-    enable = true;
-    dataDir = "/media/plan";
-  };
+  nixpkgs.overlays = [ inputs.plan.overlays.default ]; # pkgs.plan
 
   systemd.tmpfiles.rules = [
     "d /run/samba/lock 0755 root root -"
@@ -44,7 +40,7 @@
   # Networking
   networking = {
     hostName = "alechomelab";
-    firewall.allowedTCPPorts = [ 80 ];
+    firewall.allowedTCPPorts = [ 80 445 ]; # webserver, samba
     useNetworkd = false; # use nm
     networkmanager = {
       enable = true;
@@ -56,13 +52,16 @@
 
   # must run 'sudo smbpasswd -a alec' to log in!!
   services = {
-    samba = { # USB NAS
+    samba = { # USB NAS, Linux clients only (found via avahi below)
       enable = true;
-      openFirewall = true;
+      nmbd.enable = false; # dont need
+      winbindd.enable = false; # dont need
       settings = {
         global = {
           "server min protocol" = "SMB3";
           "server max protocol" = "SMB3";
+          "disable netbios" = "yes";
+          "smb ports" = "445"; # no NetBIOS session port 139
 
           "lock directory" = "/run/samba/lock";
           "cache directory" = "/run/samba/cache";
@@ -100,10 +99,6 @@
           </service>
         </service-group>
       '';
-    };
-    samba-wsdd = { # Auto-disovery
-      enable = true;
-      openFirewall = true;
     };
   };
 

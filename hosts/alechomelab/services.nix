@@ -18,9 +18,13 @@ in {
       # /etc/homelab/webserver.env with AIRNOW_TOKEN=
       webserver = service // {
         path = [ pkgs.util-linux ];
+        environment = {
+          PLAN_SERVER = "${pkgs.plan}/server.js";
+          PLAN_DATA_DIR = "/media/plan";
+        };
         serviceConfig = service.serviceConfig // privileges // {
           EnvironmentFile = "/etc/homelab/webserver.env";
-          ExecStart = "${pkgs.bun}/bin/bun ${./webserver}/webserver.js";
+          ExecStart = "${pkgs.bun}/bin/bun --smol ${./webserver}/webserver.js";
           MemoryMin = "32M"; # resident
         };
       };
