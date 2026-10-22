@@ -5,7 +5,8 @@
     text = ''
       export LC_ALL=C.UTF-8
 
-      IFS=$'\t' read -r vim ms add del s w sr wr cache ctx < <(jq -r '[
+      IFS=$'\t' read -r sid vim ms add del s w sr wr cache ctx < <(jq -r '[
+        (.session_id // "-"),
         (.vim.mode // "-"), (.cost.total_api_duration_ms // 0 | floor),
         (.cost.total_lines_added // 0), (.cost.total_lines_removed // 0),
         (.rate_limits.five_hour.used_percentage // -1 | floor),
@@ -16,12 +17,15 @@
         (.context_window.used_percentage // 0 | floor)
       ] | @tsv')
 
-      # limits only update on this session's replies; take the newest seen by any session
+      # limits only update on this session's replies; a change here is the freshest, so share it
       f=''${XDG_CACHE_HOME:-$HOME/.cache}/claude-statusline
-      read -r cs cw csr cwr 2>/dev/null <"$f" || cs=0 cw=0 csr=0 cwr=0
-      (( sr < csr || (sr == csr && s < cs) )) && s=$cs sr=$csr
-      (( wr < cwr || (wr == cwr && w < cw) )) && w=$cw wr=$cwr
-      [[ "$s $w $sr $wr" == "$cs $cw $csr $cwr" ]] || echo "$s $w $sr $wr" >"$f"
+      p=''${XDG_RUNTIME_DIR:-/tmp}/claude-statusline-$sid
+      read -r last 2>/dev/null <"$p" || last=""
+      if [[ "$s $w $sr $wr" != "$last" ]]; then
+        echo "$s $w $sr $wr" >"$p"
+        (( s >= 0 || w >= 0 )) && echo "$s $w $sr $wr" >"$f"
+      fi
+      read -r s w sr wr 2>/dev/null <"$f" || true
       printf -v now '%(%s)T' -1
 
       r=$'\e[0m'

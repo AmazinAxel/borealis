@@ -2,10 +2,7 @@
   imports = [
     ./hardware-configuration.nix
     ../common.nix
-    ../../modules/desktop.nix
     ../../modules/laptop.nix
-    ../../modules/printing.nix
-    ../../modules/bluetooth-audio.nix
   ];
 
   networking.hostName = "alecslaptop"; # Hostname

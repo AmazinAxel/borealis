@@ -14,15 +14,5 @@
         }
       '';
     };
-    mpd-discord-rpc = {
-      enable = true;
-      settings = {
-        id = 1562331878164398113;
-        format = {
-          large_image = "blank";
-          small_image = "";
-        };
-      };
-    };
   };
 }

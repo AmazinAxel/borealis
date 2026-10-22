@@ -1,10 +1,16 @@
-{
+{ inputs, ... }: {
   imports = [
     ./services.nix
     ./books.nix
     ../common.nix
     ../../modules/pi.nix
+    inputs.plan.nixosModules.default
   ];
+
+  services.plan = {
+    enable = true;
+    dataDir = "/media/plan";
+  };
 
   systemd.tmpfiles.rules = [
     "d /run/samba/lock 0755 root root -"

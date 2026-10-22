@@ -1,4 +1,7 @@
 { pkgs, ... }: {
+  imports = [ ./desktop.nix ./printing.nix ./bluetooth-audio.nix ];
+  home-manager.users.alec.imports = [ ../home-manager/laptop.nix ];
+
   boot.initrd = {
     includeDefaultModules = false;
     compressor = "zstd";

@@ -12,8 +12,8 @@
       "control+${mod}+${key}" = workspace step;
       "control+${mod}+shift+${key}" = moveItemToWorkspace step;
     }) [ dir vim ])) { left = "h"; right = "l"; up = "k"; down = "j"; };
-  # True iff the focused workspace has apps other than foot/nemo
-  shouldFloat = pkgs.writeShellScript "should-float" ''
+  # Float foot if the focused workspace has apps other than foot/nemo
+  openFoot = pkgs.writeShellScript "open-foot" ''
     swaymsg -t get_tree | ${pkgs.jq}/bin/jq -e '
       ([.. | objects | select(.type? == "workspace" and ([.. | objects | .focused?] | any))][0] // {}) |
       [.. | objects | select(
@@ -22,19 +22,12 @@
         (((.app_id? // "") | startswith("foot")) | not) and
         ((.app_id? // "") != "nemo")
       )] | length > 0
-    ' >/dev/null
-  '';
-  openFoot = pkgs.writeShellScript "open-foot" ''
-    if ${shouldFloat}; then
-      exec footclient --app-id foot-float
-    else
-      exec footclient
-    fi
+    ' >/dev/null && exec footclient --app-id foot-float
+    exec footclient
   '';
   toggleTheme = pkgs.writeShellScript "toggle-theme" ''
     gs=${pkgs.glib}/bin/gsettings
     pk=${pkgs.procps}/bin/pkill
-    temp="${pkgs.systemd}/bin/busctl --user set-property rs.wl-gammarelay / rs.wl.gammarelay Temperature q"
     themes=${config.gtk.theme.package}/share/themes
     gtk4css=$HOME/.config/gtk-4.0/gtk.css
     if [ "$($gs get org.gnome.desktop.interface color-scheme)" = "'prefer-dark'" ]; then
@@ -42,13 +35,11 @@
       $gs set org.gnome.desktop.interface gtk-theme 'Graphite-Light-nord'
       ln -sfn "$themes/Graphite-Light-nord/gtk-4.0/gtk.css" "$gtk4css"
       $pk -USR2 -f "foot --server" || true # SIGUSR2 = [colors-light]
-      $temp 6500 # filter off
     else
       $gs set org.gnome.desktop.interface color-scheme 'prefer-dark'
       $gs set org.gnome.desktop.interface gtk-theme 'Graphite-Dark-nord'
       ln -sfn "$themes/Graphite-Dark-nord/gtk-4.0/gtk.css" "$gtk4css"
       $pk -USR1 -f "foot --server" || true # SIGUSR1 = [colors-dark]
-      $temp 3500 # filter on
     fi
   '';
 in {

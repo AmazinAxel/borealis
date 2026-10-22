@@ -1,7 +1,10 @@
 { pkgs, lib, ... }: {
   wayland.windowManager.sway = {
     enable = true;
-    systemd.dbusImplementation = "broker"; # this needs to match the new nixos default
+    systemd = {
+      dbusImplementation = "broker"; # this needs to match the new nixos default
+      variables = [ "WAYLAND_DISPLAY" "SWAYSOCK" "XDG_CURRENT_DESKTOP" "XDG_DATA_DIRS" "PATH" ]; # for user services
+    };
     wrapperFeatures.gtk = true;
 
     config = {
@@ -34,7 +37,7 @@
         };
       };
 
-      colors = with lib.mapAttrs (_: v: "#${v}") (import ../../nord.nix); {
+      colors = with lib.mapAttrs (_: v: "#${v}") (import ../../nord.nix); rec {
         focused = { # focused window
           background = nord10;
           border = nord10;
@@ -42,14 +45,7 @@
           indicator = nord10;
           text = nord6;
         };
-
-        focusedInactive = {
-          background = nord10;
-          border = nord10;
-          childBorder = nord10;
-          indicator = nord10;
-          text = nord5;
-        };
+        focusedInactive = focused // { text = nord5; };
 
         placeholder = {
           background = nord0;
@@ -58,14 +54,7 @@
           indicator = nord0;
           text = nord5;
         };
-
-        unfocused = {
-          background = nord0;
-          border = nord3;
-          childBorder = nord3;
-          indicator = nord0;
-          text = nord4;
-        };
+        unfocused = placeholder // { text = nord4; };
 
         urgent = {
           background = nord11;
@@ -97,9 +86,8 @@
       };
 
       startup = [
-        { command = "dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=sway XDG_DATA_DIRS PATH"; }
         # { command = "fcitx5 -d"; }
-        { command = "wl-gammarelay-rs & ${pkgs.glib}/bin/gdbus wait --session rs.wl-gammarelay && busctl --user set-property rs.wl-gammarelay / rs.wl.gammarelay Temperature q 3500"; } # blue light filter
+        { command = "${pkgs.wl-gammarelay-rs}/bin/wl-gammarelay-rs"; } # blue light filter, ags sets temp
       ];
     };
     extraConfig = ''

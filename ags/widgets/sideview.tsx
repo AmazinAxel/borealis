@@ -23,9 +23,13 @@ const interfaceSettings = new Gio.Settings({ schema: 'org.gnome.desktop.interfac
 const applyColorScheme = () => {
   const dark = interfaceSettings.get_string('color-scheme') === 'prefer-dark';
   Gtk.Settings.get_default()!.gtk_application_prefer_dark_theme = dark;
+  Gio.DBus.session.call('rs.wl-gammarelay', '/', 'org.freedesktop.DBus.Properties', 'Set',
+    new GLib.Variant('(ssv)', ['rs.wl.gammarelay', 'Temperature', new GLib.Variant('q', dark ? 3500 : 6500)]),
+    null, Gio.DBusCallFlags.NO_AUTO_START, -1, null, null);
 };
 applyColorScheme();
 interfaceSettings.connect('changed::color-scheme', applyColorScheme);
+Gio.bus_watch_name(Gio.BusType.SESSION, 'rs.wl-gammarelay', Gio.BusNameWatcherFlags.NONE, applyColorScheme, null);
 
 const [ width, setWidth ] = createState(400);
 

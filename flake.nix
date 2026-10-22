@@ -42,6 +42,10 @@
       url = "github:AmazinAxel/wintergreen";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    plan = {
+      url = "github:AmazinAxel/plan";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     # apps
     helix.url = "github:helix-editor/helix"; # no follows so helix.cachix hits

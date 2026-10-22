@@ -53,7 +53,6 @@ in {
       screenshot # Freeze-then-select region screenshot (defined above)
       brightnessctl
       adwaita-icon-theme # Icons for GTK apps
-      wl-gammarelay-rs # Blue light filter
       cifs-utils # Needed for mounting Samba NAS drive
       rsync # Quickly pull files from NAS drive
       playerctl # mpris control from shell
