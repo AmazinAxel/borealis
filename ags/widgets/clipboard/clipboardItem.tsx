@@ -10,7 +10,23 @@ import { streamingMode } from '../../lib/streamingMode';
 export const tmpDir = '/tmp/ags';
 export const cacheDir = `${tmpDir}/cliphist`;
 GLib.mkdir_with_parents(cacheDir, 0o755);
-export const decode = (id: string, path: string) => execAsync(['bash', '-c', `cliphist decode ${id} > ${path}`]);
+export const decode = (id: string, path: string) => new Promise<void>((resolve, reject) => {
+  try {
+    const launcher = new Gio.SubprocessLauncher();
+    launcher.set_stdout_file_path(path);
+    const p = launcher.spawnv(['cliphist', 'decode', id]);
+    p.wait_check_async(null, (_, res) => {
+      try {
+        p.wait_check_finish(res);
+        resolve();
+      } catch (e) {
+        reject(e);
+      }
+    });
+  } catch (e) {
+    reject(e);
+  }
+});
 export const videoExts = /\.(mp4|mkv|webm|mov|m4v|avi)$/i;
 
 const maxWidth = 380, maxHeight = 150;

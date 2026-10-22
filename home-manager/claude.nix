@@ -129,6 +129,7 @@ in {
         refreshInterval = 2; # redraw on resize
         hideVimModeIndicator = true; # shown in the line
       };
+      preferredNotifChannel = "ghostty"; # foot notifies when unfocused
       autoCompactEnabled = true; # cheaper than blowing the window
       autoUpdates = false; # the store is read-only
       cleanupPeriodDays = 7; # trim old transcripts

@@ -15,6 +15,9 @@ const ownsArrows = (w: Gtk.Widget | null, horizontal: boolean) => {
   return false;
 };
 
+export const wrapIndex = (i: number, delta: number, len: number) =>
+  ((i < 0 && delta < 0 ? 0 : i) + delta + len) % len;
+
 export default (ctrl: Gtk.EventControllerKey, key: number, _keycode: number, state: Gdk.ModifierType) => {
   const win = ctrl.get_widget() as Gtk.Window;
   const dir = dirs[key];

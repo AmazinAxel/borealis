@@ -91,8 +91,8 @@ in {
 
       "${mod}+C" = "exec ags request hideNotif"; # Closes last notification
       "${mod}+M" = "exec ags request invokeOldestNotif"; # Activates first action of the oldest notification!
-      "shift+${mod}+M" = "exec ags request 'invokeOldestNotif 1'"; # 2nd action
-      "control+${mod}+M" = "exec ags request 'invokeOldestNotif 2'"; # 3rd action
+      "control+${mod}+M" = "exec ags request 'invokeOldestNotif 1'"; # 2nd action
+      "shift+${mod}+M" = "exec ags request 'invokeOldestNotif 2'"; # 3rd action
       "${mod}+S" = "exec ags request toggleStreamingMode";
       "${mod}+B" = "exec ${toggleTheme}";
       "${mod}+T" = "exec ags request toggleFocus";

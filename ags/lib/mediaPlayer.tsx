@@ -1,7 +1,9 @@
 import { Gtk } from 'ags/gtk4';
 import scrollStep from './scrollStep';
-import { execAsync } from 'ags/process';
 import { createState } from 'ags';
+import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
+import { openSocket, readLine, type Sock } from './socket';
 
 export type MusicAction = 'next' | 'prev';
 
@@ -12,35 +14,68 @@ export const [ isPlaying, setIsPlaying ] = createState(false);
 const [ playlistIndex, setPlaylistIndex ] = createState(0);
 export const playlistClass = playlistIndex((i) => playlists[i].toLowerCase());
 
-let mpcQueue: Promise<unknown> = Promise.resolve();
-const mpc = (...args: string[][]) => {
-  for (const a of args)
-    mpcQueue = mpcQueue.then(() => execAsync(['mpc', ...a]).catch(() => { }));
+const address = Gio.NetworkAddress.new(GLib.getenv('MPD_HOST') || '127.0.0.1', Number(GLib.getenv('MPD_PORT')) || 6600);
+const encoder = new TextEncoder();
+let sock: Sock | null = null;
+let queue: Promise<unknown> = Promise.resolve();
+
+const send = async (cmd: string) => {
+  if (!sock) {
+    sock = openSocket(address);
+    await readLine(sock.input);
+  }
+  sock.write(encoder.encode(cmd + '\n'));
+  const lines: string[] = [];
+  for (let line = await readLine(sock.input); line != 'OK'; line = await readLine(sock.input)) {
+    if (line.startsWith('ACK')) return lines;
+    lines.push(line);
+  }
+  return lines;
 };
 
-const loadPlaylist = () => mpc(['clear'], ['add', `${playlists[playlistIndex.peek()]}/`], ['shuffle']);
+const mpd = (...cmds: string[]) => {
+  const p = queue.then(async () => {
+    let lines: string[] = [];
+    for (const cmd of cmds) {
+      try {
+        lines = await send(cmd);
+      } catch {
+        sock?.conn.close(null);
+        sock = null;
+        lines = await send(cmd);
+      }
+    }
+    return lines;
+  });
+  queue = p.catch(() => { });
+  return p.catch(() => [] as string[]);
+};
+
+const status = async () => Object.fromEntries((await mpd('status')).map((l) => l.split(': ')));
+
+const loadPlaylist = () => mpd('clear', `add "${playlists[playlistIndex.peek()]}"`, 'shuffle');
 
 export const updTrack = (direction: MusicAction) => {
-  mpc([direction], ['play']);
+  mpd(direction == 'next' ? 'next' : 'previous', 'play');
   setIsPlaying(true);
 };
 
 export const playPause = () => {
-  mpc(['toggle']);
+  status().then((s) => mpd(s.state == 'play' ? 'pause 1' : 'play'));
   setIsPlaying(!isPlaying.peek());
 };
 
 export const chngPlaylist = (direction: MusicAction) => {
   const n = playlists.length;
   setPlaylistIndex((playlistIndex.peek() + (direction == 'next' ? 1 : n - 1)) % n);
-  mpc(['pause']);
+  mpd('pause 1');
   setIsPlaying(false);
   loadPlaylist();
   playPause();
 };
 
 export const initMedia = () => {
-  mpc(['crossfade', '2']);
+  mpd('crossfade 2');
   loadPlaylist();
 };
 
@@ -54,7 +89,7 @@ export const Media = () =>
         const n = Math.trunc(scrollAcc);
         if (!n) return;
         scrollAcc -= n;
-        mpc(['volume', `${n > 0 ? '+' : ''}${n}`]);
+        mpd(`volume ${n}`);
       }}
     />
     <image iconName={isPlaying((v) => v ? 'media-playback-pause-symbolic' : 'media-playback-start-symbolic')} />

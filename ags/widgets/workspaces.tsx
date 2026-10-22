@@ -1,6 +1,6 @@
 import { Astal, Gtk } from 'ags/gtk4';
 import { createComputed, createState } from 'ags';
-import { createSubprocess, execAsync } from 'ags/process';
+import { swaySubscribe, swayTree } from '../lib/sway';
 const { TOP, LEFT } = Astal.WindowAnchor;
 import app from 'ags/gtk4/app';
 import perMonitor from '../lib/perMonitor';
@@ -18,10 +18,9 @@ type SwayNode = { id: number, num?: number, name: string, focus: number[], nodes
 let request = 0;
 const updateWorkspaces = () => {
   const id = ++request;
-  execAsync(['swaymsg', '-t', 'get_tree', '-r'])
-    .then((out) => {
+  swayTree<SwayNode>()
+    .then((tree) => {
       if (id != request) return;
-      const tree = JSON.parse(out) as SwayNode;
       const workspaces = tree.nodes.flatMap((o) => o.nodes);
       setOccupied(new Set(workspaces.map((w) => w.num ?? 0).filter((n) => IDS.includes(n))));
 
@@ -32,8 +31,14 @@ const updateWorkspaces = () => {
     .catch(() => { });
 };
 
-const eventStream = createSubprocess('', ['swaymsg', '-t', 'subscribe', '-m', '["workspace"]']);
-eventStream.subscribe(() => { // Show workspaces on workspace change
+swaySubscribe(['workspace'], (event) => { // Show workspaces on workspace change
+  const { change, current, old } = event as { change: string, current?: SwayNode, old?: SwayNode };
+  if (change == 'focus' && current?.num) {
+    const next = new Set(occupied.peek());
+    if (old?.num && !old.nodes.length && !old.floating_nodes.length) next.delete(old.num);
+    setOccupied(next);
+    setFocused(current.num);
+  }
   updateWorkspaces();
   show();
 });

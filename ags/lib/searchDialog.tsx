@@ -3,6 +3,7 @@ import { Gtk } from 'ags/gtk4';
 import Gdk from 'gi://Gdk';
 import BackgroundSection from './backgroundSection';
 import inputControl from './inputControl';
+import { wrapIndex } from './wrapFocus';
 
 export default <T,>(name: string, { placeholder, search, activate, row, sensitive, onShow }: {
   placeholder: string,
@@ -19,8 +20,7 @@ export default <T,>(name: string, { placeholder, search, activate, row, sensitiv
   const handleKeys = (_ctrl: Gtk.EventControllerKey, key: number) => {
     if (key != Gdk.KEY_Up && key != Gdk.KEY_Down) return false;
     const list = items.peek();
-    const i = list.indexOf(selected.peek()!) + (key == Gdk.KEY_Down ? 1 : -1);
-    setSelected(list[Math.max(0, Math.min(list.length - 1, i))]);
+    if (list.length) setSelected(list[wrapIndex(list.indexOf(selected.peek()!), key == Gdk.KEY_Down ? 1 : -1, list.length)]);
     return true;
   };
 

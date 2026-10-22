@@ -5,11 +5,13 @@
 
     ./ags.nix
     ./aseprite.nix
+    ./btop.nix
     ./claude.nix
     ./fish.nix
     ./foot.nix
     ./gtk.nix
     ./helix.nix
+    ./lazygit.nix
     ./mimeapps.nix
     ./mpd.nix
     ./prismlauncher.nix

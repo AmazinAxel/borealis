@@ -34,7 +34,8 @@ import { readFileAsync } from 'ags/file';
 import { streamingMode, setStreamingMode } from './lib/streamingMode';
 import workspaces from './widgets/workspaces';
 import asideStatusWindow from './lib/asideStatusWindow';
-import { setAsideWindow, closeAsideWindow } from './lib/asideState';
+import { setAsideWindow, closeAsideWindow, currentAsideWindow, setCurrentAsideWindow } from './lib/asideState';
+import { prepareWifi } from './widgets/status/network';
 
 const media: Record<string, () => void> = {
   next: () => updTrack('next'),
@@ -61,7 +62,9 @@ const requests: Record<string, (arg?: string) => void> = {
   toggleQuicksettings: () => setAsideWindow('quickSettings'),
   toggleCalendar: () => setAsideWindow('calendar'),
   toggleBluetooth: () => setAsideWindow('bluetooth'),
-  toggleWifi: () => setAsideWindow('wifi'),
+  toggleWifi: () => currentAsideWindow.peek() === 'wifi'
+    ? closeAsideWindow()
+    : void prepareWifi().then(() => setCurrentAsideWindow('wifi')),
   closeAsideStatusMenuWidget: closeAsideWindow,
   toggleInfoArea: () => {
     app.toggle_window('status');

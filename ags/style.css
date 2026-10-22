@@ -131,6 +131,12 @@ popover {
   min-width: 320px;
 }
 
+popover.background > arrow,
+popover.background > contents,
+popover.background:backdrop > contents {
+  border-color: @blue3;
+}
+
 #emojiPicker entry {
   background-color: @dark3;
   border: 3px solid @blue3;

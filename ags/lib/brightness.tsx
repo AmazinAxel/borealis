@@ -1,4 +1,4 @@
-import { subprocess } from 'ags/process';
+import GUdev from 'gi://GUdev';
 import { readFile } from 'ags/file';
 import { createState } from 'ags';
 import GLib from 'gi://GLib';
@@ -24,15 +24,16 @@ export const setBrightness = (percent: number) => {
     'SetBrightness', new GLib.Variant('(ssu)', ['backlight', screen, steps]), null, Gio.DBusCallFlags.NONE, -1, null, null);
 };
 
-export const monitorBrightness = () =>
-  !screen ? null : subprocess(
-    ['udevadm', 'monitor', '--udev', '--subsystem-match=backlight'],
-    (line) => {
-      if (!line.includes(screen)) return;
-      const v = readNum(brightnessPath) / screenMax;
-      if (v !== brightness.peek()) setBrightnessValue(v); // only updates for non internal changes
-    }
-  );
+let udev: GUdev.Client | null = null;
+export const monitorBrightness = () => {
+  if (!screen) return;
+  udev = new GUdev.Client({ subsystems: ['backlight'] });
+  udev.connect('uevent', (_, _action, device) => {
+    if (device.get_name() !== screen) return;
+    const v = readNum(brightnessPath) / screenMax;
+    if (v !== brightness.peek()) setBrightnessValue(v); // only updates for non internal changes
+  });
+};
 
 export const BrightnessSlider = () =>
   <box visible={!!screen}>

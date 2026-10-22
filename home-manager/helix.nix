@@ -110,6 +110,7 @@ in
             space.b.r = ":reset-diff-change";
             space.x = [ ":sh rm '%{buffer_name}'"  ":buffer-close!" ];
             space.o = [ ":sh cp '%{buffer_name}' ./"  ":open %sh{basename '%{buffer_name}'}" ];
+            C-g = [ ":write-all" ":insert-output lazygit >/dev/tty" ":redraw" ":reload-all" ]; # lazygit
             space.D = [
               ":sh git diff -U99999 HEAD -- %{buffer_name} | sed '1,/^@@/d' > /tmp/hx-diff-show.diff"
               ":vsplit /tmp/hx-diff-show.diff"

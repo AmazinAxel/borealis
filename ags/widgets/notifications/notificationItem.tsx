@@ -2,7 +2,7 @@ import GLib from 'gi://GLib';
 import { Gtk } from 'ags/gtk4';
 import Notifd from 'gi://AstalNotifd';
 import Pango from 'gi://Pango';
-import { execAsync } from 'ags/process';
+import { swayCommand } from '../../lib/sway';
 const { START, CENTER, END } = Gtk.Align;
 
 const time = (t: number) => GLib.DateTime.new_from_unix_local(t).format('%H:%M')!;
@@ -11,7 +11,8 @@ const capitalizeFirstLetter = (s: string) => s.charAt(0).toUpperCase() + s.slice
 
 const invoke = (n: Notifd.Notification, id: string) => {
   n.invoke(id);
-  if (id === 'default' && n.desktopEntry) execAsync(['swaymsg', `[app_id="${n.desktopEntry}"] focus`]).catch(() => { });
+  const app = n.desktopEntry || n.appName;
+  if (id === 'default' && app) swayCommand(`[app_id="${app}"] focus`);
   if (!n.resident) n.dismiss();
 };
 

@@ -5,7 +5,7 @@ import Gdk from 'gi://Gdk';
 import GLib from 'gi://GLib';
 import { timeout } from 'ags/time';
 import idle from '../../lib/idle';
-import { execAsync } from 'ags/process';
+import { swayCommand } from '../../lib/sway';
 import { createState, createRoot } from 'ags';
 import { wallpaperTexture, randomWallpaper } from '../../lib/wallpaper';
 import { formatNow } from '../../lib/time';
@@ -13,6 +13,7 @@ import { powerKeys, reboot } from '../../lib/power';
 import { sleeping, inhibitSleep, releaseSleep } from '../../lib/logind';
 
 const [ authFailed, setAuthFailed ] = createState(false);
+export const [ locked, setLocked ] = createState(false);
 const hiddenCursor = Gdk.Cursor.new_from_name('none', null);
 
 let busy = false;
@@ -23,7 +24,7 @@ let displayOffOnLock = false;
 
 const setDisplay = (on: boolean) => {
   displayOff = !on;
-  execAsync(['swaymsg', `output * power ${on ? 'on' : 'off'}`]).catch(() => { });
+  swayCommand(`output * power ${on ? 'on' : 'off'}`);
 };
 
 const checkLogin = (entry: Gtk.Entry) => {
@@ -111,13 +112,16 @@ const assignLockWindow = (monitor: Gdk.Monitor) =>
 const lock = SessionLock.Instance.new();
 lock.connect('monitor', (_, monitor: Gdk.Monitor) => assignLockWindow(monitor));
 lock.connect('locked', () => {
+  setLocked(true);
   if (sleeping.peek()) releaseSleep();
   if (displayOffOnLock) setDisplay(false);
   displayOffOnLock = false;
   // move cursor up a pixel so that it updates and disappears
-  execAsync('swaymsg -- seat - cursor move 1 1, seat - cursor move -1 -1').catch(() => { });
+  swayCommand('seat - cursor move 1 1, seat - cursor move -1 -1');
 });
+lock.connect('unlocked', () => setLocked(false));
 lock.connect('failed', () => {
+  setLocked(false);
   displayOffOnLock = false;
   if (sleeping.peek()) releaseSleep();
 });

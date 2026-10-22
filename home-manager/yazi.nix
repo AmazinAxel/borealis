@@ -1,14 +1,27 @@
-let
+{ pkgs, ... }: let
   nord = builtins.mapAttrs (_: v: "#${v}") (import ../nord.nix);
 in {
   programs.yazi = {
     enable = true;
     enableFishIntegration = true; # y wrapper, cd on quit
-    settings.mgr = {
-      ratio = [ 1 3 4 ];
-      show_hidden = true;
-      scrolloff = 8;
+    extraPackages = [ pkgs.sshfs pkgs.ouch ];
+    plugins = {
+      sshfs = { package = pkgs.yaziPlugins.sshfs; setup = true; };
+      ouch = pkgs.yaziPlugins.ouch;
     };
+    settings = {
+      mgr = {
+        ratio = [ 1 3 4 ];
+        show_hidden = true;
+        scrolloff = 8;
+      };
+      opener.extract = [{ run = ''ouch d -y "$@"''; desc = "Extract here"; }];
+      plugin.prepend_previewers = [{ mime = "application/{*zip,tar,bzip2,7z*,rar,xz,zstd,java-archive}"; run = "ouch"; }];
+    };
+    keymap.mgr.prepend_keymap = [
+      { on = "C"; run = "plugin ouch"; desc = "Compress"; }
+      { on = [ "M" "s" ]; run = "plugin sshfs -- menu"; desc = "SSHFS"; }
+    ];
     theme = with nord; {
       mgr = {
         cwd = { fg = nord8; bold = true; };

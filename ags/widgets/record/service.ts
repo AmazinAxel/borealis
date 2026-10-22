@@ -1,11 +1,12 @@
 import { createState } from 'ags';
-import { execAsync } from 'ags/process';
+import { swayOutputs } from '../../lib/sway';
 import { timeout } from 'ags/time';
 import AstalIO from 'gi://AstalIO';
 import GLib from 'gi://GLib';
 import Battery from 'gi://AstalBattery';
 import { notifySend } from '../../lib/notifySend';
 import { copyUri } from '../../lib/clipboard';
+import { locked } from '../lockscreen/lockscreen';
 
 const captureDir = '/home/alec/Videos/Captures';
 const clipsDir = '/home/alec/Videos/Clips';
@@ -20,8 +21,8 @@ export const [ recQuality, setRecQuality ] = createState('Ultra');
 let rec: AstalIO.Process | null = null;
 let file: string;
 
-const getFocusedMonitor = () => execAsync(['swaymsg', '-t', 'get_outputs', '-r'])
-  .then((out) => (JSON.parse(out) as { focused: boolean, name: string }[]).find((o) => o.focused)!.name);
+const getFocusedMonitor = () => swayOutputs<{ focused: boolean, name: string }[]>()
+  .then((outputs) => outputs.find((o) => o.focused)!.name);
 
 let clipper: AstalIO.Process | null = null;
 let clipperGen = 0;
@@ -33,16 +34,21 @@ const stopClipper = () => {
 };
 
 const battery = Battery.get_default();
-const onBattery = () => battery.state == Battery.State.DISCHARGING;
+const onBattery = () => battery.isPresent && ![ Battery.State.CHARGING, Battery.State.FULLY_CHARGED, Battery.State.PENDING_CHARGE ].includes(battery.state);
 battery.connect('notify::state', () => {
   if (onBattery()) stopClipper();
+  else if (!clipper && !isRec.peek()) startClippingService();
+});
+
+locked.subscribe(() => {
+  if (locked.peek()) stopClipper();
   else if (!clipper && !isRec.peek()) startClippingService();
 });
 
 export const startClippingService = (): Promise<void> => {
   stopClipper();
   const gen = clipperGen;
-  if (onBattery()) return Promise.resolve();
+  if (onBattery() || locked.peek()) return Promise.resolve();
 
   return getFocusedMonitor().then((monitor) => {
     if (gen != clipperGen || isRec.peek()) return;

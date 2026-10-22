@@ -64,7 +64,6 @@ in {
       # Desktop applications
       gthumb
       video-trimmer
-      gnome-system-monitor
       nemo-with-extensions
       nemo-fileroller
       file-roller

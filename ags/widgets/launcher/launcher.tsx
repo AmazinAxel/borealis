@@ -1,7 +1,7 @@
 import Apps from 'gi://AstalApps';
 import { Gtk } from 'ags/gtk4';
 import app from 'ags/gtk4/app';
-import { execAsync } from 'ags/process';
+import { swayCommand } from '../../lib/sway';
 import searchDialog from '../../lib/searchDialog';
 import { focus } from '../focus';
 
@@ -16,7 +16,7 @@ const launchApp = (selectedApp: Apps.Application) => {
   if (focus.peek() && blockable(selectedApp)) return;
   const cmd = selectedApp.executable.replace(/ ?%[a-zA-Z]/g, '').trim();
   app.toggle_window('launcher');
-  execAsync(['swaymsg', 'exec', '--', cmd]);
+  swayCommand(`exec ${cmd}`);
 };
 
 export default () => searchDialog('launcher', {

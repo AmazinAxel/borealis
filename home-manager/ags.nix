@@ -18,9 +18,8 @@
 
       pkgs.webkitgtk_6_0 # webview
       pkgs.glib-networking # TLS stuff for webview
-      pkgs.sway # swaymsg IPC
+      pkgs.libgudev # backlight events
       pkgs.iwd # wifi control
-      pkgs.mpc # MPD
       pkgs.cliphist
       pkgs.wl-clipboard # wl-copy
       pkgs.swappy

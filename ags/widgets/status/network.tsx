@@ -190,6 +190,10 @@ const join = (path: string, attempt: Promise<unknown>) => {
   });
 };
 
+currentAsideWindow.subscribe(() => currentAsideWindow.peek() === 'wifi' ? watchIwd() : unwatchIwd());
+
+export const prepareWifi = () => Promise.race([ refresh(), new Promise<void>((r) => timeout(100, () => r())) ]);
+
 const NetworkRow = ({ path }: { path: string }) => {
   const net = nets((m) => m[path] ?? { ssid: '', security: 'open', level: 0, known: false });
   let entry: Gtk.Entry | null = null;
@@ -294,8 +298,7 @@ export default () =>
         onScan={scan}
         power={(self) => {
           powerButton = self;
-          self.connect('map', () => { watchIwd(); refresh(); focusWifiMenu(); });
-          self.connect('unmap', unwatchIwd);
+          self.connect('map', focusWifiMenu);
         }}
         scan={(self) => scanButton = self}
         list={(self) => listBox = self}

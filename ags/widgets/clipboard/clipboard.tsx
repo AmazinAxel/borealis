@@ -10,6 +10,8 @@ import { ClipboardItem, entryPath, cacheDir, videoExts, binaryData, decode } fro
 import { openCompress } from './compress';
 import BackgroundSection from '../../lib/backgroundSection';
 import inputControl from '../../lib/inputControl';
+import listDir from '../../lib/listDir';
+import { wrapIndex } from '../../lib/wrapFocus';
 import { streamingMode } from '../../lib/streamingMode';
 
 const hide = () => app.get_window('clipboard')?.hide();
@@ -71,8 +73,11 @@ const refreshItems = () => inFlight = inFlight.then(async () => {
   });
 
   // Their decodes and thumbnails are dead weight now
-  if (stale.length) execAsync(['bash', '-c',
-    'rm -f ' + stale.map(([ id ]) => `${cacheDir}/${id}.*`).join(' ')]);
+  if (stale.length) {
+    const ids = new Set(stale.map(([ id ]) => id));
+    for (const f of listDir(cacheDir))
+      if (ids.has(f.get_name().split('.')[0])) GLib.unlink(`${cacheDir}/${f.get_name()}`);
+  }
   selectTop(true);
 }).catch(() => { });
 refreshItems();
@@ -100,8 +105,7 @@ const selectTop = (keep = false) => {
 
 const moveSelection = (delta: number) => {
   const rows = visibleRows();
-  const i = rows.indexOf(list.get_selected_row()!) + delta;
-  select(rows[Math.max(0, Math.min(rows.length - 1, i))]);
+  if (rows.length) select(rows[wrapIndex(rows.indexOf(list.get_selected_row()!), delta, rows.length)]);
 };
 
 const search = (text: string) => {

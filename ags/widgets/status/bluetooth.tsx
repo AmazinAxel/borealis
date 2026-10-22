@@ -23,6 +23,30 @@ const devicePath = (d: BluetoothService.Device) => `${d.adapter}/dev_${d.address
 const trust = (d: BluetoothService.Device) => bluez(devicePath(d), 'org.freedesktop.DBus.Properties', 'Set',
   new GLib.Variant('(ssv)', ['org.bluez.Device1', 'Trusted', new GLib.Variant('b', true)]));
 
+const [ batteryPaths, setBatteryPaths ] = createState<ReadonlySet<string>>(new Set());
+const setHasBattery = (path: string, has: boolean) => {
+  const cur = batteryPaths.peek();
+  if (cur.has(path) === has) return;
+  const next = new Set(cur);
+  if (has) next.add(path);
+  else next.delete(path);
+  setBatteryPaths(next);
+};
+Gio.DBus.system.signal_subscribe('org.bluez', 'org.freedesktop.DBus.ObjectManager', null, '/', null, Gio.DBusSignalFlags.NONE,
+  (_conn, _sender, _path, _iface, signal, params) => {
+    const [ path, ifaces ] = params.deepUnpack() as [string, Record<string, unknown> | string[]];
+    if (signal === 'InterfacesAdded' && 'org.bluez.Battery1' in ifaces) setHasBattery(path, true);
+    if (signal === 'InterfacesRemoved' && (ifaces as string[]).includes('org.bluez.Battery1')) setHasBattery(path, false);
+  });
+Gio.DBus.system.call('org.bluez', '/', 'org.freedesktop.DBus.ObjectManager', 'GetManagedObjects', null, null,
+  Gio.DBusCallFlags.NONE, -1, null, (conn, res) => {
+    try {
+      const [ objects ] = conn!.call_finish(res).deepUnpack() as [Record<string, Record<string, unknown>>];
+      for (const [ path, ifaces ] of Object.entries(objects))
+        if ('org.bluez.Battery1' in ifaces) setHasBattery(path, true);
+    } catch { }
+  });
+
 const hook = <T extends { connect(s: string, cb: () => void): number; disconnect(id: number): void }>(
   obj: T | null | undefined, signal: string, cb: () => void,
 ) => {
@@ -231,7 +255,8 @@ const DeviceRow = ({ device }: { device: BluetoothService.Device }) => {
       <image iconName={device.icon + '-symbolic'} />
       <label label={alias(nameSubstitute)} halign={Gtk.Align.START} hexpand ellipsize={Pango.EllipsizeMode.END} />
       <label
-        visible={createComputed((track) => track(connected) && track(battery) >= 0)}
+        visible={createComputed((track) => track(connected) && track(battery) >= 0
+          && track(batteryPaths).has(devicePath(device)))}
         label={battery((p) => Math.round(p * 100) + '%')}
         halign={Gtk.Align.END}
       />
