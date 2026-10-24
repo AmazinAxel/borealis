@@ -69,6 +69,11 @@ window scale {
   color: @light1;
 }
 
+window scale.fine-tune.horizontal {
+  min-height: 2px;
+  padding: 17px 12px;
+}
+
 window scale trough {
   background: @light1;
   min-height: 5px;
@@ -93,7 +98,7 @@ window scale slider:hover {
 }
 
 window scale slider:active {
-  transform: rotate(45deg) scale(0.8);
+  box-shadow: 0 0 4px alpha(@dark1, 0.8), 0 0 0 2px alpha(@dark1, 0.35);
 }
 
 .clipboardScroll scrollbar {
@@ -240,6 +245,10 @@ window .backgroundSection .header:first-child {
   font-family: 'Hammersmith One';
   padding: 3px 6px;
   background-color: @dark1;
+}
+
+#focusTask levelbar block.filled {
+  background-color: @blue3;
 }
 
 /* Workspace preview */

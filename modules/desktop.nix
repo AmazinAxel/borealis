@@ -67,7 +67,6 @@ in {
       nemo-fileroller
       file-roller
       discord
-      slack
       filezilla
       libreoffice
       thunderbird

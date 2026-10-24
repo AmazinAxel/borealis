@@ -1,6 +1,7 @@
 { pkgs, lib, ... }: {
   imports = [
     ./hardware-configuration.nix
+    ./fingerprint.nix
     ../common.nix
     ../../modules/laptop.nix
   ];

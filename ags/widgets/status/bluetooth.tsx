@@ -15,9 +15,12 @@ import { timeout } from 'ags/time';
 
 const bluetooth = BluetoothService.get_default();
 
-const bluez = (path: string, iface: string, method: string, args: GLib.Variant | null = null) =>
+const bluez = (path: string, iface: string, method: string, args: GLib.Variant | null = null, onDone?: () => void) =>
   Gio.DBus.system.call('org.bluez', path, iface, method, args, null, Gio.DBusCallFlags.NONE, 60000, null, (conn, res) => {
-    try { conn!.call_finish(res); } catch { }
+    try {
+      conn!.call_finish(res);
+      onDone?.();
+    } catch { }
   });
 const devicePath = (d: BluetoothService.Device) => `${d.adapter}/dev_${d.address.replace(/:/g, '_')}`;
 const trust = (d: BluetoothService.Device) => bluez(devicePath(d), 'org.freedesktop.DBus.Properties', 'Set',
@@ -54,9 +57,9 @@ const hook = <T extends { connect(s: string, cb: () => void): number; disconnect
   if (id) onCleanup(() => obj!.disconnect(id));
 };
 
-let pendingSinkId = 0;
-const switchToBluetoothSink = (address: string) => {
-  const wanted = address.replaceAll(':', '_');
+let stopPending = () => { };
+const switchToBluetoothSink = (device: BluetoothService.Device) => {
+  const wanted = device.address.replaceAll(':', '_');
   const take = () => {
     const sink = (audio.speakers ?? []).find((s) =>
       (s.get_pw_property('node.name') ?? '').includes(wanted));
@@ -64,12 +67,16 @@ const switchToBluetoothSink = (address: string) => {
     sink.isDefault = true;
     return true;
   };
-  const stop = () => { if (pendingSinkId) { audio.disconnect(pendingSinkId); pendingSinkId = 0; } };
 
-  stop();
+  stopPending();
   if (take()) return;
-  const id = pendingSinkId = audio.connect('notify::speakers', () => take() && stop());
-  timeout(10000, () => pendingSinkId === id && stop());
+  const sinkId = audio.connect('notify::speakers', () => take() && stopPending());
+  const deviceId = device.connect('notify::connected', () => !device.connected && stopPending());
+  stopPending = () => {
+    audio.disconnect(sinkId);
+    device.disconnect(deviceId);
+    stopPending = () => { };
+  };
 };
 
 const [ discovering, setDiscovering ] = createState(false);
@@ -178,17 +185,10 @@ const DeviceRow = ({ device }: { device: BluetoothService.Device }) => {
     return listed(device);
   });
 
-  let pairId = 0;
-  const stopPairWatch = () => {
-    if (pairId) device.disconnect(pairId);
-    pairId = 0;
-  };
-  onCleanup(stopPairWatch);
-
   const connectAndSwitch = () => device.connect_device((_, res) => {
     try {
       device.connect_device_finish(res);
-      switchToBluetoothSink(device.address);
+      switchToBluetoothSink(device);
     } catch { }
   });
 
@@ -231,16 +231,11 @@ const DeviceRow = ({ device }: { device: BluetoothService.Device }) => {
         return connectAndSwitch();
       }
 
-      stopPairWatch();
-      const id = pairId = device.connect('notify::paired', () => {
-        if (!device.paired) return;
-        stopPairWatch();
+      bluez(devicePath(device), 'org.bluez.Device1', 'Pair', null, () => {
         trust(device);
         saveOrder(knownDevices().map((d) => d.address));
         connectAndSwitch();
       });
-      timeout(30000, () => pairId === id && stopPairWatch());
-      bluez(devicePath(device), 'org.bluez.Device1', 'Pair');
     }}
   >
     <Gtk.EventControllerKey onKeyPressed={(ctrl, key, _, state) => {

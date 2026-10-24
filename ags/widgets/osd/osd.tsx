@@ -1,7 +1,7 @@
 import { createState, createBinding } from 'ags';
 import { Astal, Gtk } from 'ags/gtk4';
 import app from 'ags/gtk4/app';
-import { audio } from '../../lib/audio';
+import { audio, wp } from '../../lib/audio';
 import { brightness } from '../../lib/brightness';
 import perMonitor from '../../lib/perMonitor';
 import OutTransition, { createFlash } from '../../lib/outTransition';
@@ -10,19 +10,21 @@ const [ icon, setIcon ] = createState('');
 const [ val, setVal ] = createState(0);
 const { visible, reveal, show, onHidden } = createFlash(500);
 
-let ready = false;
-setTimeout(() => ready = true, 1000);
-
 const osdChange = (iconType: string, value: number) => {
-  if (!ready) return;
   setIcon(iconType);
   setVal(value);
   show();
 };
 
 brightness.subscribe(() => osdChange('display-brightness-symbolic', brightness.peek()));
+let ready = false;
 let speaker = audio.defaultSpeaker;
+wp.connect('ready', () => {
+  ready = true;
+  speaker = audio.defaultSpeaker;
+});
 const volumeChanged = () => {
+  if (!ready) return;
   const s = audio.defaultSpeaker;
   if (s && s == speaker) osdChange(s.volumeIcon, s.volume);
   speaker = s;

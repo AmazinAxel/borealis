@@ -118,6 +118,14 @@ const ensurePage = (name: PageName) => {
     return false;
   });
 
+  webview.connect('decide-policy', (_webview, decision, type) => {
+    if (type !== WebKit.PolicyDecisionType.NEW_WINDOW_ACTION) return false;
+    const uri = (decision as WebKitT.NavigationPolicyDecision).get_navigation_action().get_request().get_uri();
+    Gio.AppInfo.launch_default_for_uri(uri, null);
+    decision.ignore();
+    return true;
+  });
+
   const bg = new Gdk.RGBA();
   bg.parse('#2e3440');
   webview.set_background_color(bg);

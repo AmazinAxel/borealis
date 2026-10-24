@@ -14,7 +14,7 @@ import listDir from '../../lib/listDir';
 import { wrapIndex } from '../../lib/wrapFocus';
 import { streamingMode } from '../../lib/streamingMode';
 
-const hide = () => app.get_window('clipboard')?.hide();
+const hide = () => app.get_window('clipboard')?.set_visible(false);
 const items = new Map<string, { mime: string, path: string | null, search: string, row: Gtk.Widget }>();
 const [ hasResults, setHasResults ] = createState(false);
 

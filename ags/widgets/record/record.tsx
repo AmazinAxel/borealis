@@ -9,11 +9,11 @@ const handleKeys = (_ctrl: Gtk.EventControllerKey, key: number) => {
   switch (Gdk.keyval_to_lower(key)) {
     case Gdk.KEY_space: // start recording
       startRec();
-      app.get_window('recordMenu')?.hide();
+      app.get_window('recordMenu')?.set_visible(false);
       break;
     case Gdk.KEY_c: // clip & save last 30 seconds
       saveClip();
-      app.get_window('recordMenu')?.hide();
+      app.get_window('recordMenu')?.set_visible(false);
       break;
     case Gdk.KEY_r: // toggle microphone input
       setRecMic(!recMic.peek());

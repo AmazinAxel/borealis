@@ -7,7 +7,6 @@ import Pango from 'gi://Pango';
 import { currentAsideWindow } from '../../lib/asideState';
 import { streamingMode } from '../../lib/streamingMode';
 import { bus, iwdBus, iwdCall, getObjects, onPropertiesChanged, deviceInterface, stationInterface, networkInterface } from '../../lib/iwd';
-import { timeout, type Timer } from 'ags/time';
 import idle from '../../lib/idle';
 import DeviceMenu from '../../lib/deviceMenu';
 
@@ -62,18 +61,20 @@ const menuHasFocus = () => {
 };
 
 let subIds: number[] = [];
-let debounce: Timer | null = null;
+let refreshQueued = false;
 
 const queueRefresh = () => {
-  debounce?.cancel();
-  debounce = timeout(150, () => {
-    debounce = null;
+  if (refreshQueued) return;
+  refreshQueued = true;
+  idle(() => {
+    refreshQueued = false;
     refresh();
   });
 };
 
 const watchIwd = () => { // update dynamically
   if (subIds.length) return;
+  refresh();
 
   subIds.push(onPropertiesChanged((path, iface, changed) => {
     if (iface === stationInterface && path === stationPath && changed.Scanning === false) setScanning(false);
@@ -91,8 +92,6 @@ const unwatchIwd = () => {
   for (const id of subIds) bus.signal_unsubscribe(id);
   subIds = [];
   setScanning(false);
-  debounce?.cancel();
-  debounce = null;
 };
 
 const clear = () => {
@@ -191,8 +190,6 @@ const join = (path: string, attempt: Promise<unknown>) => {
 };
 
 currentAsideWindow.subscribe(() => currentAsideWindow.peek() === 'wifi' ? watchIwd() : unwatchIwd());
-
-export const prepareWifi = () => Promise.race([ refresh(), new Promise<void>((r) => timeout(100, () => r())) ]);
 
 const NetworkRow = ({ path }: { path: string }) => {
   const net = nets((m) => m[path] ?? { ssid: '', security: 'open', level: 0, known: false });

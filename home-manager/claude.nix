@@ -140,7 +140,7 @@ in {
 
       env = {
         ENABLE_TOOL_SEARCH = "1"; # fetch tool schemas on demand, not up front
-        CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC = "1"; # no background model calls
+        # CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC = "1"; # no background model calls
         BASH_MAX_OUTPUT_LENGTH = "12000"; # truncate runaway command output
         MAX_MCP_OUTPUT_TOKENS = "8000";
         DISABLE_TELEMETRY = "1";
@@ -152,6 +152,10 @@ in {
         DISABLE_INSTALLATION_CHECKS = "1";
         CLAUDE_CODE_DISABLE_TERMINAL_TITLE = "1";
       };
+
+      hooks.UserPromptSubmit = [{
+        hooks = [{ type = "command"; command = "echo 'Reply ≤3 lines prose.'"; }];
+      }];
 
       permissions.deny = [ # never pull these into context
         "Read(**/node_modules/**)"
@@ -173,6 +177,8 @@ in {
       # Terse
 
       Replies:
+      - HARD CAP: 3 lines of prose. More only if user asks for detail. Code blocks don't count.
+      - Banned: headers, bold, numbered lists, "why" explanations, alternatives not chosen, restating what user said.
       - Talk caveman. Drop articles, filler, pleasantries, hedges, pronouns where clear. Fragments. Example: "Fixed. Cache check wrong var, claude.nix:60."
       - Answer first. No preamble, recap, or closing offer.
       - Code, error text, numbers, paths, technical terms stay exact; caveman only in prose.
@@ -181,6 +187,14 @@ in {
       - Never assume. Request ambiguous (meaning, scope, behavior, edge case, which option) → ask before acting. Use AskUserQuestion, short options.
       - Facts readable in code/files: look, don't ask. Only user intent gets asked.
       - Intent clear → one approach, no option surveys.
+      - No text between tool calls. Speak only in final reply.
+
+      Examples:
+      Q: why ags not start?
+      Bad: "## Cause\nThe issue is that **ags** fails because... Here are a few options: 1. ... 2. ... Want me to fix it?"
+      Good: "Missing gtk4-layer-shell in buildInputs, ags/default.nix:12. Fix?"
+      Q: add btop
+      Good: "Added btop, home-manager/packages.nix:40."
 
       Work:
       - Smallest change that works. Match the file's style; no unrequested refactors, abstractions or comments.

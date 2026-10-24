@@ -14,7 +14,7 @@ export default () => inputControl('emojiPicker', () =>
     $={(self) => textBox = self}
     onNotifyText={({ text }) => {
       if (!text || /[:a-z]/.test(text)) return;
-      app.get_window('emojiPicker')?.hide();
+      app.get_window('emojiPicker')?.set_visible(false);
       copy(text);
     }}
   />,

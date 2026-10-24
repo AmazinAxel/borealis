@@ -5,10 +5,11 @@ import BackgroundSection from './backgroundSection';
 import inputControl from './inputControl';
 import { wrapIndex } from './wrapFocus';
 
-export default <T,>(name: string, { placeholder, search, activate, row, sensitive, onShow }: {
+export default <T,>(name: string, { placeholder, search, activate, shiftActivate, row, sensitive, onShow }: {
   placeholder: string,
   search: (text: string) => T[],
   activate: (item: T) => void,
+  shiftActivate?: (item: T) => void,
   row: (item: T) => JSX.Element,
   sensitive?: (item: T) => Accessor<boolean>,
   onShow?: () => void,
@@ -17,7 +18,12 @@ export default <T,>(name: string, { placeholder, search, activate, row, sensitiv
   const [ items, setItems ] = createState<T[]>([]);
   const [ selected, setSelected ] = createState<T | undefined>(undefined);
 
-  const handleKeys = (_ctrl: Gtk.EventControllerKey, key: number) => {
+  const handleKeys = (_ctrl: Gtk.EventControllerKey, key: number, _code: number, state: Gdk.ModifierType) => {
+    if (shiftActivate && (key == Gdk.KEY_Return || key == Gdk.KEY_KP_Enter) && state & Gdk.ModifierType.SHIFT_MASK) {
+      const top = selected.peek();
+      if (top !== undefined) shiftActivate(top);
+      return true;
+    }
     if (key != Gdk.KEY_Up && key != Gdk.KEY_Down) return false;
     const list = items.peek();
     if (list.length) setSelected(list[wrapIndex(list.indexOf(selected.peek()!), key == Gdk.KEY_Down ? 1 : -1, list.length)]);

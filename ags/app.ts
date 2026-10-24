@@ -16,7 +16,7 @@ import clipboard from './widgets/clipboard/clipboard';
 import compress from './widgets/clipboard/compress';
 import emojiPicker from './widgets/emojiPicker';
 import launcher from './widgets/launcher/launcher';
-import { focusMenu, focusTask, toggleFocus } from './widgets/focus';
+import { focusMenu, focusTask, toggleFocus, cancelBreak } from './widgets/focus';
 import pass from './widgets/pass/pass';
 import passSave from './widgets/pass/passSave';
 import recordMenu from './widgets/record/record';
@@ -35,7 +35,6 @@ import { streamingMode, setStreamingMode } from './lib/streamingMode';
 import workspaces from './widgets/workspaces';
 import asideStatusWindow from './lib/asideStatusWindow';
 import { setAsideWindow, closeAsideWindow, currentAsideWindow, setCurrentAsideWindow } from './lib/asideState';
-import { prepareWifi } from './widgets/status/network';
 
 const media: Record<string, () => void> = {
   next: () => updTrack('next'),
@@ -64,7 +63,7 @@ const requests: Record<string, (arg?: string) => void> = {
   toggleBluetooth: () => setAsideWindow('bluetooth'),
   toggleWifi: () => currentAsideWindow.peek() === 'wifi'
     ? closeAsideWindow()
-    : void prepareWifi().then(() => setCurrentAsideWindow('wifi')),
+    : setCurrentAsideWindow('wifi'),
   closeAsideStatusMenuWidget: closeAsideWindow,
   toggleInfoArea: () => {
     app.toggle_window('status');
@@ -73,6 +72,7 @@ const requests: Record<string, (arg?: string) => void> = {
   },
   toggleStreamingMode: () => setStreamingMode(!streamingMode.peek()),
   toggleFocus,
+  cancelBreak,
 };
 
 const reminders = async () => {
@@ -107,6 +107,8 @@ app.start({
   main() {
     Gtk.Settings.get_default()!.gtkImModule = 'simple'; // fix launcher errors
 
+    focusMenu();
+    app.get_window('focusMenu')?.set_visible(true);
     wallpaper();
     randomWallpaper();
     status();
@@ -115,7 +117,6 @@ app.start({
     compress();
     emojiPicker();
     recordMenu();
-    focusMenu();
     focusTask();
     osd();
     powermenu();

@@ -1,6 +1,5 @@
 import { createState } from 'ags';
 import { swayOutputs } from '../../lib/sway';
-import { timeout } from 'ags/time';
 import AstalIO from 'gi://AstalIO';
 import GLib from 'gi://GLib';
 import Battery from 'gi://AstalBattery';
@@ -56,11 +55,7 @@ export const startClippingService = (): Promise<void> => {
       '-q', 'medium', '-w', monitor, '-o', clipsDir, '-f', '30', '-r', '30', '-c', 'mp4']);
     clipper = p;
     p.connect('stdout', (_, path) => copyUri(path));
-    p.connect('exit', () => {
-      if (clipper != p) return;
-      clipper = null;
-      timeout(5000, () => gen == clipperGen && !isRec.peek() && startClippingService());
-    });
+    p.connect('exit', () => clipper == p && (clipper = null));
   }).catch(() => { });
 };
 

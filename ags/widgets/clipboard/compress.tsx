@@ -34,7 +34,7 @@ const compress = async () => {
   const base = GLib.path_get_basename(source).replace(/\.[^.]*$/, '');
   const out = `${tmpDir}/${base == entryId ? base : base + '_' + entryId}.mp4`;
 
-  app.get_window('compress')?.hide();
+  app.get_window('compress')?.set_visible(false);
 
   try {
     await execAsync(['bash', '-c', script(source, out, limit)]);

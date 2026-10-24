@@ -42,6 +42,14 @@
       $pk -USR1 -f "foot --server" || true # SIGUSR1 = [colors-dark]
     fi
   '';
+  toggleDim = pkgs.writeShellScript "toggle-dim" ''
+    set -- rs.wl-gammarelay / rs.wl.gammarelay Brightness
+    if [ "$(busctl --user get-property "$@")" = "d 1" ]; then
+      busctl --user set-property "$@" d 0.4
+    else
+      busctl --user set-property "$@" d 1
+    fi
+  '';
 in {
   wayland.windowManager.sway = {
     config.keybindings = directionBinds // {
@@ -86,7 +94,9 @@ in {
       "shift+${mod}+M" = "exec ags request 'invokeOldestNotif 2'"; # 3rd action
       "${mod}+S" = "exec ags request toggleStreamingMode";
       "${mod}+B" = "exec ${toggleTheme}";
+      "${mod}+O" = "exec ${toggleDim}";
       "${mod}+T" = "exec ags request toggleFocus";
+      "${mod}+Escape" = "exec ags request cancelBreak";
       "${mod}+Z" = "exec ags request toggleInfoArea";
 
       "${mod}+V" = "exec ags toggle clipboard";

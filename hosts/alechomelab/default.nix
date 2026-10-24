@@ -82,10 +82,10 @@
     avahi = { # need for my iot services and wintergreen!
       enable = true;
       openFirewall = true;
-      publish = {
-        enable = true;
-        addresses = true;
-        userServices = true; # NAS
+      settings.publish = {
+        disable-publishing = false;
+        publish-addresses = true;
+        disable-user-service-publishing = false; # NAS
       };
 
       extraServiceFiles.smb = ''

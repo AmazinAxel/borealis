@@ -15,6 +15,11 @@
   text-shadow: 0 2px 6px alpha(@dark1, 0.6), 0 0 16px @red;
 }
 
+#lockscreen label.fprintFailed {
+  color: @orange;
+  text-shadow: 0 2px 6px alpha(@dark1, 0.6), 0 0 16px @orange;
+}
+
 #lockscreen entry {
   /* Also a background */
   background-image: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.5));
