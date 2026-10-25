@@ -38,7 +38,7 @@ const checkLogin = (entry: Gtk.Entry) => {
   Auth.Pam.authenticate(password, (_, task) => {
     try {
       Auth.Pam.authenticate_finish(task);
-      unlockScreen(true);
+      unlockScreen();
       failures = 0;
     } catch { // Wrong password
       if (++failures >= 5) return reboot();
@@ -143,11 +143,11 @@ export const lockThen = (action: () => void) => {
   afterLock = action;
   lockScreen();
 };
-const unlockScreen = async (newWallpaper = false) => {
+const unlockScreen = async () => {
   const win = app.get_window('focusMenu');
-  if (newWallpaper) await randomWallpaper();
-  if (!win || (win.visible && !newWallpaper)) return lock.unlock();
-  const wins = [win, ...(newWallpaper ? app.get_windows().filter((w) => w.name == 'wallpaper') : [])];
+  await randomWallpaper();
+  if (!win) return lock.unlock();
+  const wins = [win, ...app.get_windows().filter((w) => w.name == 'wallpaper')];
   let pending = wins.length;
   for (const w of wins) {
     w.set_visible(false);
@@ -167,18 +167,38 @@ if (GLib.file_test('/etc/pam.d/astal-fprint', GLib.FileTest.EXISTS)) {
   const fprint = new Auth.Pam({ service: 'astal-fprint' });
   const skip = () => fprint.supply_secret(null);
   let fprintFlash: Timer | null = null;
-  const retry = () => lock.is_locked() && fprint.start_authenticate();
+  let mismatches = 0;
+  let running = false;
+  const allowed = () => lock.is_locked() && mismatches < 5;
+  const retry = () => {
+    if (running || !allowed()) return;
+    running = true;
+    fprint.start_authenticate();
+  };
   fprint.connect('auth-info', skip);
-  fprint.connect('auth-error', () => {
+  fprint.connect('auth-error', (_, msg: string) => {
+    if (msg.includes('Failed to match')) mismatches++;
     for (const entry of entries) entry.set_text('');
-    setAuthFailed('fprintFailed');
     fprintFlash?.cancel();
-    fprintFlash = timeout(400, () => authFailed.peek() == 'fprintFailed' && setAuthFailed(''));
+    if (mismatches >= 5) setAuthFailed('failed');
+    else {
+      setAuthFailed('fprintFailed');
+      fprintFlash = timeout(400, () => authFailed.peek() == 'fprintFailed' && setAuthFailed(''));
+    }
     skip();
   });
-  fprint.connect('success', () => lock.is_locked() && unlockScreen());
-  fprint.connect('fail', retry);
-  lock.connect('locked', retry);
+  fprint.connect('success', () => {
+    running = false;
+    if (allowed()) unlockScreen();
+  });
+  fprint.connect('fail', () => {
+    running = false;
+    retry();
+  });
+  lock.connect('locked', () => {
+    mismatches = 0;
+    retry();
+  });
 }
 
 const inhibitReason = 'Lock screen before sleep';

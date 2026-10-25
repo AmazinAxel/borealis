@@ -273,6 +273,7 @@ export default () =>
     />
     <box visible={streamingMode((d) => !d)}>
       <DeviceMenu
+        upTo="scan"
         powered={wifiOn}
         powerIcon={wifiOn((on) => on ? 'network-wireless-symbolic' : 'network-wireless-offline-symbolic')}
         scanning={scanning}

@@ -82,6 +82,6 @@ export const focusTask = () => perMonitor((monitor) =>
   >
     <box orientation={Gtk.Orientation.VERTICAL}>
       <label cssClasses={['statusElement']} label={focusText} />
-      <levelbar value={breakWait} visible={breakWait((w) => w >= 0)} />
+      <levelbar value={breakWait((w) => Math.max(w, 0))} visible={breakWait((w) => w >= 0)} />
     </box>
   </window>);

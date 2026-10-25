@@ -235,7 +235,7 @@ export default () => {
   }));
 
   return <DeviceMenu
-    upToPower
+    upTo="power"
     powered={btPowered}
     powerIcon="bluetooth-active-symbolic"
     scanning={discovering}

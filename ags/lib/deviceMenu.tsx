@@ -2,12 +2,12 @@ import { Gtk } from 'ags/gtk4';
 import { type Accessor } from 'ags';
 import { setUpExit } from './wrapFocus';
 
-export default ({ powered, powerIcon, scanning, scanSensitive, upToPower, onPower, onScan, power, scan, list, children }: {
+export default ({ powered, powerIcon, scanning, scanSensitive, upTo, onPower, onScan, power, scan, list, children }: {
   powered: Accessor<boolean>,
   powerIcon: string | Accessor<string>,
   scanning: Accessor<boolean>,
   scanSensitive?: Accessor<boolean>,
-  upToPower?: boolean,
+  upTo: 'power' | 'scan',
   onPower: () => void,
   onScan: () => void,
   power?: (self: Gtk.Button) => void,
@@ -15,7 +15,7 @@ export default ({ powered, powerIcon, scanning, scanSensitive, upToPower, onPowe
   list?: (self: Gtk.Box) => void,
   children: JSX.Element,
 }) => {
-  let powerButton: Gtk.Button;
+  let powerButton: Gtk.Button, scanButton: Gtk.Button;
   return <box orientation={Gtk.Orientation.VERTICAL}>
     <box>
       <button
@@ -36,7 +36,10 @@ export default ({ powered, powerIcon, scanning, scanSensitive, upToPower, onPowe
         sensitive={scanSensitive ?? true}
         visible={powered}
         cssClasses={scanning((s) => s ? ['active'] : [])}
-        $={scan}
+        $={(self) => {
+          scanButton = self;
+          scan?.(self);
+        }}
       >
         <image iconName="view-refresh-symbolic" />
       </button>
@@ -52,7 +55,7 @@ export default ({ powered, powerIcon, scanning, scanSensitive, upToPower, onPowe
       <box
         orientation={Gtk.Orientation.VERTICAL}
         $={(self) => {
-          if (upToPower) setUpExit(self, powerButton);
+          setUpExit(self, upTo == 'power' ? powerButton : scanButton);
           list?.(self);
         }}
       >

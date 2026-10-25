@@ -12,6 +12,7 @@ const { TOP, BOTTOM, LEFT, RIGHT } = Astal.WindowAnchor;
 
 export const [ wallpaperTexture, setWallpaperTexture ] = createState<Gdk.Paintable>(Gdk.Paintable.new_empty(1, 1));
 export const [ wallpaperLight, setWallpaperLight ] = createState(false);
+const [ loaded, setLoaded ] = createState(false);
 
 const listFiles = (dir: string): string[] => listDir(dir).flatMap((i) => {
   const path = `${dir}/${i.get_name()}`;
@@ -64,6 +65,7 @@ export const randomWallpaper = () => queue = queue.then(async () => {
     current = w.path;
     setWallpaperTexture(w.texture);
     setWallpaperLight(w.light);
+    setLoaded(true);
   }
   next = load(pick());
 }).catch(() => { });
@@ -77,8 +79,8 @@ export default () => perMonitor((monitor) =>
     layer={Astal.Layer.BACKGROUND}
     gdkmonitor={monitor}
     application={app}
-    visible
-    $={(self) => self.get_surface()?.set_input_region(new cairo.Region())}
+    visible={loaded}
+    onRealize={(self) => self.get_surface()?.set_input_region(new cairo.Region())}
   >
     <Gtk.Picture paintable={wallpaperTexture} contentFit={Gtk.ContentFit.COVER} />
   </window>);

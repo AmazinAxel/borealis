@@ -104,6 +104,7 @@ app.start({
     Gtk.Settings.get_default()!.gtkImModule = 'simple'; // fix launcher errors
 
     const wallpaperReady = randomWallpaper();
+    wallpaper();
     focusMenu();
     status();
     sideview();
@@ -126,10 +127,7 @@ app.start({
     reminders();
     startClippingService();
 
-    wallpaperReady.then(() => {
-      wallpaper();
-      app.get_window('focusMenu')?.set_visible(true);
-    });
+    wallpaperReady.then(() => app.get_window('focusMenu')?.set_visible(true));
   },
   requestHandler(argv, respond) {
     const [ cmd, arg ] = argv.join(' ').split(' ');
