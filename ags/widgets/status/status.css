@@ -5,7 +5,7 @@
 }
 
 .statusMenu {
-  padding: 8px 0 14px 0;
+  padding: 8px 0 14px;
 }
 
 .statusMenu image {
@@ -42,10 +42,6 @@
   line-height: 26px;
 }
 
-.time .date {
-  line-height: 26px;
-}
-
 .time .date.bottom {
   margin-bottom: 6px;
 }
@@ -68,7 +64,7 @@
   padding: 0 5px;
 }
 
-/* Bluetooth */
+/* Bluetooth/wifi */
 .unpowered {
   padding: 32px;
   margin: 8px;
@@ -99,63 +95,26 @@
 }
 
 /* Media/mpris player */
-#mediaBtn image,
+#media.study { --playlist: @red; }
+#media.focus { --playlist: @blue3; }
+#media.synthwave { --playlist: @purple; }
+#media.liked { --playlist: @blue4; }
+#media.synthambient { --playlist: @yellow; }
+#media.ambient { --playlist: @blue2; }
+
+#media {
+  border-color: shade(var(--playlist), 1.1);
+}
+
 #media image {
   -gtk-icon-size: 21px;
 }
 
-#status #mediaBtn {
+#mediaBtn {
   padding: 8px;
+  background-color: var(--playlist);
 }
 
-#status #mprisBtn {
+#mprisBtn {
   padding: 13px 0;
-}
-
-#media.study {
-  border-color: shade(@red, 1.1);
-}
-
-#media.focus {
-  border-color: shade(@blue3, 1.1);
-}
-
-#media.synthwave {
-  border-color: shade(@purple, 1.1);
-}
-
-#media.liked {
-  border-color: shade(@blue4, 1.1);
-}
-
-#media.synthambient {
-  border-color: shade(@yellow, 1.1);
-}
-
-#media.ambient {
-  border-color: shade(@blue2, 1.1);
-}
-
-#media.study #mediaBtn {
-  background-color: @red;
-}
-
-#media.focus #mediaBtn {
-  background-color: @blue3;
-}
-
-#media.synthwave #mediaBtn {
-  background-color: @purple;
-}
-
-#media.liked #mediaBtn {
-  background-color: @blue4;
-}
-
-#media.synthambient #mediaBtn {
-  background-color: @yellow;
-}
-
-#media.ambient #mediaBtn {
-  background-color: @blue2;
 }

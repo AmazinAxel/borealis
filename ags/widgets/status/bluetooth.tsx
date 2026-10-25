@@ -9,53 +9,43 @@ import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
 import Pango from 'gi://Pango';
 import Gdk from 'gi://Gdk';
-import { currentAsideWindow } from '../../lib/asideState';
+import { currentAsideWindow, focusAside } from '../../lib/asideState';
 import { btPowered } from '../../lib/bluetooth';
 import { timeout } from 'ags/time';
 
 const bluetooth = BluetoothService.get_default();
 
-const bluez = (path: string, iface: string, method: string, args: GLib.Variant | null = null, onDone?: () => void) =>
+const bluez = (path: string, iface: string, method: string, args: GLib.Variant | null = null, onDone?: (reply: GLib.Variant) => void) =>
   Gio.DBus.system.call('org.bluez', path, iface, method, args, null, Gio.DBusCallFlags.NONE, 60000, null, (conn, res) => {
     try {
-      conn!.call_finish(res);
-      onDone?.();
+      onDone?.(conn!.call_finish(res));
     } catch { }
   });
 const devicePath = (d: BluetoothService.Device) => `${d.adapter}/dev_${d.address.replace(/:/g, '_')}`;
 const trust = (d: BluetoothService.Device) => bluez(devicePath(d), 'org.freedesktop.DBus.Properties', 'Set',
   new GLib.Variant('(ssv)', ['org.bluez.Device1', 'Trusted', new GLib.Variant('b', true)]));
 
-const [ batteryPaths, setBatteryPaths ] = createState<ReadonlySet<string>>(new Set());
-const setHasBattery = (path: string, has: boolean) => {
-  const cur = batteryPaths.peek();
-  if (cur.has(path) === has) return;
-  const next = new Set(cur);
-  if (has) next.add(path);
-  else next.delete(path);
-  setBatteryPaths(next);
+const setMember = (set: Accessor<ReadonlySet<string>>, update: (s: ReadonlySet<string>) => void, key: string, has: boolean) => {
+  if (set.peek().has(key) === has) return;
+  const next = new Set(set.peek());
+  if (has) next.add(key);
+  else next.delete(key);
+  update(next);
 };
+
+const [ batteryPaths, setBatteryPaths ] = createState<ReadonlySet<string>>(new Set());
+const setHasBattery = (path: string, has: boolean) => setMember(batteryPaths, setBatteryPaths, path, has);
 Gio.DBus.system.signal_subscribe('org.bluez', 'org.freedesktop.DBus.ObjectManager', null, '/', null, Gio.DBusSignalFlags.NONE,
   (_conn, _sender, _path, _iface, signal, params) => {
     const [ path, ifaces ] = params.deepUnpack() as [string, Record<string, unknown> | string[]];
     if (signal === 'InterfacesAdded' && 'org.bluez.Battery1' in ifaces) setHasBattery(path, true);
     if (signal === 'InterfacesRemoved' && (ifaces as string[]).includes('org.bluez.Battery1')) setHasBattery(path, false);
   });
-Gio.DBus.system.call('org.bluez', '/', 'org.freedesktop.DBus.ObjectManager', 'GetManagedObjects', null, null,
-  Gio.DBusCallFlags.NONE, -1, null, (conn, res) => {
-    try {
-      const [ objects ] = conn!.call_finish(res).deepUnpack() as [Record<string, Record<string, unknown>>];
-      for (const [ path, ifaces ] of Object.entries(objects))
-        if ('org.bluez.Battery1' in ifaces) setHasBattery(path, true);
-    } catch { }
-  });
-
-const hook = <T extends { connect(s: string, cb: () => void): number; disconnect(id: number): void }>(
-  obj: T | null | undefined, signal: string, cb: () => void,
-) => {
-  const id = obj?.connect(signal, cb);
-  if (id) onCleanup(() => obj!.disconnect(id));
-};
+bluez('/', 'org.freedesktop.DBus.ObjectManager', 'GetManagedObjects', null, (reply) => {
+  const [ objects ] = reply.deepUnpack() as [Record<string, Record<string, unknown>>];
+  for (const [ path, ifaces ] of Object.entries(objects))
+    if ('org.bluez.Battery1' in ifaces) setHasBattery(path, true);
+});
 
 let stopPending = () => { };
 const switchToBluetoothSink = (device: BluetoothService.Device) => {
@@ -94,12 +84,7 @@ wireAdapter(bluetooth.adapter);
 bluetooth.connect('notify::adapter', () => wireAdapter(bluetooth.adapter));
 
 const [ stickyKeys, setStickyKeys ] = createState<ReadonlySet<string>>(new Set());
-const stickyAdd = (address: string) => {
-  if (stickyKeys.peek().has(address)) return;
-  const next = new Set(stickyKeys.peek());
-  next.add(address);
-  setStickyKeys(next);
-};
+const stickyAdd = (address: string) => setMember(stickyKeys, setStickyKeys, address, true);
 const stickyClear = () => stickyKeys.peek().size && setStickyKeys(new Set());
 
 let scanToken = 0;
@@ -159,19 +144,6 @@ const moveDevice = (device: BluetoothService.Device, delta: number) => {
 let focusedDevice: BluetoothService.Device | null = null;
 const focusDevice = () => (focusedDevice && listed(focusedDevice) ? focusedDevice : firstListed());
 
-const focusOnOpen = (self: Gtk.Widget, when: () => boolean) =>
-  onCleanup(currentAsideWindow.subscribe(() => {
-    if (currentAsideWindow.peek() !== 'bluetooth') return;
-    idle(() => currentAsideWindow.peek() === 'bluetooth' && when() && self.grab_focus());
-  }));
-
-const wireMenuLifecycle = () =>
-  onCleanup(currentAsideWindow.subscribe(() => {
-    if (currentAsideWindow.peek() === 'bluetooth') return;
-    if (bluetooth.adapter?.discovering) bluetooth.adapter.stop_discovery();
-    stickyClear();
-  }));
-
 const DeviceRow = ({ device }: { device: BluetoothService.Device }) => {
   const connected = createBinding(device, 'connected');
   const connecting = createBinding(device, 'connecting');
@@ -192,11 +164,7 @@ const DeviceRow = ({ device }: { device: BluetoothService.Device }) => {
     } catch { }
   });
 
-  const refocusLater = (self: Gtk.Widget) => idle(() => {
-    if (currentAsideWindow.peek() === 'bluetooth'
-      && focusDevice() === device && self.get_mapped())
-      self.grab_focus();
-  });
+  const refocusLater = (self: Gtk.Widget) => focusAside('bluetooth', () => focusDevice() === device ? self : null);
 
   return <button hexpand
     canTarget={false}
@@ -212,15 +180,13 @@ const DeviceRow = ({ device }: { device: BluetoothService.Device }) => {
     }}
     onMap={refocusLater}
     $={(self) => {
-      hook(device, 'notify::connected', () => refocusLater(self));
-      hook(device, 'notify::connecting', () => refocusLater(self));
-
+      onCleanup(connected.subscribe(() => refocusLater(self)));
+      onCleanup(connecting.subscribe(() => refocusLater(self)));
       onCleanup(() => {
         if (focusedDevice === device) focusedDevice = null; // row gone
       });
     }}
     onClicked={() => {
-      focusedDevice = device; // keep focus here
       if (device.connected)
         return device.disconnect_device((_, res) => { try { device.disconnect_device_finish(res); } catch { } });
 
@@ -260,13 +226,16 @@ const DeviceRow = ({ device }: { device: BluetoothService.Device }) => {
 };
 
 export default () => {
-  let listBox: Gtk.Box | null = null;
-  wireMenuLifecycle();
-  hook(bluetooth, 'notify::is-powered', () => {
-    if (bluetooth.isPowered && !focusDevice()) listBox?.get_first_child()?.grab_focus();
-  });
+  let power: Gtk.Widget, scan: Gtk.Widget;
+  onCleanup(currentAsideWindow.subscribe(() => {
+    if (currentAsideWindow.peek() === 'bluetooth')
+      return focusAside('bluetooth', () => !bluetooth.isPowered ? power : !focusDevice() ? scan : null);
+    if (bluetooth.adapter?.discovering) bluetooth.adapter.stop_discovery();
+    stickyClear();
+  }));
 
   return <DeviceMenu
+    upToPower
     powered={btPowered}
     powerIcon="bluetooth-active-symbolic"
     scanning={discovering}
@@ -282,9 +251,8 @@ export default () => {
           bluetooth.adapter.stop_discovery();
       });
     }}
-    power={(self) => focusOnOpen(self, () => !bluetooth.isPowered)}
-    scan={(self) => focusOnOpen(self, () => bluetooth.isPowered && !focusDevice())}
-    list={(self) => listBox = self}
+    power={(self) => power = self}
+    scan={(self) => scan = self}
   >
     <For each={visibleDevices}>
       {(device: BluetoothService.Device) => <DeviceRow device={device} />}

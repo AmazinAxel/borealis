@@ -5,13 +5,13 @@ import { notificationItem, invokeAction } from './notificationItem';
 import { createState, For } from 'ags';
 import perMonitor from '../../lib/perMonitor';
 import { focus } from '../focus';
+import { streamingMode } from '../../lib/streamingMode';
 
 const { TOP, RIGHT } = Astal.WindowAnchor;
-import { streamingMode } from '../../lib/streamingMode';
 
 const notifd = Notifd.get_default();
 const map = new Map<number, Notifd.Notification>();
-export const [ notificationlist, setNotificationList ] = createState<Notifd.Notification[]>([])
+export const [ notificationlist, setNotificationList ] = createState<Notifd.Notification[]>([]);
 
 const notify = () => setNotificationList([...map.values()].reverse());
 

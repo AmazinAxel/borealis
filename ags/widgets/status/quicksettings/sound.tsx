@@ -4,7 +4,7 @@ import { Gtk } from 'ags/gtk4';
 import Gdk from 'gi://Gdk';
 import { execAsync } from 'ags/process';
 import { wp, audio, volumeIcon } from '../../../lib/audio';
-import idle from '../../../lib/idle';
+import { idleOnce } from '../../../lib/idle';
 
 const defaultSpeaker = createBinding(audio, 'defaultSpeaker');
 
@@ -88,15 +88,7 @@ const reconcileNow = () => {
   else setSelected([]);
 };
 
-let queued = false;
-const reconcile = () => {
-  if (queued) return;
-  queued = true;
-  idle(() => {
-    queued = false;
-    reconcileNow();
-  });
-};
+const reconcile = idleOnce(reconcileNow);
 
 defaultSpeaker.subscribe(reconcile);
 

@@ -8,6 +8,7 @@ import { createState, createRoot } from 'ags';
 import { wallpaperTexture, randomWallpaper } from '../../lib/wallpaper';
 import { formatNow } from '../../lib/time';
 import { powerKeys, reboot } from '../../lib/power';
+import { type Actions } from '../../lib/inputControl';
 import { sleeping, inhibitSleep, releaseSleep } from '../../lib/logind';
 import app from 'ags/gtk4/app';
 import { timeout, type Timer } from 'ags/time';
@@ -48,7 +49,7 @@ const checkLogin = (entry: Gtk.Entry) => {
   });
 };
 
-const lockKeys: Record<number, () => void> = {
+const lockKeys: Actions = {
   ...powerKeys,
   [Gdk.KEY_d]: () => setDisplay(false),
   [Gdk.KEY_c]: () => { }, // clear input
@@ -142,9 +143,9 @@ export const lockThen = (action: () => void) => {
   afterLock = action;
   lockScreen();
 };
-const unlockScreen = (newWallpaper = false) => {
+const unlockScreen = async (newWallpaper = false) => {
   const win = app.get_window('focusMenu');
-  if (newWallpaper) randomWallpaper();
+  if (newWallpaper) await randomWallpaper();
   if (!win || (win.visible && !newWallpaper)) return lock.unlock();
   const wins = [win, ...(newWallpaper ? app.get_windows().filter((w) => w.name == 'wallpaper') : [])];
   let pending = wins.length;

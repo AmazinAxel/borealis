@@ -52,21 +52,19 @@ window {
 }
 
 window,
-window image {
+window image,
+window button,
+window button label,
+window calendar,
+window scale,
+list,
+list row {
   color: @light1;
 }
 
 list,
 list row {
   background-color: transparent;
-  color: @light1;
-}
-
-window button,
-window button label,
-window calendar,
-window scale {
-  color: @light1;
 }
 
 window scale.fine-tune.horizontal {
@@ -122,7 +120,7 @@ calendar {
 }
 
 separator {
-  margin: 10px 0 10px 0;
+  margin: 10px 0;
   min-height: 2px;
   background-color: @light1;
 }
@@ -131,7 +129,7 @@ separator {
   background-color: rgba(0, 0, 0, 0.3);
 }
 
-/* Sink selector */
+/* Wifi password */
 popover {
   min-width: 320px;
 }
@@ -170,7 +168,6 @@ calendar .today {
   color: @light1;
   opacity: 0.8;
 }
-
 
 list row:selected,
 .searchableDialog button:focus,
@@ -238,7 +235,7 @@ window .backgroundSection .header:first-child {
 }
 
 #focusTask label {
-  margin: 5px 0 0 0;
+  margin: 5px 0 0;
   border: 3px solid @blue3;
   border-top-width: 0;
   font-size: 32px;

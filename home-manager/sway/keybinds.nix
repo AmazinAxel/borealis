@@ -80,9 +80,9 @@ in {
       "control+${mod}+x" = "exec ags request toggleBluetooth";
       "control+${mod}+c" = "exec ags request toggleWifi";
 
-      "control+${mod}+Q" = "exec ags request sideviewPlan";
-      "control+${mod}+W" = "exec ags request sideviewClaude";
-      "control+${mod}+E" = "exec ags request sideviewCustom";
+      "control+${mod}+Q" = "exec ags request 'sideview plan'";
+      "control+${mod}+W" = "exec ags request 'sideview claude'";
+      "control+${mod}+E" = "exec ags request 'sideview custom'";
       "control+${mod}+R" = "exec ags request closeSideview"; # destroy
       "${mod}+A" = "exec ags request toggleSideviewFocus";
       "control+${mod}+Tab" = "exec ags request hideSideview"; # just hides

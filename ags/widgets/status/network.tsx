@@ -4,10 +4,10 @@ import { execAsync } from 'ags/process';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Pango from 'gi://Pango';
-import { currentAsideWindow } from '../../lib/asideState';
+import { currentAsideWindow, focusAside } from '../../lib/asideState';
 import { streamingMode } from '../../lib/streamingMode';
 import { bus, iwdBus, iwdCall, getObjects, onPropertiesChanged, deviceInterface, stationInterface, networkInterface } from '../../lib/iwd';
-import idle from '../../lib/idle';
+import idle, { idleOnce } from '../../lib/idle';
 import DeviceMenu from '../../lib/deviceMenu';
 
 type WifiNet = { ssid: string, security: string, level: number, known: boolean };
@@ -49,11 +49,7 @@ const focusTarget = () => {
   return listBox?.get_first_child() ?? scanButton;
 };
 
-const focusWifiMenu = () => idle(() => {
-  if (currentAsideWindow.peek() !== 'wifi') return;
-  const target = focusTarget();
-  if (target?.get_mapped()) target.grab_focus();
-});
+const focusWifiMenu = () => focusAside('wifi', focusTarget);
 
 const menuHasFocus = () => {
   const root = listBox?.get_root() as Gtk.Window | null;
@@ -61,16 +57,7 @@ const menuHasFocus = () => {
 };
 
 let subIds: number[] = [];
-let refreshQueued = false;
-
-const queueRefresh = () => {
-  if (refreshQueued) return;
-  refreshQueued = true;
-  idle(() => {
-    refreshQueued = false;
-    refresh();
-  });
-};
+const queueRefresh = idleOnce(() => refresh());
 
 const watchIwd = () => { // update dynamically
   if (subIds.length) return;
@@ -245,7 +232,6 @@ const NetworkRow = ({ path }: { path: string }) => {
         : track(connected) === path ? ['active']
           : [])}
     onClicked={(self) => {
-      focusedPath = path; // keep focus here through the reorder
       if (connecting.peek() === path) return;
       const { security, known } = net.peek();
       if (connected.peek() === path) {

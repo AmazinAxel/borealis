@@ -1,10 +1,11 @@
 import { Astal, Gtk } from 'ags/gtk4';
 import { createComputed, createState } from 'ags';
 import { swaySubscribe, swayTree } from '../lib/sway';
-const { TOP, LEFT } = Astal.WindowAnchor;
 import app from 'ags/gtk4/app';
 import perMonitor from '../lib/perMonitor';
 import OutTransition, { createFlash } from '../lib/outTransition';
+
+const { TOP, LEFT } = Astal.WindowAnchor;
 
 const IDS = [...Array(9).keys()].map((i) => i + 1);
 

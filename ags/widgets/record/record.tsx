@@ -3,25 +3,15 @@ import Gdk from 'gi://Gdk';
 import app from 'ags/gtk4/app';
 import BackgroundSection from '../../lib/backgroundSection';
 import { recMic, setRecMic, recQuality, startRec, setRecQuality, isRec, saveClip } from './service';
-import inputControl from '../../lib/inputControl';
+import inputControl, { type Actions } from '../../lib/inputControl';
 
-const handleKeys = (_ctrl: Gtk.EventControllerKey, key: number) => {
-  switch (Gdk.keyval_to_lower(key)) {
-    case Gdk.KEY_space: // start recording
-      startRec();
-      app.get_window('recordMenu')?.set_visible(false);
-      break;
-    case Gdk.KEY_c: // clip & save last 30 seconds
-      saveClip();
-      app.get_window('recordMenu')?.set_visible(false);
-      break;
-    case Gdk.KEY_r: // toggle microphone input
-      setRecMic(!recMic.peek());
-      break;
-    case Gdk.KEY_q: // toggle quality
-      setRecQuality(recQuality.peek() == 'Medium' ? 'Ultra' : 'Medium');
-      break;
-  }
+const hide = () => app.get_window('recordMenu')?.set_visible(false);
+
+const actions: Actions = {
+  [Gdk.KEY_space]: () => { startRec(); hide(); }, // start recording
+  [Gdk.KEY_c]: () => { saveClip(); hide(); }, // clip & save last 30 seconds
+  [Gdk.KEY_r]: () => setRecMic(!recMic.peek()), // toggle microphone input
+  [Gdk.KEY_q]: () => setRecQuality(recQuality.peek() == 'Medium' ? 'Ultra' : 'Medium'), // toggle quality
 };
 
 export default () => inputControl('recordMenu', () =>
@@ -34,7 +24,7 @@ export default () => inputControl('recordMenu', () =>
       </box>
     }
   />,
-  { onKeyPressed: handleKeys }
+  { actions }
 );
 
 export const RecordingIndicator = () =>

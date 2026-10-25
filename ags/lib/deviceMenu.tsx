@@ -1,26 +1,32 @@
 import { Gtk } from 'ags/gtk4';
 import { type Accessor } from 'ags';
+import { setUpExit } from './wrapFocus';
 
-export default ({ powered, powerIcon, scanning, scanSensitive, onPower, onScan, power, scan, list, children }: {
+export default ({ powered, powerIcon, scanning, scanSensitive, upToPower, onPower, onScan, power, scan, list, children }: {
   powered: Accessor<boolean>,
   powerIcon: string | Accessor<string>,
   scanning: Accessor<boolean>,
   scanSensitive?: Accessor<boolean>,
+  upToPower?: boolean,
   onPower: () => void,
   onScan: () => void,
   power?: (self: Gtk.Button) => void,
   scan?: (self: Gtk.Button) => void,
-  list: (self: Gtk.Box) => void,
+  list?: (self: Gtk.Box) => void,
   children: JSX.Element,
-}) =>
-  <box orientation={Gtk.Orientation.VERTICAL}>
+}) => {
+  let powerButton: Gtk.Button;
+  return <box orientation={Gtk.Orientation.VERTICAL}>
     <box>
       <button
         canTarget={false}
         hexpand halign={Gtk.Align.START}
         onClicked={onPower}
         cssClasses={powered((on) => [on ? 'active' : 'unpowered'])}
-        $={power}
+        $={(self) => {
+          powerButton = self;
+          power?.(self);
+        }}
       >
         <image iconName={powerIcon} />
       </button>
@@ -43,8 +49,15 @@ export default ({ powered, powerIcon, scanning, scanSensitive, onPower, onScan, 
       maxContentHeight={500}
       visible={powered}
     >
-      <box orientation={Gtk.Orientation.VERTICAL} $={list}>
+      <box
+        orientation={Gtk.Orientation.VERTICAL}
+        $={(self) => {
+          if (upToPower) setUpExit(self, powerButton);
+          list?.(self);
+        }}
+      >
         {children}
       </box>
     </scrolledwindow>
   </box>;
+};

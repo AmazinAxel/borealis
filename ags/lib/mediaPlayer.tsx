@@ -80,17 +80,15 @@ export const initMedia = () => {
 };
 
 let scrollAcc = 0;
+export const mediaScroll = (self: Gtk.EventControllerScroll, _dx: number, dy: number) => {
+  scrollAcc -= scrollStep(self, dy, 5, 0.2);
+  const n = Math.trunc(scrollAcc);
+  if (!n) return;
+  scrollAcc -= n;
+  mpd(`volume ${n}`);
+};
+
 export const Media = () =>
   <box name="mediaBtn">
-    <Gtk.EventControllerScroll
-      flags={Gtk.EventControllerScrollFlags.VERTICAL}
-      onScroll={(self, _dx, dy) => {
-        scrollAcc -= scrollStep(self, dy, 5, 0.2);
-        const n = Math.trunc(scrollAcc);
-        if (!n) return;
-        scrollAcc -= n;
-        mpd(`volume ${n}`);
-      }}
-    />
     <image iconName={isPlaying((v) => v ? 'media-playback-pause-symbolic' : 'media-playback-start-symbolic')} />
   </box>;

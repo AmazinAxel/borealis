@@ -5,7 +5,7 @@ import app from 'ags/gtk4/app';
 import GLib from 'gi://GLib';
 import Gdk from 'gi://Gdk';
 import BackgroundSection from '../../lib/backgroundSection';
-import inputControl from '../../lib/inputControl';
+import inputControl, { type Actions } from '../../lib/inputControl';
 import { notifySend } from '../../lib/notifySend';
 import { copyUri } from '../../lib/clipboard';
 import { tmpDir } from './clipboardItem';
@@ -58,16 +58,9 @@ export const openCompress = (file: string, id: string) => {
   app.get_window('compress')?.set_visible(true);
 };
 
-const handleKeys = (_ctrl: Gtk.EventControllerKey, key: number) => {
-  switch (key) {
-    case Gdk.KEY_Tab: // change size
-      setTarget((target.peek() + 1) % targets.length);
-      return true;
-    case Gdk.KEY_Return: // compress!!
-      compress();
-      return true;
-  }
-  return false;
+const actions: Actions = {
+  [Gdk.KEY_Tab]: () => setTarget((target.peek() + 1) % targets.length), // change size
+  [Gdk.KEY_Return]: compress, // compress!!
 };
 
 export default () => inputControl('compress', () =>
@@ -77,4 +70,4 @@ export default () => inputControl('compress', () =>
       halign={Gtk.Align.CENTER} valign={Gtk.Align.CENTER}
       label={target((t) => `${targets[t]}MB`)} />}
   />,
-  { onKeyPressed: handleKeys });
+  { actions });

@@ -9,7 +9,7 @@ import Gdk from 'gi://Gdk';
 import { ClipboardItem, entryPath, cacheDir, videoExts, binaryData, decode } from './clipboardItem';
 import { openCompress } from './compress';
 import BackgroundSection from '../../lib/backgroundSection';
-import inputControl from '../../lib/inputControl';
+import inputControl, { type Actions } from '../../lib/inputControl';
 import listDir from '../../lib/listDir';
 import { wrapIndex } from '../../lib/wrapFocus';
 import { streamingMode } from '../../lib/streamingMode';
@@ -142,7 +142,13 @@ const withFile = (want: ((f: string) => boolean) | null, action: (file: string, 
   decode(id, path).then(run).catch(() => { });
 };
 
-const actions: Record<number, () => void> = {
+const actions: Actions = {
+  [Gdk.KEY_Return]: () => selectedRow()?.activate(),
+  [Gdk.KEY_Up]: () => moveSelection(-1),
+  [Gdk.KEY_Down]: () => moveSelection(1),
+};
+
+const ctrlActions: Actions = {
   [Gdk.KEY_c]: () => visibleRows()[1]?.activate(), // copy 2nd recent entry
   [Gdk.KEY_e]: () => withFile((f) => !videoExts.test(f), (f) => execAsync(['swappy', '-f', f])),
   [Gdk.KEY_g]: () => withFile(null, (f) => execAsync(['gthumb', f])),
@@ -152,20 +158,6 @@ const actions: Record<number, () => void> = {
     execAsync(['bash', '-c', `cliphist wipe && rm -rf ${cacheDir}/* && mkdir -p ${cacheDir}`]);
     hide();
   },
-};
-
-const handleKeys = (_ctrl: Gtk.EventControllerKey, key: number, _keycode: number, state: Gdk.ModifierType) => {
-  if (key == Gdk.KEY_Return) {
-    selectedRow()?.activate();
-    return true;
-  }
-  if (key == Gdk.KEY_Up || key == Gdk.KEY_Down) {
-    moveSelection(key == Gdk.KEY_Down ? 1 : -1);
-    return true;
-  }
-  const action = (state & Gdk.ModifierType.CONTROL_MASK) ? actions[Gdk.keyval_to_lower(key)] : undefined;
-  action?.();
-  return !!action;
 };
 
 export default () => inputControl('clipboard', () =>
@@ -192,7 +184,8 @@ export default () => inputControl('clipboard', () =>
   />,
   {
     onShow: selectTop,
-    onKeyPressed: handleKeys,
+    actions,
+    ctrlActions,
     searchable: true,
     focus: () => textBox,
   });

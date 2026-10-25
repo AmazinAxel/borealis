@@ -34,41 +34,39 @@ const decode = (path: string, p: GdkPixbuf.Pixbuf): Wallpaper => {
 };
 
 let current = '';
-let next: Wallpaper | null = null;
 
 const pick = () => {
   const files = listFiles('/home/alec/Wallpapers').filter((f) => f != current);
   return files.length ? files[Math.floor(Math.random() * files.length)] : null;
 };
 
-const preload = () => {
-  next = null;
-  const path = pick();
-  if (!path) return;
+const load = (path: string | null) => new Promise<Wallpaper | null>((resolve) => {
+  if (!path) return resolve(null);
   try {
     GdkPixbuf.Pixbuf.new_from_stream_async(Gio.File.new_for_path(path).read(null), null, (_, res) => {
       try {
-        next = decode(path, GdkPixbuf.Pixbuf.new_from_stream_finish(res));
-      } catch { }
+        resolve(decode(path, GdkPixbuf.Pixbuf.new_from_stream_finish(res)));
+      } catch {
+        resolve(null);
+      }
     });
-  } catch { }
-};
-
-export const randomWallpaper = () => {
-  let w = next;
-  if (!w) {
-    const path = pick();
-    try {
-      if (path) w = decode(path, GdkPixbuf.Pixbuf.new_from_file(path));
-    } catch { }
+  } catch {
+    resolve(null);
   }
+});
+
+let next = load(pick());
+let queue = Promise.resolve();
+
+export const randomWallpaper = () => queue = queue.then(async () => {
+  const w = await next ?? await load(pick());
   if (w) {
     current = w.path;
     setWallpaperTexture(w.texture);
     setWallpaperLight(w.light);
   }
-  preload();
-};
+  next = load(pick());
+}).catch(() => { });
 
 export default () => perMonitor((monitor) =>
   <window

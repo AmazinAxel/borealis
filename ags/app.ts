@@ -11,7 +11,7 @@ import { Gtk } from 'ags/gtk4';
 import { execAsync } from 'ags/process';
 
 import status, { setStatusMargin } from './widgets/status/status';
-import sideview, { showPage, closeSideview, hideSideview, toggleSideviewFocus, toggleSideviewSize } from './widgets/sideview';
+import sideview, { showPage, closeSideview, hideSideview, toggleSideviewFocus, toggleSideviewSize, type PageName } from './widgets/sideview';
 import clipboard from './widgets/clipboard/clipboard';
 import compress from './widgets/clipboard/compress';
 import emojiPicker from './widgets/emojiPicker';
@@ -34,7 +34,7 @@ import { readFileAsync } from 'ags/file';
 import { streamingMode, setStreamingMode } from './lib/streamingMode';
 import workspaces from './widgets/workspaces';
 import asideStatusWindow from './lib/asideStatusWindow';
-import { setAsideWindow, closeAsideWindow, currentAsideWindow, setCurrentAsideWindow } from './lib/asideState';
+import { setAsideWindow, closeAsideWindow } from './lib/asideState';
 
 const media: Record<string, () => void> = {
   next: () => updTrack('next'),
@@ -50,9 +50,7 @@ const requests: Record<string, (arg?: string) => void> = {
   lock: lockScreen,
   invokeOldestNotif: (arg) => invokeOldestNotification(Number(arg ?? 0)),
   toggleSideviewSize,
-  sideviewPlan: () => showPage('plan'),
-  sideviewClaude: () => showPage('claude'),
-  sideviewCustom: () => showPage('custom'),
+  sideview: (arg) => showPage(arg as PageName),
   closeSideview,
   hideSideview,
   toggleSideviewFocus,
@@ -61,9 +59,7 @@ const requests: Record<string, (arg?: string) => void> = {
   toggleQuicksettings: () => setAsideWindow('quickSettings'),
   toggleCalendar: () => setAsideWindow('calendar'),
   toggleBluetooth: () => setAsideWindow('bluetooth'),
-  toggleWifi: () => currentAsideWindow.peek() === 'wifi'
-    ? closeAsideWindow()
-    : setCurrentAsideWindow('wifi'),
+  toggleWifi: () => setAsideWindow('wifi'),
   closeAsideStatusMenuWidget: closeAsideWindow,
   toggleInfoArea: () => {
     app.toggle_window('status');
@@ -107,10 +103,8 @@ app.start({
   main() {
     Gtk.Settings.get_default()!.gtkImModule = 'simple'; // fix launcher errors
 
+    const wallpaperReady = randomWallpaper();
     focusMenu();
-    app.get_window('focusMenu')?.set_visible(true);
-    wallpaper();
-    randomWallpaper();
     status();
     sideview();
     clipboard();
@@ -131,6 +125,11 @@ app.start({
     initMedia();
     reminders();
     startClippingService();
+
+    wallpaperReady.then(() => {
+      wallpaper();
+      app.get_window('focusMenu')?.set_visible(true);
+    });
   },
   requestHandler(argv, respond) {
     const [ cmd, arg ] = argv.join(' ').split(' ');

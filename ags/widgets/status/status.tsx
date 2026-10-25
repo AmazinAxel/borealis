@@ -6,7 +6,7 @@ import scrollStep from '../../lib/scrollStep';
 import { Time } from './modules/time';
 import { Status } from './modules/statusIcons';
 import { Mpris } from './modules/mpris';
-import { Media, playlistClass } from '../../lib/mediaPlayer';
+import { Media, mediaScroll, playlistClass } from '../../lib/mediaPlayer';
 import { RecordingIndicator } from '../record/record';
 
 const { BOTTOM, LEFT } = Astal.WindowAnchor;
@@ -27,6 +27,10 @@ export default () =>
         name="media"
         cssClasses={playlistClass((p) => ['statusElement', p])}
       >
+        <Gtk.EventControllerScroll
+          flags={Gtk.EventControllerScrollFlags.VERTICAL}
+          onScroll={mediaScroll}
+        />
         <Media />
         <Mpris />
       </box>

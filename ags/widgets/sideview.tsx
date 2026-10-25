@@ -56,7 +56,7 @@ const getNetworkSession = () => {
 };
 
 const stack = new Gtk.Stack();
-const webviews: Partial<Record<PageName, WebKitT.WebView>> = {};
+let webviews: Partial<Record<PageName, WebKitT.WebView>> = {};
 let currentPage: PageName | null = null;
 let pushedAside = false; // better focus behavior
 
@@ -95,13 +95,8 @@ const PASTE_SHIM_JS = `(function(){
 const ensurePage = (name: PageName) => {
   if (webviews[name]) return;
   const contentManager = new WebKit.UserContentManager();
-  contentManager.add_script(WebKit.UserScript.new(
-    PASTE_SHIM_JS,
-    WebKit.UserContentInjectedFrames.ALL_FRAMES,
-    WebKit.UserScriptInjectionTime.START,
-    null,
-    null
-  ));
+  contentManager.add_script(WebKit.UserScript.new(PASTE_SHIM_JS,
+    WebKit.UserContentInjectedFrames.ALL_FRAMES, WebKit.UserScriptInjectionTime.START, null, null));
 
   const webview = new WebKit.WebView({
     network_session: getNetworkSession(),
@@ -168,13 +163,12 @@ export const hideSideview = () => {
 // destroys all webviews
 export const closeSideview = () => {
   hideSideview();
-  for (const name of Object.keys(webviews) as PageName[]) {
-    const webview = webviews[name]!;
+  for (const webview of Object.values(webviews)) {
     stack.remove(webview);
     webview.terminate_web_process();
     webview.run_dispose();
-    delete webviews[name];
   }
+  webviews = {};
   currentPage = null;
 
   if (networkSession) {
