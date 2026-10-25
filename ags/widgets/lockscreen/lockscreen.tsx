@@ -1,4 +1,4 @@
-import { Gtk } from 'ags/gtk4';
+import { Astal, Gtk } from 'ags/gtk4';
 import Auth from 'gi://AstalAuth';
 import SessionLock from 'gi://Gtk4SessionLock';
 import Gdk from 'gi://Gdk';
@@ -120,12 +120,15 @@ lock.connect('locked', () => {
   app.get_window('powermenu')?.set_visible(false);
   afterLock?.();
   afterLock = null;
+  prepareUnlock();
   // move cursor up a pixel so that it updates and disappears
   swayCommand('seat - cursor move 1 1, seat - cursor move -1 -1');
 });
 lock.connect('unlocked', () => {
   setLocked(false);
   setAuthFailed('');
+  const win = app.get_window('focusMenu') as Astal.Window | null;
+  if (win) win.keymode = Astal.Keymode.EXCLUSIVE;
 });
 lock.connect('failed', () => {
   setLocked(false);
@@ -143,23 +146,16 @@ export const lockThen = (action: () => void) => {
   afterLock = action;
   lockScreen();
 };
-const unlockScreen = async () => {
-  const win = app.get_window('focusMenu');
+const unlockScreen = () => lock.unlock();
+const prepareUnlock = async () => {
+  const win = app.get_window('focusMenu') as Astal.Window | null;
+  if (win) win.keymode = Astal.Keymode.NONE;
   await randomWallpaper();
-  if (!win) return lock.unlock();
-  const wins = [win, ...app.get_windows().filter((w) => w.name == 'wallpaper')];
-  let pending = wins.length;
-  for (const w of wins) {
+  if (!win) return;
+  if (!lock.is_locked()) win.keymode = Astal.Keymode.EXCLUSIVE;
+  for (const w of [win, ...app.get_windows().filter((w) => w.name == 'wallpaper')]) {
     w.set_visible(false);
     w.set_visible(true);
-    const clock = w.get_frame_clock()!;
-    const id = clock.connect('after-paint', () => {
-      clock.disconnect(id);
-      if (--pending) return;
-      w.get_display().sync();
-      lock.unlock();
-    });
-    w.queue_draw();
   }
 };
 

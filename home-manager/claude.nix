@@ -210,6 +210,28 @@ in {
       - No subagents unless asked. Think hard only when the problem needs it.
     '';
 
+    skills.optimize = ''
+      ---
+      name: optimize
+      description: Whole-project optimization and cleanup pass
+      disable-model-invocation: true
+      ---
+
+      Thorough optimization + cleanup of the entire project in the current directory. Goal: fastest, leanest, most responsive result with zero bloat.
+
+      1. Map: read the project's CLAUDE.md/README/build files, then every source/config file. Identify language, runtime, target constraints (memory, CPU, startup, binary size, latency) and how to build/test/typecheck.
+      2. Audit everything, file by file:
+         - Performance: hot paths, startup cost, blocking/sync work, redundant computation, polling where events exist, unnecessary allocations/copies, eager loading that could be lazy (or vice versa), algorithmic complexity.
+         - Memory/size: leaks, unbounded caches/buffers, oversized types, duplicated data, heavy dependencies for small uses.
+         - Bloat: dead code, unused imports/deps/options/files, commented-out code, needless abstraction/indirection, wrappers that add nothing, defensive code for impossible cases.
+         - Duplication: repeated logic/config/values that should be one shared definition.
+         - Simplicity: convoluted control flow, inconsistent naming/idioms, things the language/stdlib/framework/upstream already provides.
+         - Architecture: libraries, frameworks, data flow or structure that a lighter or better-fitting choice would beat. Justify with concrete gains.
+      3. Report findings before editing: ranked by impact, each with file:line, the problem, the fix, and expected gain. Separate safe cleanups from behavior-changing or architectural changes. Ask which to apply.
+      4. Apply approved changes, matching existing style. Preserve behavior unless a change was approved.
+      5. Verify with the project's build/typecheck/tests (never deploy, flash, or rebuild systems). Report results honestly, including anything not verified.
+    '';
+
     context = ''
       - Never run nixos-rebuild or home-manager switch; I build myself.
       - Shell is fish: no bash <(...), use psub or /dev/stdin.
