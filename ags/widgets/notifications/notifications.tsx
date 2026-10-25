@@ -15,8 +15,10 @@ export const [ notificationlist, setNotificationList ] = createState<Notifd.Noti
 
 const notify = () => setNotificationList([...map.values()].reverse());
 
+const agsApps = ['Low battery', 'Focus', 'Pass', 'Compress', 'Sync', 'Cleanup'];
+
 const hidden = (n: Notifd.Notification) =>
-  ((streamingMode.peek() || focus.peek()) && n.appName != 'Low battery')
+  ((streamingMode.peek() || focus.peek()) && !agsApps.includes(n.appName))
   || n.body.startsWith('Failed to connect to server'); // Hide annoying message
 
 notifd.connect('notified', (_, id) => {

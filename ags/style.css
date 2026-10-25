@@ -248,6 +248,11 @@ window .backgroundSection .header:first-child {
   background-color: @blue3;
 }
 
+#compressProgress { background-color: transparent; }
+#compressProgress levelbar trough, #compressProgress levelbar block { min-height: 4px; border-radius: 0; }
+#compressProgress levelbar block.filled { background-color: @green; box-shadow: 0 0 10px @green; }
+#compressProgress levelbar block.empty { background-color: transparent; }
+
 /* Workspace preview */
 #workspaces .statusElement {
   padding: 3px 0;

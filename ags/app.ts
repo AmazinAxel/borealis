@@ -13,7 +13,7 @@ import { execAsync } from 'ags/process';
 import status, { setStatusMargin } from './widgets/status/status';
 import sideview, { showPage, closeSideview, hideSideview, toggleSideviewFocus, toggleSideviewSize, type PageName } from './widgets/sideview';
 import clipboard from './widgets/clipboard/clipboard';
-import compress from './widgets/clipboard/compress';
+import compress, { compressProgress } from './widgets/clipboard/compress';
 import emojiPicker from './widgets/emojiPicker';
 import launcher from './widgets/launcher/launcher';
 import { focusMenu, focusTask, toggleFocus, cancelBreak } from './widgets/focus';
@@ -110,6 +110,7 @@ app.start({
     sideview();
     clipboard();
     compress();
+    compressProgress();
     emojiPicker();
     recordMenu();
     focusTask();

@@ -3,13 +3,13 @@ import { swayOutputs } from '../../lib/sway';
 import AstalIO from 'gi://AstalIO';
 import GLib from 'gi://GLib';
 import Battery from 'gi://AstalBattery';
-import { notifySend } from '../../lib/notifySend';
+// import { notifySend } from '../../lib/notifySend';
 import { copyUri } from '../../lib/clipboard';
 import { locked } from '../lockscreen/lockscreen';
 
 const captureDir = '/home/alec/Videos/Captures';
 const clipsDir = '/home/alec/Videos/Clips';
-const quote = GLib.shell_quote;
+// const quote = GLib.shell_quote;
 
 const now = () => GLib.DateTime.new_now_local().format('%Y-%m-%d_%H-%M-%S');
 
@@ -86,14 +86,14 @@ export const stopRec = () => {
   rec = null;
   setIsRec(false);
 
-  notifySend({
-    appName: 'Recording',
-    title: 'Screen recording saved',
-    actions: [
-      { id: 1, label: 'Open Captures', command: `nemo ${quote(captureDir)}` },
-      { id: 2, label: 'View', command: `xdg-open ${quote(file)}` },
-    ],
-  });
+  // notifySend({
+  //   appName: 'Recording',
+  //   title: 'Screen recording saved',
+  //   actions: [
+  //     { id: 1, label: 'Open Captures', command: `nemo ${quote(captureDir)}` },
+  //     { id: 2, label: 'View', command: `xdg-open ${quote(file)}` },
+  //   ],
+  // });
 
   startClippingService(); // Restart screen clipping
 };
