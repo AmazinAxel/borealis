@@ -51,29 +51,22 @@ const focusTarget = () => {
 
 const focusWifiMenu = () => focusAside('wifi', focusTarget);
 
-let subIds: number[] = [];
+let showAll = false;
 const queueRefresh = idleOnce(() => refresh());
 
 const watchIwd = () => { // update dynamically
-  if (subIds.length) return;
   refresh();
 
-  subIds.push(onPropertiesChanged((path, iface, changed) => {
+  onPropertiesChanged((path, iface, changed) => {
     if (iface === stationInterface && path === stationPath && changed.Scanning === false) setScanning(false);
     queueRefresh();
-  }));
+  });
 
-  subIds.push(bus.signal_subscribe(
+  bus.signal_subscribe(
     iwdBus, 'org.freedesktop.DBus.ObjectManager', null,
     null, null, Gio.DBusSignalFlags.NONE,
     queueRefresh,
-  ));
-};
-
-const unwatchIwd = () => {
-  for (const id of subIds) bus.signal_unsubscribe(id);
-  subIds = [];
-  setScanning(false);
+  );
 };
 
 const clear = () => {
@@ -116,11 +109,13 @@ const refresh = async () => {
       const p = objects[path]?.[networkInterface];
       if (!p?.['Name']) continue;
       const kn = p['KnownNetwork'];
+      const known = typeof kn === 'string' && kn !== '' && kn !== '/';
+      if (!known && !showAll && path !== current && path !== pending) continue;
       next[path] = {
         ssid: p['Name'] as string,
         security: p['Type'] as string,
         level: sigLevel(mbm),
-        known: typeof kn === 'string' && kn !== '' && kn !== '/',
+        known,
       };
     }
 
@@ -152,6 +147,8 @@ const toggleWifi = async () => {
 const scan = async () => {
   if (scanning.peek()) return;
   setScanning(true);
+  showAll = true;
+  queueRefresh();
   try {
     if (!stationPath) await refresh();
     await iwdCall(stationPath, stationInterface, 'Scan').catch((e) => {
@@ -171,7 +168,11 @@ const join = (path: string, attempt: Promise<unknown>) => {
   });
 };
 
-currentAsideWindow.subscribe(() => currentAsideWindow.peek() === 'wifi' ? watchIwd() : unwatchIwd());
+watchIwd();
+currentAsideWindow.subscribe(() => {
+  if (currentAsideWindow.peek() !== 'wifi') showAll = false;
+  queueRefresh();
+});
 
 const NetworkRow = ({ path }: { path: string }) => {
   const net = nets((m) => m[path] ?? { ssid: '', security: 'open', level: 0, known: false });
