@@ -32,7 +32,7 @@ export default () =>
       cssClasses={['asideStatusWidget']}
     >
       {Object.entries(menus).map(([ name, Content ]) =>
-        <box visible={currentAsideWindow((a) => a === name)}>
+        <box widthRequest={300} visible={currentAsideWindow((a) => a === name)}>
           <Content />
         </box>
       )}

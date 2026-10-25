@@ -51,11 +51,6 @@ const focusTarget = () => {
 
 const focusWifiMenu = () => focusAside('wifi', focusTarget);
 
-const menuHasFocus = () => {
-  const root = listBox?.get_root() as Gtk.Window | null;
-  return !!root?.get_focus()?.get_mapped();
-};
-
 let subIds: number[] = [];
 const queueRefresh = idleOnce(() => refresh());
 
@@ -137,7 +132,7 @@ const refresh = async () => {
     if (JSON.stringify(next) !== JSON.stringify(nets.peek())) setNets(next);
     if (order.join() !== paths.peek().join()) {
       setPaths(order);
-      if (!menuHasFocus()) focusWifiMenu();
+      if (!listBox?.get_root()?.get_focus()?.is_ancestor(listBox)) focusWifiMenu();
     }
   } catch { }
 };
@@ -258,7 +253,7 @@ const NetworkRow = ({ path }: { path: string }) => {
   >
     <box spacing={10}>
       <image iconName={net((n) => `network-wireless-signal-${levels[n.level]}-symbolic`)} />
-      <label hexpand halign={Gtk.Align.START} label={net((n) => n.ssid)} ellipsize={Pango.EllipsizeMode.END} />
+      <label hexpand xalign={0} label={net((n) => n.ssid)} ellipsize={Pango.EllipsizeMode.END} maxWidthChars={1} />
       <image visible={net((n) => n.security !== 'open')} iconName="network-wireless-encrypted-symbolic" />
     </box>
   </button>;
@@ -278,6 +273,7 @@ export default () =>
         powerIcon={wifiOn((on) => on ? 'network-wireless-symbolic' : 'network-wireless-offline-symbolic')}
         scanning={scanning}
         scanSensitive={scanning((s) => !s)}
+        empty={paths((p) => !p.length)}
         onPower={toggleWifi}
         onScan={scan}
         power={(self) => {

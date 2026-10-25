@@ -214,7 +214,7 @@ const DeviceRow = ({ device }: { device: BluetoothService.Device }) => {
     }} />
     <box hexpand valign={Gtk.Align.CENTER} spacing={10}>
       <image iconName={device.icon + '-symbolic'} />
-      <label label={alias(nameSubstitute)} halign={Gtk.Align.START} hexpand ellipsize={Pango.EllipsizeMode.END} />
+      <label label={alias(nameSubstitute)} xalign={0} hexpand ellipsize={Pango.EllipsizeMode.END} maxWidthChars={1} />
       <label
         visible={createComputed((track) => track(connected) && track(battery) >= 0
           && track(batteryPaths).has(devicePath(device)))}

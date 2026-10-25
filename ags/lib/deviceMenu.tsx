@@ -1,12 +1,13 @@
 import { Gtk } from 'ags/gtk4';
-import { type Accessor } from 'ags';
+import { createComputed, type Accessor } from 'ags';
 import { setUpExit } from './wrapFocus';
 
-export default ({ powered, powerIcon, scanning, scanSensitive, upTo, onPower, onScan, power, scan, list, children }: {
+export default ({ powered, powerIcon, scanning, scanSensitive, empty, upTo, onPower, onScan, power, scan, list, children }: {
   powered: Accessor<boolean>,
   powerIcon: string | Accessor<string>,
   scanning: Accessor<boolean>,
   scanSensitive?: Accessor<boolean>,
+  empty?: Accessor<boolean>,
   upTo: 'power' | 'scan',
   onPower: () => void,
   onScan: () => void,
@@ -16,11 +17,12 @@ export default ({ powered, powerIcon, scanning, scanSensitive, upTo, onPower, on
   children: JSX.Element,
 }) => {
   let powerButton: Gtk.Button, scanButton: Gtk.Button;
+  const showList = createComputed((track) => track(powered) && !(empty && track(empty)));
   return <box orientation={Gtk.Orientation.VERTICAL}>
     <box>
       <button
         canTarget={false}
-        hexpand halign={Gtk.Align.START}
+        hexpand halign={powered((on) => on ? Gtk.Align.START : Gtk.Align.CENTER)}
         onClicked={onPower}
         cssClasses={powered((on) => [on ? 'active' : 'unpowered'])}
         $={(self) => {
@@ -44,13 +46,13 @@ export default ({ powered, powerIcon, scanning, scanSensitive, upTo, onPower, on
         <image iconName="view-refresh-symbolic" />
       </button>
     </box>
-    <Gtk.Separator visible={powered} />
+    <Gtk.Separator visible={showList} />
     <scrolledwindow
       hscrollbarPolicy={Gtk.PolicyType.NEVER}
       hexpand vexpand
       propagateNaturalWidth propagateNaturalHeight
       maxContentHeight={500}
-      visible={powered}
+      visible={showList}
     >
       <box
         orientation={Gtk.Orientation.VERTICAL}

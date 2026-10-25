@@ -2,6 +2,7 @@ import Wp from 'gi://AstalWp';
 import { createBinding, createState, For } from 'ags';
 import { Gtk } from 'ags/gtk4';
 import Gdk from 'gi://Gdk';
+import Pango from 'gi://Pango';
 import { execAsync } from 'ags/process';
 import { wp, audio, volumeIcon } from '../../../lib/audio';
 import { idleOnce } from '../../../lib/idle';
@@ -160,7 +161,7 @@ export const SinkSelector = () =>
           />
           <box>
             <image visible={isSelected} iconName="emblem-default-symbolic" marginEnd={7} />
-            <label halign={Gtk.Align.START} hexpand label={nameSubstitute(speaker.description)} />
+            <label xalign={0} hexpand label={nameSubstitute(speaker.description)} ellipsize={Pango.EllipsizeMode.END} maxWidthChars={1} />
           </box>
         </button>
       }}

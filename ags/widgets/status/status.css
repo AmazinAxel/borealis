@@ -36,7 +36,7 @@
 .time .date,
 .time .day {
   color: @blue2;
-  text-shadow: var(--shadow), 0 0 3px @blue3;
+  text-shadow: var(--shadow), 0 0 8px @blue3;
   margin: 0;
   font-size: 22px;
   line-height: 26px;
@@ -83,6 +83,16 @@
 }
 
 #asideStatus scrolledwindow>viewport>box {
+  padding: 5px;
+}
+
+#asideStatus calendar button {
+  margin: 0 3px;
+  padding-left: 3px;
+  padding-right: 3px;
+}
+
+.sinkSelector {
   padding: 5px;
 }
 

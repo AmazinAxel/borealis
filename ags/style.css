@@ -75,6 +75,8 @@ window scale.fine-tune.horizontal {
 window scale trough {
   background: @light1;
   min-height: 5px;
+  margin: 0 10px;
+  box-shadow: -10px 0 @blue2, 10px 0 @light1;
 }
 
 window scale highlight {
@@ -84,7 +86,7 @@ window scale highlight {
 window scale slider {
   min-width: 9px;
   min-height: 9px;
-  margin: -7px;
+  margin: -7px -9px;
   background: @light1;
   border: 5px solid @blue2;
   box-shadow: 0 0 4px alpha(@dark1, 0.8);
@@ -119,6 +121,15 @@ calendar {
   margin: 0;
 }
 
+calendar>grid>label.day-name {
+  font-size: 14px;
+}
+
+calendar>grid>label.day-number {
+  padding-left: 7px;
+  padding-right: 7px;
+}
+
 separator {
   margin: 10px 0;
   min-height: 2px;
@@ -134,9 +145,9 @@ popover {
   min-width: 320px;
 }
 
-popover.background > arrow,
-popover.background > contents,
-popover.background:backdrop > contents {
+popover.background>arrow,
+popover.background>contents,
+popover.background:backdrop>contents {
   border-color: @blue3;
 }
 
@@ -165,6 +176,8 @@ calendar .today {
 }
 
 calendar .today {
+  border: none;
+  box-shadow: inset 0 0 0 1px @blue1, 0 0 5px 3px @blue3;
   color: @light1;
   opacity: 0.8;
 }
@@ -248,10 +261,24 @@ window .backgroundSection .header:first-child {
   background-color: @blue3;
 }
 
-#compressProgress { background-color: transparent; }
-#compressProgress levelbar trough, #compressProgress levelbar block { min-height: 4px; border-radius: 0; }
-#compressProgress levelbar block.filled { background-color: @green; box-shadow: 0 0 10px @green; }
-#compressProgress levelbar block.empty { background-color: transparent; }
+#compressProgress {
+  background-color: transparent;
+}
+
+#compressProgress levelbar trough,
+#compressProgress levelbar block {
+  min-height: 4px;
+  border-radius: 0;
+}
+
+#compressProgress levelbar block.filled {
+  background-color: @green;
+  box-shadow: 0 0 10px @green;
+}
+
+#compressProgress levelbar block.empty {
+  background-color: transparent;
+}
 
 /* Workspace preview */
 #workspaces .statusElement {
