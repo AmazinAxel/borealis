@@ -261,7 +261,7 @@ const NetworkRow = ({ path }: { path: string }) => {
 };
 
 export default () =>
-  <box orientation={Gtk.Orientation.VERTICAL}>
+  <box orientation={Gtk.Orientation.VERTICAL} hexpand>
     <label
       visible={streamingMode}
       label="Streaming mode enabled"

@@ -131,6 +131,15 @@ const firstListed = () => {
   return devices.find((d) => d.connected && listed(d)) ?? devices.find(listed) ?? null;
 };
 
+const noneListed = createComputed((track) => {
+  track(discovering);
+  track(stickyKeys);
+  return !track(visibleDevices).some((d) => {
+    (['alias', 'paired', 'trusted', 'connected'] as const).forEach((p) => track(createBinding(d, p)));
+    return listed(d);
+  });
+});
+
 const knownDevices = () => visibleDevices.peek().filter((d) => isKnown(d) && listed(d));
 const moveDevice = (device: BluetoothService.Device, delta: number) => {
   const list = knownDevices();
@@ -239,6 +248,7 @@ export default () => {
     powered={btPowered}
     powerIcon="bluetooth-active-symbolic"
     scanning={discovering}
+    empty={noneListed}
     onPower={() => bluetooth.toggle()}
     onScan={() => {
       const adapter = bluetooth.adapter;
