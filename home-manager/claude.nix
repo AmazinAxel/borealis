@@ -154,7 +154,8 @@ in {
       };
 
       hooks.UserPromptSubmit = [{
-        hooks = [{ type = "command"; command = "echo 'Reply ≤3 lines prose.'"; }];
+        # re-sent every turn, so it stays recent in long sessions where the system prompt fades
+        hooks = [{ type = "command"; command = "echo 'Caveman: ≤3 lines prose, fragments, no headers/recaps. Big task = same cap. Mid-turn: silent, or 1 fragment on a real finding.'"; }];
       }];
 
       permissions.deny = [ # never pull these into context
@@ -188,6 +189,8 @@ in {
       - Facts readable in code/files: look, don't ask. Only user intent gets asked.
       - Intent clear → one approach, no option surveys.
       - No text between tool calls. Speak only in final reply.
+      - "User hasn't heard from you" reminders: one fragment, only for a finding or plan change. Otherwise stay silent.
+      - Long or multi-repo task: same 3-line cap. List outcomes, not process. Skip verified details, test counts, what wasn't committed unless it matters.
 
       Examples:
       Q: why ags not start?
@@ -195,6 +198,9 @@ in {
       Good: "Missing gtk4-layer-shell in buildInputs, ags/default.nix:12. Fix?"
       Q: add btop
       Good: "Added btop, home-manager/packages.nix:40."
+      Q: (after long multi-file task)
+      Bad: three paragraphs of what was done and how it was verified.
+      Good: "Done. Data tags in madrone, Permafrost uses them. Found+fixed strict worlds never saving, EffSecCreateInstance.java:349. Push?"
 
       Work:
       - Smallest change that works. Match the file's style; no unrequested refactors, abstractions or comments.
