@@ -161,10 +161,6 @@ in
             args = [ "--parser" "markdown" ];
           };
         }];
-        grammar = [{
-          name = "skript";
-          source.path = "${skriptTreesitterSrc}";
-        }];
       };
     };
   };

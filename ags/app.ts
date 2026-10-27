@@ -28,7 +28,7 @@ import { isRec, stopRec, startClippingService } from './widgets/record/service';
 
 import { lockScreen } from './widgets/lockscreen/lockscreen';
 import { monitorBrightness } from './lib/brightness';
-import { initMedia, updTrack, playPause, chngPlaylist } from './lib/mediaPlayer';
+import { updTrack, playPause, chngPlaylist } from './lib/mediaPlayer';
 import wallpaper, { randomWallpaper } from './lib/wallpaper';
 import { readFileAsync } from 'ags/file';
 import { streamingMode, setStreamingMode } from './lib/streamingMode';
@@ -124,7 +124,6 @@ app.start({
     passSave();
 
     monitorBrightness();
-    initMedia();
     reminders();
     startClippingService();
 

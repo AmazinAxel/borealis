@@ -64,6 +64,21 @@ in {
       };
     };
 
+    # tailnet alechomelab:8000
+    sockets.permablot = {
+      wantedBy = [ "sockets.target" ];
+      listenStreams = [ "8000" ];
+    };
+    services.permablot = {
+      requires = [ "permablot.socket" ];
+      after = [ "permablot.socket" ];
+      serviceConfig = {
+        ExecStart = "${pkgs.systemd}/lib/systemd/systemd-socket-proxyd --exit-idle-time=1min permablot.local:80";
+        DynamicUser = true;
+        MemoryMax = "16M";
+      };
+    };
+
     services.sshd.serviceConfig = {
       OOMScoreAdjust = -900; # NEVER OOM SSH
       MemoryMin = "16M";

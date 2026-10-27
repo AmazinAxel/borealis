@@ -41,6 +41,7 @@
   networking = {
     hostName = "alechomelab";
     firewall.allowedTCPPorts = [ 80 445 ]; # webserver, samba
+    firewall.interfaces.tailscale0.allowedTCPPorts = [ 8000 ]; # permablot proxy, tailnet only
     useNetworkd = false; # use nm
     networkmanager = {
       enable = true;
@@ -82,6 +83,7 @@
     avahi = { # need for my iot services and wintergreen!
       enable = true;
       openFirewall = true;
+      nssmdns4 = true; # resolve permablot.local for the proxy (services.nix)
       settings.publish = {
         disable-publishing = false;
         publish-addresses = true;

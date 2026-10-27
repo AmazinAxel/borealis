@@ -15,6 +15,7 @@
     kdePackages.kdenlive
     iotas
     maven
+    orca-slicer
   ];
   programs.steam.enable = true; # Gaming
   services.pipewire.alsa.support32Bit = true; # 32-bit games
@@ -34,6 +35,7 @@
         ".local/share/Steam" ".steam" # Steam
         ".local/share/iotas"
         ".local/share/kdenlive"
+        ".config/OrcaSlicer"
       ];
       files = [ ".config/ponderosa/config.toml" ];
     };

@@ -1,4 +1,4 @@
-{ lib, ... }: let
+{ pkgs, lib, ... }: let
   main = { resolution = "1920x1080@144Hz"; position = "0 0"; };
   right = { position = "3200 0"; scale = "1.5"; };
 in {
@@ -14,7 +14,7 @@ in {
     };
 
     startup = [
-      { command = "sleep 3 && thunderbird"; } # let ags load first
+      { command = "${pkgs.glib.bin}/bin/gdbus wait --session io.Astal.ags && thunderbird"; } # let ags load first
     ];
     assigns."5" = [{ app_id = "thunderbird"; }];
 

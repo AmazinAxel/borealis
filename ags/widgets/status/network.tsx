@@ -52,11 +52,9 @@ const focusTarget = () => {
 const focusWifiMenu = () => focusAside('wifi', focusTarget);
 
 let showAll = false;
-const queueRefresh = idleOnce(() => refresh());
+const queueRefresh = idleOnce(() => currentAsideWindow.peek() === 'wifi' && refresh());
 
 const watchIwd = () => { // update dynamically
-  refresh();
-
   onPropertiesChanged((path, iface, changed) => {
     if (iface === stationInterface && path === stationPath && changed.Scanning === false) setScanning(false);
     queueRefresh();

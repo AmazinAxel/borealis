@@ -53,14 +53,23 @@ const mpd = (...cmds: string[]) => {
 
 const status = async () => Object.fromEntries((await mpd('status')).map((l) => l.split(': ')));
 
-const loadPlaylist = () => mpd('clear', `add "${playlists[playlistIndex.peek()]}"`, 'shuffle');
+let started = false;
+const loadPlaylist = () => {
+  const cmds = ['clear', `add "${playlists[playlistIndex.peek()]}"`, 'shuffle'];
+  if (!started) cmds.unshift('crossfade 2');
+  started = true;
+  return mpd(...cmds);
+};
+const start = () => started || loadPlaylist();
 
 export const updTrack = (direction: MusicAction) => {
+  start();
   mpd(direction == 'next' ? 'next' : 'previous', 'play');
   setIsPlaying(true);
 };
 
 export const playPause = () => {
+  start();
   status().then((s) => mpd(s.state == 'play' ? 'pause 1' : 'play'));
   setIsPlaying(!isPlaying.peek());
 };
@@ -72,11 +81,6 @@ export const chngPlaylist = (direction: MusicAction) => {
   setIsPlaying(false);
   loadPlaylist();
   playPause();
-};
-
-export const initMedia = () => {
-  mpd('crossfade 2');
-  loadPlaylist();
 };
 
 let scrollAcc = 0;

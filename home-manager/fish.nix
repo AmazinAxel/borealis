@@ -70,7 +70,6 @@ in {
         if test "$TERM" = linux
             set -gx STARSHIP_CONFIG ~/.config/starship-tty.toml
         end
-        starship init fish | source
       '';
     };
     starship = {
