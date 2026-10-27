@@ -16,33 +16,13 @@
       url = "github:nix-community/lanzaboote";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    playit = {
-      url = "github:pedorich-n/playit-nixos-module";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     nix-cachyos-kernel.url = "github:xddxdd/nix-cachyos-kernel/release";
 
     # shell
-    ags = {
-      url = "github:aylur/ags";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.astal.follows = "astal";
-    };
-    astal = {
-      url = "github:aylur/astal";
+    flurry = {
+      url = "git+file:///home/alec/Projects/flurry"; # TEMP until pushed
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
-    # my programs
-    homelab = {
-      url = "github:AmazinAxel/homelab";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    wintergreen = {
-      url = "github:AmazinAxel/wintergreen";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    plan.url = "github:AmazinAxel/plan";
 
     # apps
     helix.url = "github:helix-editor/helix"; # no follows so helix.cachix hits
@@ -59,19 +39,26 @@
     };
   };
 
-  outputs = { nixpkgs, ... }@inputs: {
-    # headless devices
-    # nixos-rebuild switch --flake .#<hostname> --sudo --ask-sudo-password --build-host alec@alecpc --target-host alec@<hostname>
-    nixosConfigurations = nixpkgs.lib.genAttrs [
-      "alecslaptop" # Primary laptop
-      "alecolaptop" # Old laptop
-      "alecpc" # Desktop/compute server
-      "alechomelab" # Homelab (Zero 2W)
-      "alecdev" # Pi 4B dev server
-      "alecvps" # VPS
-    ] (host: nixpkgs.lib.nixosSystem {
-      specialArgs = { inherit inputs; };
-      modules = [ ./hosts/${host}/default.nix ];
-    });
+  outputs = inputs: let
+    # keyed so importing several profiles pulls each in once; upstream modules live here since imports can't use module args
+    keyed = name: imports: { key = "borealis/${name}"; inherit imports; };
+    base = { key = "borealis"; _module.args.borealis = inputs; imports = [ ./modules/base.nix ]; };
+    hm = keyed "home-manager" [ inputs.home-manager.nixosModules.home-manager ./modules/home-manager.nix ];
+    persist = keyed "impermanence" [ inputs.impermanence.nixosModules.impermanence ];
+    lanzaboote = keyed "lanzaboote" [ inputs.lanzaboote.nixosModules.lanzaboote ];
+    profile = imports: { imports = [ base ] ++ imports; };
+  in {
+    nixosModules = {
+      default = base;
+      home-manager = profile [ hm ]; # HM without the desktop
+      desktop = profile [ hm persist lanzaboote ./modules/desktop.nix ];
+      laptop = profile [ hm persist lanzaboote ./modules/laptop.nix ];
+      pi = profile [ persist ./modules/pi.nix ];
+    };
+
+    templates.default = {
+      path = ./templates/default;
+      description = "Host flake on borealis";
+    };
   };
 }

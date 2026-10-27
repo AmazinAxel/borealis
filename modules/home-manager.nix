@@ -1,8 +1,6 @@
-{ inputs, ... }: {
-  imports = [ inputs.home-manager.nixosModules.home-manager ];
-
+{ borealis, ... }: {
   home-manager = {
-    extraSpecialArgs = { inherit inputs; };
+    extraSpecialArgs = { inherit borealis; };
     useGlobalPkgs = true; # Faster eval
     useUserPackages = true; # skip nix-env profile install on boot
   };

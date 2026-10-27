@@ -2,12 +2,12 @@
   gtk = {
     enable = true;
     gtk3.bookmarks = [
-      "file:///home/alec/Downloads"
-      "file:///home/alec/Documents"
-      "file:///home/alec/Music"
-      "file:///home/alec/Pictures"
-      "file:///home/alec/Projects"
-      "file:///home/alec/Videos"
+      "file://${config.home.homeDirectory}/Downloads"
+      "file://${config.home.homeDirectory}/Documents"
+      "file://${config.home.homeDirectory}/Music"
+      "file://${config.home.homeDirectory}/Pictures"
+      "file://${config.home.homeDirectory}/Projects"
+      "file://${config.home.homeDirectory}/Videos"
     ];
 
     font = {

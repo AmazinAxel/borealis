@@ -1,6 +1,6 @@
-{ pkgs, ... }: {
+{ pkgs, config, ... }: {
   imports = [ ./desktop.nix ./printing.nix ./bluetooth-audio.nix ];
-  home-manager.users.alec.imports = [ ../home-manager/laptop.nix ];
+  home-manager.users.${config.borealis.user}.imports = [ ../home-manager/laptop.nix ];
 
   boot.initrd = {
     includeDefaultModules = false;
@@ -23,7 +23,7 @@
       "/var/lib/upower"
       "/var/lib/bluetooth" # bt paired devices
     ];
-    users.alec.directories = [
+    users.${config.borealis.user}.directories = [
       ".config/kicad"
       ".local/share/kicad"
       ".FlashPrint5" # FlashPrint slicer

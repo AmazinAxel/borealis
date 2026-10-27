@@ -1,10 +1,12 @@
-{
+{ config, ... }: let
+  inherit (config.borealis) user;
+in {
   imports = [ ./impermanence.nix ];
 
-  # sudo install -Dm600 <(grep '^alec:' /etc/shadow | cut -d: -f2) /passwords/alec
-  # maybe install to /persist/passwords/alec
+  # sudo install -Dm600 <(grep "^$USER:" /etc/shadow | cut -d: -f2) /passwords/<user>
+  # maybe install to /persist/passwords/<user>
   users = {
-    users.alec.hashedPasswordFile = "/persist/passwords/alec";
+    users.${user}.hashedPasswordFile = "/persist/passwords/${user}";
     mutableUsers = false;
   };
 

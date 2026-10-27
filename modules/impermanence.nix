@@ -1,6 +1,4 @@
-{ inputs, lib, config, ... }: {
-  imports = [ inputs.impermanence.nixosModules.impermanence ];
-
+{ lib, config, ... }: {
   environment.persistence."/persist" = {
     hideMounts = true;
     allowTrash = true;
@@ -17,7 +15,7 @@
       "/etc/machine-id" # stable id
     ];
 
-    users.alec.directories = [
+    users.${config.borealis.user}.directories = [
       ".local/share/fish" # shell history
       ".local/share/git" # github login
     ];

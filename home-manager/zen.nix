@@ -1,5 +1,5 @@
-{ inputs, pkgs, ... }: {
-  imports = [ inputs.zen-browser.homeModules.beta ];
+{ borealis, pkgs, ... }: {
+  imports = [ borealis.zen-browser.homeModules.beta ];
 
   programs.zen-browser = {
     enable = true;

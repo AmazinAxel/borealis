@@ -1,8 +1,8 @@
-{ inputs, pkgs, ... }:
+{ borealis, pkgs, ... }:
 let
-  spicePkgs = inputs.spicetify-nix.legacyPackages.${pkgs.stdenv.hostPlatform.system};
+  spicePkgs = borealis.spicetify-nix.legacyPackages.${pkgs.stdenv.hostPlatform.system};
 in {
-  imports = [ inputs.spicetify-nix.homeManagerModules.default ];
+  imports = [ borealis.spicetify-nix.homeManagerModules.default ];
 
   programs.spicetify = {
     enable = true;

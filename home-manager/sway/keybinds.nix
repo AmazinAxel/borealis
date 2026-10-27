@@ -81,7 +81,7 @@ in {
       "control+${mod}+c" = "exec ags request toggleWifi";
 
       "control+${mod}+Q" = "exec ags request 'sideview plan'";
-      "control+${mod}+W" = "exec ags request 'sideview claude'";
+      "control+${mod}+W" = "exec ags request 'sideview assistant'";
       "control+${mod}+E" = "exec ags request 'sideview custom'";
       "control+${mod}+R" = "exec ags request closeSideview"; # destroy
       "${mod}+A" = "exec ags request toggleSideviewFocus";

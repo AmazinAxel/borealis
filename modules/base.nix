@@ -1,9 +1,13 @@
-{ pkgs, lib, config, ... }: {
-  users.users.alec = { # Default user
+{ pkgs, lib, config, ... }: let
+  inherit (config.borealis) user;
+in {
+  imports = [ ./options.nix ];
+
+  users.users.${user} = { # Default user
     isNormalUser = true;
     extraGroups = [ "wheel" "audio" "video" "dialout" ];
-    openssh.authorizedKeys.keys = [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILNtO18H89dHbyP658hIDMeFZrjdWNUbWrdcL6URrthh alec" ];
   };
+  systemd.tmpfiles.rules = [ "L /etc/nixos - - - - ${config.borealis.flake}" ]; # plain nixos-rebuild
 
   boot = {
     loader.timeout = lib.mkForce 0; # Hold down space on boot to access
@@ -84,10 +88,7 @@
         init.defaultBranch = "main";
         color.ui = true;
         core.editor = "hx";
-        credential.helper = "store --file=/home/alec/.local/share/git/credentials";
-        github.user = "AmazinAxel"; # Github
-        user.name = "AmazinAxel"; # Git
-        user.email = "87440159+AmazinAxel@users.noreply.github.com";
+        credential.helper = "store --file=/home/${user}/.local/share/git/credentials";
         push.autoSetupRemote = true;
       };
     };
@@ -96,7 +97,6 @@
   };
   security.sudo.extraConfig = "Defaults lecture=never"; # lectures are on by default
 
-  time.timeZone = "America/Los_Angeles"; # lang also set to en_US
   zramSwap = {
     enable = lib.mkDefault true;
     memoryPercent = lib.mkDefault 100;
@@ -111,7 +111,7 @@
       auto-optimise-store = true;
       warn-dirty = false;
       download-buffer-size = 268435456; # 256 MiB
-      trusted-users = [ "alec" ]; # for remote deployments
+      trusted-users = [ user ]; # for remote deployments
 
       # Binary caches
       extra-substituters = [

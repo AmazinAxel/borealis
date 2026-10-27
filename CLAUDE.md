@@ -1,32 +1,19 @@
-# flake map
+# borealis map
 
-NixOS + home-manager flake, user `alec`. Public repo: no private info.
+Opinionated NixOS + home-manager base others import. Public repo: no private info, no hardcoded user/paths. Shell lives in `~/Projects/flurry`, Alec's hosts in `~/Projects/snowflake`.
 
 ## Wiring
-- `flake.nix`: hosts via `genAttrs` → `hosts/<host>/default.nix`; `specialArgs = { inputs }`.
-- `hosts/common.nix`: every host (user, sysctl, networkd/iwd, tailscale).
+- `flake.nix`: `nixosModules.{default,home-manager,desktop,laptop,pi}` profiles; `base` sets `_module.args.borealis = inputs`. Upstream modules (HM, impermanence, lanzaboote) are imported in flake.nix, keyed, since `imports` can't use module args. `templates.default`.
+- `modules/options.nix`: `borealis.user` (required), `borealis.flake` (default `~/Projects/flake`, symlinked to `/etc/nixos`). Use `config.borealis.user`, never a literal name.
+- `modules/base.nix`: every host (sysctl, networkd/iwd, tailscale, nix settings).
 - `modules/desktop.nix`: cachyos kernel, lanzaboote, sway, `screenshot`; imports `tmpfs-root.nix` + `home-manager.nix`, HM `home-manager/home.nix`.
 - `modules/laptop.nix`: desktop + printing + bluetooth-audio, HM `home-manager/laptop.nix`.
 - `modules/tmpfs-root.nix` → `impermanence.nix` (`/persist`); used by desktop + `pi.nix`.
-- `modules/home-manager.nix`: HM NixOS module, `useGlobalPkgs`.
-
-## Hosts
-- `alecslaptop`: primary laptop (laptop.nix; hm.nix = monitors, thunderbird, iotas).
-- `alecolaptop`: old laptop (laptop.nix; hm.nix = eDP scale).
-- `alecpc`: desktop, nvidia (desktop + mcdev + playit).
-- `alechomelab`: Pi Zero 2W (pi.nix, services.nix, books.nix, `webserver/` bun js, `scripts/*.fish`).
-- `alecdev`: Pi 4B (pi + mcdev + mcscripts, HM fish/helix only).
-- `alecvps`: Proxmox LXC, `tracker/` bun service.
+- `modules/home-manager.nix`: HM settings, `useGlobalPkgs`, passes `borealis` to HM.
 
 ## home-manager/
-One file per program, all imported in `home.nix`. `sway/{sway,keybinds}.nix`, `claude.nix` (Claude Code settings, statusline, terse style), `ags.nix` (astal packages, `configDir = ../ags`).
-
-## ags/ (Astal/gnim, GTK4, TSX)
-- `app.ts`: entry; imports all CSS + widgets, request handler (sway keybinds call `ags request ...`).
-- `widgets/`: status bar (`status/`), `sideview.tsx`, launcher, clipboard, notifications, osd, lockscreen, powermenu, pass, record, focus, emojiPicker, workspaces.
-- `lib/`: services/helpers (audio, bluetooth, iwd, brightness, sway, mediaPlayer, wallpaper, idle, power, logind, perMonitor, searchDialog).
-- Typecheck: `cd ags; nix shell nixpkgs#typescript_5 -c tsc --noEmit -p . | rg -v nix/store`.
+One file per program, all imported in `home.nix`. `sway/{sway,keybinds}.nix`, `claude.nix`, `flurry.nix` (enables flurry). Paths via `config.home.homeDirectory` / `config.xdg.userDirs`.
 
 ## Other
-- `nord.nix`: palette. `scripts/`: fish utils (fetch, sys-sync, persist-prune, homelab-update).
-- Verify: `nix eval .#nixosConfigurations.<host>.config.system.build.toplevel.drvPath`. New files need `git add` first (git+file flake). Never `path:`, never rebuild.
+- `nord.nix`: palette. `scripts/`: fish utils (fetch, persist-prune, nx-gc).
+- Verify from snowflake: `nix eval --no-write-lock-file --override-input borealis git+file:///home/alec/Projects/borealis .#nixosConfigurations.<host>.config.system.build.toplevel.drvPath`. New files need `git add` first. Never `path:`, never rebuild.

@@ -7,7 +7,7 @@ in {
     fish = {
       enable = true;
       shellAliases = {
-        nx-switch = "sudo nixos-rebuild switch --flake /home/alec/Projects/flake";
+        nx-switch = "sudo nixos-rebuild switch";
         g = "git";
         ga = "git add -A";
         gl = "git pull";

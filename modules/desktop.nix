@@ -1,4 +1,5 @@
-{ inputs, pkgs, lib, ... }: let
+{ borealis, pkgs, lib, config, ... }: let
+  inherit (config.borealis) user;
   screenshot = pkgs.writeShellScriptBin "screenshot" ''
     ${pkgs.wayfreeze}/bin/wayfreeze --hide-cursor --after-freeze-cmd '
       geom=$(${pkgs.slurp}/bin/slurp) &&
@@ -11,11 +12,10 @@ in {
   imports = [
     ./tmpfs-root.nix
     ./home-manager.nix
-    inputs.lanzaboote.nixosModules.lanzaboote
   ];
 
   # Cachy kernel
-  nixpkgs.overlays = [ inputs.nix-cachyos-kernel.overlays.pinned ];
+  nixpkgs.overlays = [ borealis.nix-cachyos-kernel.overlays.pinned ];
 
   boot = {
     kernelPackages = pkgs.cachyosKernels.linuxPackages-cachyos-latest;
@@ -32,10 +32,10 @@ in {
   };
 
   home-manager = {
-    users.alec.imports = [ ../home-manager/home.nix ];
+    users.${user}.imports = [ ../home-manager/home.nix ];
     backupFileExtension = "backup2";
   };
-  users.users.alec.shell = pkgs.fish; # default shell for ssh and foot
+  users.users.${user}.shell = pkgs.fish; # default shell for ssh and foot
 
   xdg.sounds.enable = false; # don't need
   system.tools = { # don't need
@@ -53,8 +53,6 @@ in {
       screenshot # Freeze-then-select region screenshot (defined above)
       brightnessctl
       adwaita-icon-theme # Icons for GTK apps
-      cifs-utils # Needed for mounting Samba NAS drive
-      rsync # Quickly pull files from NAS drive
       playerctl # mpris control from shell
       pass # password management
       xdg-terminal-exec # open in terminals
@@ -70,11 +68,10 @@ in {
       filezilla
       libreoffice
       thunderbird
+      iotas
       bun
 
       # Scripts
-      (writeScriptBin "sys-sync" (builtins.readFile ../scripts/sys-sync.fish))
-      (writeScriptBin "homelab-update" (builtins.readFile ../scripts/homelab-update.fish))
       (writeShellScriptBin "pass-sync" ''
         pass git pull --rebase && if [ "$(pass git rev-list '@{u}..HEAD' --count)" -gt 0 ]; then pass git push; fi
       '')
@@ -84,7 +81,7 @@ in {
         "/var/lib/systemd" # backlight
         "/var/lib/sbctl" # secure boot keys
       ];
-      users.alec = {
+      users.${user} = {
         directories = [
           "Documents"
           "Downloads"
@@ -107,6 +104,7 @@ in {
           ".thunderbird"
           ".bun"
           ".config/valent"
+          ".local/share/iotas"
           ".local/share/PrismLauncher"
           ".claude/projects" # transcripts, memory
           ".config/zen"
@@ -151,8 +149,8 @@ in {
     #   ProcessSizeMax = "0";
     # };
     tmpfiles.rules = [
-      "Z /persist/home/alec/Music - alec users - -" # music proper owner
-      "R! /home/alec/*/.Trash-* - - - - -" # wipe trash in each persisted folder on boot
+      "Z /persist/home/${user}/Music - ${user} users - -" # music proper owner
+      "R! /home/${user}/*/.Trash-* - - - - -" # wipe trash in each persisted folder on boot
     ];
     sleep.settings.Sleep.HibernateMode = "platform"; # ONLY POWER BUTTON FOR UNHIBERNATION
     oomd.enable = false; # earlyoom already handles OOM
@@ -261,7 +259,7 @@ in {
       enable = true;
       settings.default_session = {
         command = "fish -lc 'exec sway'";
-        user = "alec";
+        inherit user;
       };
     };
   };

@@ -1,9 +1,9 @@
-{ pkgs, ... }: {
+{ pkgs, config, ... }: {
   imports = [
     ./sway/keybinds.nix
     ./sway/sway.nix
 
-    ./ags.nix
+    ./flurry.nix
     ./aseprite.nix
     ./btop.nix
     ./claude.nix
@@ -11,6 +11,7 @@
     ./foot.nix
     ./gtk.nix
     ./helix.nix
+    ./iotas.nix
     ./lazygit.nix
     ./mimeapps.nix
     ./mpd.nix
@@ -57,13 +58,13 @@
     userDirs = {
       enable = true;
       createDirectories = true; # Auto-creates all directories
-      desktop = "/home/alec"; # don't want this folder
+      desktop = config.home.homeDirectory; # don't want this folder
       publicShare = null;
       templates = null;
       extraConfig = {
-        PROJECTS = "/home/alec/Projects";
-        CAPTURES = "/home/alec/Videos/Captures";
-        CLIPS = "/home/alec/Videos/Clips";
+        PROJECTS = "${config.home.homeDirectory}/Projects";
+        CAPTURES = "${config.xdg.userDirs.videos}/Captures";
+        CLIPS = "${config.xdg.userDirs.videos}/Clips";
       };
     };
   };

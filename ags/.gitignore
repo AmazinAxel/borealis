@@ -1,8 +1,0 @@
-# 'ags types -pd .' and 'npm i' used to generate & install the following
-
-@girs/
-node_modules/
-package-lock.json
-
-package.json
-lastSync.txt

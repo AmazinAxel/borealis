@@ -1,4 +1,4 @@
-{ pkgs, lib, inputs, ... }:
+{ pkgs, lib, borealis, ... }:
 let
   skriptTreesitterSrc = pkgs.fetchFromGitHub {
     owner = "AmazinAxel";
@@ -12,7 +12,7 @@ let
     src = skriptTreesitterSrc;
   };
   # perl grammar breaks on glibc 2.44 (bsearch _Generic clash)
-  helixPkg = inputs.helix.packages.${pkgs.stdenv.hostPlatform.system}.default.override {
+  helixPkg = borealis.helix.packages.${pkgs.stdenv.hostPlatform.system}.default.override {
     includeGrammarIf = g: g.name != "perl";
   };
 in
