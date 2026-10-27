@@ -20,7 +20,7 @@
 
     # shell
     flurry = {
-      url = "git+file:///home/alec/Projects/flurry"; # TEMP until pushed
+      url = "github:AmazinAxel/flurry";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 

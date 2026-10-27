@@ -3,9 +3,11 @@
     "ags": {
       "inputs": {
         "astal": [
+          "flurry",
           "astal"
         ],
         "nixpkgs": [
+          "flurry",
           "nixpkgs"
         ]
       },
@@ -26,6 +28,7 @@
     "astal": {
       "inputs": {
         "nixpkgs": [
+          "flurry",
           "nixpkgs"
         ]
       },
@@ -108,21 +111,25 @@
         "type": "github"
       }
     },
-    "flake-parts_2": {
+    "flurry": {
       "inputs": {
-        "nixpkgs-lib": "nixpkgs-lib_2"
+        "ags": "ags",
+        "astal": "astal",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
       },
       "locked": {
-        "lastModified": 1788450739,
-        "narHash": "sha256-glZLQlzIn1fXH6PazR2iUmTo7kzzyYSshrWhLS9TqCU=",
-        "owner": "hercules-ci",
-        "repo": "flake-parts",
-        "rev": "31729ca8cbdb4fa927b34e5f4353e6a83f39e993",
+        "lastModified": 1793134816,
+        "narHash": "sha256-z1Qr0jWuaHSIU6ht+tLZGvhwpP0K9meL6WDEX3cQDNU=",
+        "owner": "AmazinAxel",
+        "repo": "flurry",
+        "rev": "4a6537410709eaabd59ccf112fa2f30fc90ecedb",
         "type": "github"
       },
       "original": {
-        "owner": "hercules-ci",
-        "repo": "flake-parts",
+        "owner": "AmazinAxel",
+        "repo": "flurry",
         "type": "github"
       }
     },
@@ -162,26 +169,6 @@
       "original": {
         "owner": "nix-community",
         "repo": "home-manager",
-        "type": "github"
-      }
-    },
-    "homelab": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1782106356,
-        "narHash": "sha256-/JjOjy4qyAmOAMIrJY/gNfO3TWqMpVSjhHwsaJcQNnY=",
-        "owner": "AmazinAxel",
-        "repo": "homelab",
-        "rev": "4b3dc091b259230388da8f87d1c4f5d6f6ee1387",
-        "type": "github"
-      },
-      "original": {
-        "owner": "AmazinAxel",
-        "repo": "homelab",
         "type": "github"
       }
     },
@@ -283,21 +270,6 @@
         "type": "github"
       }
     },
-    "nixpkgs-lib_2": {
-      "locked": {
-        "lastModified": 1788057806,
-        "narHash": "sha256-DTQSMxzDWmT0zhguthvegnVkn7CFqGCv4IHCzk5ZUpM=",
-        "owner": "nix-community",
-        "repo": "nixpkgs.lib",
-        "rev": "596e2e3940e09b2abbeb03f75fa1828c57fcd72c",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nix-community",
-        "repo": "nixpkgs.lib",
-        "type": "github"
-      }
-    },
     "nixpkgs_2": {
       "locked": {
         "lastModified": 1790505892,
@@ -330,43 +302,6 @@
         "type": "github"
       }
     },
-    "plan": {
-      "locked": {
-        "lastModified": 1792740439,
-        "narHash": "sha256-aiL1TMr/WGNV5uWVDTb3GqdOzb/EfuEAX1xKaD5S/54=",
-        "owner": "AmazinAxel",
-        "repo": "plan",
-        "rev": "fd6803e1098c1a41efd11702bf39dad4ce8010cc",
-        "type": "github"
-      },
-      "original": {
-        "owner": "AmazinAxel",
-        "repo": "plan",
-        "type": "github"
-      }
-    },
-    "playit": {
-      "inputs": {
-        "flake-parts": "flake-parts_2",
-        "nixpkgs": [
-          "nixpkgs"
-        ],
-        "systems": "systems"
-      },
-      "locked": {
-        "lastModified": 1791022020,
-        "narHash": "sha256-lGeNjmAjKpDpUiK1P7n8SptFYHbbqcHyykuX7g5HNkk=",
-        "owner": "pedorich-n",
-        "repo": "playit-nixos-module",
-        "rev": "4d7dfeeff828816086486b2fd79b657960dc3a87",
-        "type": "github"
-      },
-      "original": {
-        "owner": "pedorich-n",
-        "repo": "playit-nixos-module",
-        "type": "github"
-      }
-    },
     "pre-commit": {
       "inputs": {
         "flake-compat": "flake-compat",
@@ -391,19 +326,14 @@
     },
     "root": {
       "inputs": {
-        "ags": "ags",
-        "astal": "astal",
+        "flurry": "flurry",
         "helix": "helix",
         "home-manager": "home-manager",
-        "homelab": "homelab",
         "impermanence": "impermanence",
         "lanzaboote": "lanzaboote",
         "nix-cachyos-kernel": "nix-cachyos-kernel",
         "nixpkgs": "nixpkgs_3",
-        "plan": "plan",
-        "playit": "playit",
         "spicetify-nix": "spicetify-nix",
-        "wintergreen": "wintergreen",
         "zen-browser": "zen-browser"
       }
     },
@@ -454,7 +384,7 @@
         "nixpkgs": [
           "nixpkgs"
         ],
-        "systems": "systems_2"
+        "systems": "systems"
       },
       "locked": {
         "lastModified": 1792312987,
@@ -472,21 +402,6 @@
     },
     "systems": {
       "locked": {
-        "lastModified": 1689347949,
-        "narHash": "sha256-12tWmuL2zgBgZkdoB6qXZsgJEH9LR3oUgpaQq2RbI80=",
-        "owner": "nix-systems",
-        "repo": "default-linux",
-        "rev": "31732fcf5e8fea42e59c2488ad31a0e651500f68",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nix-systems",
-        "repo": "default-linux",
-        "type": "github"
-      }
-    },
-    "systems_2": {
-      "locked": {
         "lastModified": 1791244623,
         "narHash": "sha256-uuanbkFk8a313Zfrxdcz8Us/yQtaxNnKJtX8v0ZPpd8=",
         "owner": "nix-systems",
@@ -497,26 +412,6 @@
       "original": {
         "owner": "nix-systems",
         "repo": "default",
-        "type": "github"
-      }
-    },
-    "wintergreen": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1792122511,
-        "narHash": "sha256-bx0xPATfLRURQDjp3DbMbJM/Xgp9e6AmTGIKmGeJKvg=",
-        "owner": "AmazinAxel",
-        "repo": "wintergreen",
-        "rev": "cb45bde3913ab1bded364e3a40937af2d9af9d5d",
-        "type": "github"
-      },
-      "original": {
-        "owner": "AmazinAxel",
-        "repo": "wintergreen",
         "type": "github"
       }
     },
