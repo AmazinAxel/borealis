@@ -6,7 +6,6 @@ import BackgroundSection from '../lib/backgroundSection';
 import inputControl from '../lib/inputControl';
 import { interval, timeout, type Timer } from 'ags/time';
 import { execAsync } from 'ags/process';
-import { swayCommand } from '../lib/sway';
 import { notifySend } from '../lib/notifySend';
 
 const { TOP } = Astal.WindowAnchor;
@@ -34,15 +33,9 @@ export const startBreak = (cmd: string) => {
     const waited = (Date.now() - start) / 10000;
     if (waited < 1) return setBreakWait(waited);
     endBreak();
-    const unit = `focus-break-${start}`;
-    swayCommand(`exec systemd-run --user --scope --collect --unit=${unit} ${cmd}`);
-    breakTimers = [
-      timeout(105000, () => notifySend({ appName: 'Focus', title: 'App closing in 15s' })),
-      timeout(120000, () => {
-        endBreak();
-        execAsync(['systemctl', '--user', 'stop', `${unit}.scope`]).catch(() => { });
-      }),
-    ];
+    execAsync(['systemd-run', '--user', '--scope', '--collect', '-p', 'RuntimeMaxSec=120', 'sh', '-c', cmd])
+      .catch(() => { }).then(endBreak);
+    breakTimers = [timeout(105000, () => notifySend({ appName: 'Focus', title: 'App closing in 15s' }))];
   })];
 };
 
