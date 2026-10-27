@@ -7,7 +7,6 @@ in {
     isNormalUser = true;
     extraGroups = [ "wheel" "audio" "video" "dialout" ];
   };
-  systemd.tmpfiles.rules = [ "L /etc/nixos - - - - ${config.borealis.flake}" ]; # plain nixos-rebuild
 
   boot = {
     loader.timeout = lib.mkForce 0; # Hold down space on boot to access

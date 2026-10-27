@@ -1,4 +1,4 @@
-{ lib, pkgs, ... }: let
+{ lib, pkgs, osConfig, ... }: let
   nord = import ../nord.nix;
 in {
   home.packages = [ (pkgs.writeScriptBin "fetch" (builtins.readFile ../scripts/fetch.fish)) ]; # shell start even thru ssh
@@ -7,7 +7,7 @@ in {
     fish = {
       enable = true;
       shellAliases = {
-        nx-switch = "sudo nixos-rebuild switch";
+        nx-switch = "sudo nixos-rebuild switch --flake ${osConfig.borealis.flake}";
         g = "git";
         ga = "git add -A";
         gl = "git pull";
