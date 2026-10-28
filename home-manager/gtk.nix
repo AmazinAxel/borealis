@@ -16,8 +16,8 @@
       size = 11;
     };
     iconTheme = {
-      name = "MoreWaita";
-      package = pkgs.morewaita-icon-theme;
+      name = "Adwaita";
+      package = pkgs.adwaita-icon-theme; # flurry bakes its own icons in
     };
     theme = {
       name = "Graphite-Dark-nord";

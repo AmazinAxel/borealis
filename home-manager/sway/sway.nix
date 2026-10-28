@@ -93,6 +93,9 @@
     extraConfig = ''
       primary_selection disabled
       swaybg_command -
+      # composite 2ms before vblank instead of right after the last one: keypresses that land
+      # mid-frame make it into the next frame (up to one refresh less input latency)
+      output * max_render_time 2
     '';
   };
 }

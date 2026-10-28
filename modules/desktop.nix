@@ -114,8 +114,7 @@ in {
           ".config/Code"
           ".vscode-shared" # logins and recents
           ".vscode" # password store
-          ".local/share/ags-sideview"
-          ".cache/ags-sideview"
+          ".local/share/flurry-sideview"
 
           # GPU cache
           ".cache/mesa_shader_cache"

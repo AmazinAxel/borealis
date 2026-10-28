@@ -69,44 +69,43 @@ in {
       "${mod}+shift+N" = "exec env SUDO_ASKPASS=${pkgs.writeShellScript "zenity-askpass" "exec ${pkgs.zenity}/bin/zenity --password"} sudo -AE ${pkgs.nemo-with-extensions}/bin/nemo"; # root nemo
 
       # Ags
-      "${mod}+space" = "exec ags toggle launcher";
-      "${mod}+P" = "exec ags toggle pass";
-      "${mod}+I" = "exec ags request randomWallpaper";
-      "${mod}+period" = "exec ags toggle emojiPicker";
-      "${mod}+X" = "exec ags request closeAsideStatusMenuWidget";
-      "control+${mod}+P" = "exec ags toggle passSave";
-      "control+${mod}+z" = "exec ags request toggleQuicksettings";
-      "control+${mod}+v" = "exec ags request toggleCalendar";
-      "control+${mod}+x" = "exec ags request toggleBluetooth";
-      "control+${mod}+c" = "exec ags request toggleWifi";
+      "${mod}+space" = "exec flurry toggle launcher";
+      "${mod}+P" = "exec flurry toggle pass";
+      "${mod}+I" = "exec flurry randomWallpaper";
+      "${mod}+X" = "exec flurry closeAsideStatusMenuWidget";
+      "control+${mod}+P" = "exec flurry toggle passSave";
+      "control+${mod}+z" = "exec flurry toggleQuicksettings";
+      "control+${mod}+v" = "exec flurry toggleCalendar";
+      "control+${mod}+x" = "exec flurry toggleBluetooth";
+      "control+${mod}+c" = "exec flurry toggleWifi";
 
-      "control+${mod}+Q" = "exec ags request 'sideview plan'";
-      "control+${mod}+W" = "exec ags request 'sideview assistant'";
-      "control+${mod}+E" = "exec ags request 'sideview custom'";
-      "control+${mod}+R" = "exec ags request closeSideview"; # destroy
-      "${mod}+A" = "exec ags request toggleSideviewFocus";
-      "control+${mod}+Tab" = "exec ags request hideSideview"; # just hides
-      "${mod}+G" = "exec ags request toggleSideviewSize";
+      "control+${mod}+Q" = "exec flurry sideview plan";
+      "control+${mod}+W" = "exec flurry sideview assistant";
+      "control+${mod}+E" = "exec flurry sideview custom";
+      "control+${mod}+R" = "exec flurry closeSideview"; # destroy
+      "${mod}+A" = "exec flurry toggleSideviewFocus";
+      "control+${mod}+Tab" = "exec flurry hideSideview"; # just hides
+      "${mod}+G" = "exec flurry toggleSideviewSize";
 
-      "${mod}+C" = "exec ags request hideNotif"; # Closes last notification
-      "${mod}+M" = "exec ags request invokeOldestNotif"; # Activates first action of the oldest notification!
-      "control+${mod}+M" = "exec ags request 'invokeOldestNotif 1'"; # 2nd action
-      "shift+${mod}+M" = "exec ags request 'invokeOldestNotif 2'"; # 3rd action
-      "${mod}+S" = "exec ags request toggleStreamingMode";
+      "${mod}+C" = "exec flurry hideNotif"; # Closes last notification
+      "${mod}+M" = "exec flurry invokeOldestNotif"; # Activates first action of the oldest notification!
+      "control+${mod}+M" = "exec flurry invokeOldestNotif 1"; # 2nd action
+      "shift+${mod}+M" = "exec flurry invokeOldestNotif 2"; # 3rd action
+      "${mod}+S" = "exec flurry toggleStreamingMode";
       "${mod}+B" = "exec ${toggleTheme}";
       "${mod}+O" = "exec ${toggleDim}";
-      "${mod}+T" = "exec ags request toggleFocus";
-      "${mod}+Escape" = "exec ags request cancelBreak";
-      "${mod}+Z" = "exec ags request toggleInfoArea";
+      "${mod}+T" = "exec flurry toggleFocus";
+      "${mod}+Escape" = "exec flurry cancelBreak";
+      "${mod}+Z" = "exec flurry toggleInfoArea";
 
-      "${mod}+V" = "exec ags toggle clipboard";
+      "${mod}+V" = "exec flurry toggle clipboard";
       # Enter = select entry, C = copy 2nd entry, E = edit image with swappy, G = open in gthumb, M = compress video, N = show in nemo, W = wipe clipboard
 
-      "${mod}+R" = "exec ags request record";
+      "${mod}+R" = "exec flurry record";
       # R = toggle mic, Q = toggle quality, C = clip last 30s, Space = record
 
-      "XF86PowerOff" = "exec ags toggle powermenu";
-      "${mod}+shift+S" = "exec ags toggle powermenu";
+      "XF86PowerOff" = "exec flurry toggle powermenu";
+      "${mod}+shift+S" = "exec flurry toggle powermenu";
       # S = sleep, Q = shutdown, L = lock, R = restart
 
       # Mpris/spotify
@@ -115,11 +114,11 @@ in {
       "control+${mod}+A" = ''exec "playerctl --player=spotify,%any previous"''; # previous track
 
       # Ags MPD controls
-      "${mod}+control+period" = "exec ags request 'media next'";
-      "${mod}+control+comma" = "exec ags request 'media prev'";
-      "${mod}+greater" = "exec ags request 'media nextPlaylist'";
-      "${mod}+less" = "exec ags request 'media prevPlaylist'";
-      "${mod}+slash" = "exec ags request 'media toggle'";
+      "${mod}+control+period" = "exec flurry media next";
+      "${mod}+control+comma" = "exec flurry media prev";
+      "${mod}+greater" = "exec flurry media nextPlaylist";
+      "${mod}+less" = "exec flurry media prevPlaylist";
+      "${mod}+slash" = "exec flurry media toggle";
 
       "Print" = "exec screenshot"; # Screenshot
 
