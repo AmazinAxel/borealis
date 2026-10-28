@@ -1,4 +1,4 @@
-{ pkgs, lib, ... }: {
+{ pkgs, ... }: {
   wayland.windowManager.sway = {
     enable = true;
     systemd = {
@@ -37,7 +37,7 @@
         };
       };
 
-      colors = with lib.mapAttrs (_: v: "#${v}") (import ../../nord.nix); rec {
+      colors = with (import ../../nord.nix).hex; rec {
         focused = { # focused window
           background = nord10;
           border = nord10;
@@ -95,7 +95,7 @@
       swaybg_command -
       # composite 2ms before vblank instead of right after the last one: keypresses that land
       # mid-frame make it into the next frame (up to one refresh less input latency)
-      output * max_render_time 2
+      output * max_render_time 2 adaptive_sync on
     '';
   };
 }

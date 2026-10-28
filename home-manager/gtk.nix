@@ -38,7 +38,6 @@
     settings = {
       "org/gnome/desktop/interface" = {
         color-scheme = "prefer-dark";
-        gtk-theme = "Graphite-Dark-nord";
       };
       "org/gnome/SoundRecorder".audio-profile = "mp3";
       "org/nemo/window-state".start-with-status-bar = false; # this info is inaccurate

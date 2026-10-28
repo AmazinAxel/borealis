@@ -87,10 +87,11 @@ in {
         init.defaultBranch = "main";
         color.ui = true;
         core.editor = "hx";
-        credential.helper = "store --file=/home/${user}/.local/share/git/credentials";
+        credential.helper = "store --file=${config.users.users.${user}.home}/.local/share/git/credentials";
         push.autoSetupRemote = true;
       };
     };
+    fish.useBabelfish = true; # env scripts translated at build, no bash spawn per shell
     command-not-found.enable = false;
     nano.enable = false; # use Helix
   };
@@ -104,10 +105,10 @@ in {
   nixpkgs.config.allowUnfree = true;
   nix = {
     channel.enable = false; # we only use flakes
+    optimise.automatic = true; # dedupe on a timer instead of slowing every build
 
     settings = {
       experimental-features = [ "nix-command" "flakes" ];
-      auto-optimise-store = true;
       warn-dirty = false;
       download-buffer-size = 268435456; # 256 MiB
       trusted-users = [ user ]; # for remote deployments

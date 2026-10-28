@@ -9,10 +9,7 @@
     '
   '';
 in {
-  imports = [
-    ./tmpfs-root.nix
-    ./home-manager.nix
-  ];
+  imports = [ ./tmpfs-root.nix ];
 
   # Cachy kernel
   nixpkgs.overlays = [ borealis.nix-cachyos-kernel.overlays.pinned ];
@@ -52,7 +49,6 @@ in {
       mpc
       screenshot # Freeze-then-select region screenshot (defined above)
       brightnessctl
-      adwaita-icon-theme # Icons for GTK apps
       playerctl # mpris control from shell
       pass # password management
       xdg-terminal-exec # open in terminals
@@ -98,7 +94,6 @@ in {
 
           # apps
           ".config/discord"
-          ".config/Slack"
           ".config/filezilla"
           ".config/libreoffice"
           ".thunderbird"
@@ -245,13 +240,16 @@ in {
        freeMemThreshold = 10; # 10%
     };
     speechd.enable = false; # unused TTS daemon, browsers spawn it
+    scx = { # sched_ext scheduler that favors interactive tasks
+      enable = true;
+      scheduler = "scx_lavd";
+    };
 
     # Sound
     pipewire = {
       enable = true;
       alsa.enable = true;
       pulse.enable = true;
-      wireplumber.enable = true;
     };
 
     greetd = { # Autologin

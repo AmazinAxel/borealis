@@ -1,5 +1,5 @@
 let
-  nord = builtins.mapAttrs (_: v: "#${v}") (import ../nord.nix);
+  nord = (import ../nord.nix).hex;
 in {
   programs.lazygit = {
     enable = true;

@@ -1,8 +1,8 @@
-{
+{ config, ... }: {
   programs.swappy = {
     enable = true;
     settings.Default = {
-      save_dir = "$HOME/Pictures/Screenshots";
+      save_dir = "${config.xdg.userDirs.pictures}/Screenshots";
       save_filename_format = "%Y%m%d-%H%M%S-edited.png";
       show_panel = false;
       line_size = 10;

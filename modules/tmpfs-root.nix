@@ -1,10 +1,10 @@
-{ config, ... }: let
+{ pkgs, config, ... }: let
   inherit (config.borealis) user;
 in {
   imports = [ ./impermanence.nix ];
+  environment.systemPackages = [ (pkgs.writers.writeFishBin "persist-prune" (builtins.readFile ../scripts/persist-prune.fish)) ];
 
-  # sudo install -Dm600 <(grep "^$USER:" /etc/shadow | cut -d: -f2) /passwords/<user>
-  # maybe install to /persist/passwords/<user>
+  # sudo grep "^$USER:" /etc/shadow | cut -d: -f2 | sudo install -Dm600 /dev/stdin /persist/passwords/<user>
   users = {
     users.${user}.hashedPasswordFile = "/persist/passwords/${user}";
     mutableUsers = false;

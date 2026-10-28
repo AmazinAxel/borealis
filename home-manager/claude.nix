@@ -130,7 +130,6 @@ in {
         type = "command";
         command = lib.getExe statusline;
         padding = 0;
-        refreshInterval = 2; # redraw on resize
         hideVimModeIndicator = true; # shown in the line
       };
       preferredNotifChannel = "ghostty"; # foot notifies when unfocused

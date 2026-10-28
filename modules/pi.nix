@@ -13,7 +13,9 @@
       };
     };
 
-    initrd.systemd.enable = false; # necessary for boot, fail to start closure otherwise
+    # TODO REMOVE AFTER PI INSTALL
+    initrd.systemd.emergencyAccess = true; # recovery shell if systemd initrd stalls
+    kernelParams = [ "console=tty1" ]; # show it on HDMI
     supportedFilesystems = lib.mkForce [ "ext4" ]; # dont build zfs!!
     initrd.supportedFilesystems = lib.mkForce [ "ext4" ];
   };
@@ -53,7 +55,6 @@
     depends = [ "/persist" ];
   };
 
-
   services.journald.settings.Journal.Storage = "volatile";
   nixpkgs.hostPlatform = "aarch64-linux";
 
@@ -64,13 +65,10 @@
     "vm.vfs_cache_pressure" = 50; # keep dentry/inode cache, avoids re-reads
   };
 
-
-  nix = {
-    gc = {
-      automatic = true;
-      dates = "weekly";
-      options = "--delete-older-than 14d";
-      randomizedDelaySec = "30m";
-    };
+  nix.gc = {
+    automatic = true;
+    dates = "weekly";
+    options = "--delete-older-than 14d";
+    randomizedDelaySec = "30m";
   };
 }

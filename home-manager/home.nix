@@ -23,8 +23,6 @@
     ./zen.nix
   ];
 
-  systemd.user.startServices = "sd-switch"; # Better system unit reloads
-
   home = {
     stateVersion = "26.05";
 
@@ -50,10 +48,7 @@
   xdg = {
     configFile."xdg-terminals.list".text = "footclient.desktop\n"; # open in Terminal
 
-    dataFile."fonts" = { # Symlink fonts
-      target = "./fonts";
-      source = ./fonts;
-    };
+    dataFile."fonts".source = ./fonts; # Symlink fonts
 
     userDirs = {
       enable = true;

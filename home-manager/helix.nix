@@ -59,7 +59,7 @@ in
             display-inlay-hints = true;
             inlay-hints-length-limit = 20;
           };
-          idle-timeout = 500; # delay while typing
+          idle-timeout = 250; # delay while typing
           inline-diagnostics = {
             cursor-line = "error";
             other-lines = "error";
@@ -77,9 +77,7 @@ in
           };
           search.smart-case = false; # do NOT be case sensitive no matter what
 
-          indent-guides = {
-            render = true;
-          };
+          indent-guides.render = true;
           gutters = [ "diagnostics" "spacer" "line-numbers" "spacer" "diff" ];
           soft-wrap.enable = true;
         };

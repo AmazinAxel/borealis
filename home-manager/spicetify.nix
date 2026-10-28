@@ -20,7 +20,6 @@ in {
     enabledExtensions = with spicePkgs.extensions; [
       autoSkipVideo
       adblock # blocks ads on homescreen?
-      adblockify
       keyboardShortcut
       aiBandBlocker
       shuffle

@@ -23,10 +23,11 @@ in {
       cursor = {
         style = "beam";
         unfocused-style = "unchanged";
-        blink = true;
+        blink = false;
         beam-thickness = 1;
       };
       key-bindings.clipboard-paste = "Control+Shift+v XF86Paste";
+      tweak.delayed-render-lower = 0; # draw output immediately instead of batching
 
       colors-dark = nordColors // {
         alpha = 0.95;

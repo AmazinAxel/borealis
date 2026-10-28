@@ -11,7 +11,6 @@
     };
 
     profiles.default = {
-      search.default = "bing";
       settings = { # Other settings are managed by Mozilla settings sync
         "mousewheel.min_line_scroll_amount" = 50;
 
@@ -77,6 +76,7 @@
       };
 
       search = {
+        default = "bing";
         force = true;
         engines = {
           "MyNixOS" = {

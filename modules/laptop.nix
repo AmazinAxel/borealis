@@ -1,4 +1,9 @@
-{ pkgs, config, ... }: {
+{ pkgs, config, ... }: let
+  sleepDevs = ''
+    bat=$(echo /sys/class/power_supply/BAT*)
+    rtc=$(dirname $(echo /sys/class/rtc/*/wakealarm | cut -d' ' -f1))
+  '';
+in {
   imports = [ ./desktop.nix ./printing.nix ./bluetooth-audio.nix ];
   home-manager.users.${config.borealis.user}.imports = [ ../home-manager/laptop.nix ];
 
@@ -58,17 +63,13 @@
     before = [ "systemd-suspend.service" ];
     unitConfig.StopWhenUnneeded = true;
     serviceConfig = { Type = "oneshot"; RemainAfterExit = true; };
-    script = ''
-      bat=$(echo /sys/class/power_supply/BAT*)
-      rtc=$(dirname $(echo /sys/class/rtc/*/wakealarm | cut -d' ' -f1))
+    script = sleepDevs + ''
       armed=0
       echo 0 > $rtc/wakealarm
       [ "$(cat $bat/status)" = Discharging ] && echo +3600 > $rtc/wakealarm && armed=1
       echo "$(date +%s) $(cat $bat/charge_now) $(cat /sys/power/suspend_stats/total_hw_sleep) $armed" > /run/sleep-guard
     '';
-    preStop = ''
-      bat=$(echo /sys/class/power_supply/BAT*)
-      rtc=$(dirname $(echo /sys/class/rtc/*/wakealarm | cut -d' ' -f1))
+    preStop = sleepDevs + ''
       read t0 c0 h0 armed < /run/sleep-guard
       dt=$(( $(date +%s) - t0 ))
       [ $dt -gt 0 ] || dt=1

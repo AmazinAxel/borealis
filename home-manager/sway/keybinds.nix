@@ -3,7 +3,7 @@
   currentWorkspace = "$(swaymsg -p -t get_workspaces | grep focused | grep -oE '[0-9]+')";
   stepWorkspace = cmd: direction: "exec sh -c 'current=${currentWorkspace}; target=$((current ${direction} 1)); [ $target -lt 1 ] && target=1; [ $target -gt 9 ] && target=9; [ $target -eq $current ] || { ${cmd}; }'";
   workspace = stepWorkspace "swaymsg workspace number $target";
-  moveItemToWorkspace = stepWorkspace "swaymsg move container to workspace number $target && swaymsg workspace number $target";
+  moveItemToWorkspace = stepWorkspace "swaymsg move container to workspace number $target, workspace number $target";
   # arrows and hjkl: focus, move window, switch workspace, move window to workspace
   directionBinds = lib.concatMapAttrs (dir: vim: let step = if dir == "left" || dir == "up" then "-" else "+"; in
     lib.mergeAttrsList (map (key: {

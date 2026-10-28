@@ -34,36 +34,15 @@
         "bluez5.hw-volume" = [ "a2dp_sink" ];
       };
 
-      "device.profile.priority.rules" = [
-        { # higher quality
-          matches = [{ "device.name" = "~bluez_card.*"; }];
-          actions.update-props.priorities = [ "a2dp-sink-sbc_xq" "a2dp-sink" ];
-        }
-        { # drops packets or is wonky on 452kbps!!! :p
-          matches = [
-            { "device.name" = "bluez_card.67_10_1D_B6_4C_E2"; }
-            { "device.name" = "bluez_card.D6_1F_21_FC_F9_C7"; }
-          ];
-          actions.update-props.priorities = [ "a2dp-sink" ];
-        }
-        { # Rail ANC
-          matches = [{ "device.name" = "bluez_card.88_08_94_2F_FB_D2"; }];
-          actions.update-props.priorities = [ "a2dp-sink-aac" "a2dp-sink-sbc_xq" "a2dp-sink" ];
-        }
-      ];
+      "device.profile.priority.rules" = [{ # higher quality
+        matches = [{ "device.name" = "~bluez_card.*"; }];
+        actions.update-props.priorities = [ "a2dp-sink-sbc_xq" "a2dp-sink" ];
+      }];
 
-      "monitor.bluez.rules" = [
-        { # BLUETOOTH SPEAKER
-          matches = [{ "device.name" = "bluez_card.67_10_1D_B6_4C_E2"; }];
-          actions.update-props."device.description" = "Bluetooth Speaker";
-        } { # BLUETOOTH EARBUDS
-          matches = [{ "device.name" = "bluez_card.D6_1F_21_FC_F9_C7"; }];
-          actions.update-props."device.description" = "Bluetooth Earbuds";
-        } { # better bluetooth absorbtion
-          matches = [{ "node.name" = "~bluez_output.*"; }];
-          actions.update-props."node.latency" = "2048/48000";
-        }
-      ];
+      "monitor.bluez.rules" = [{ # better bluetooth absorbtion
+        matches = [{ "node.name" = "~bluez_output.*"; }];
+        actions.update-props."node.latency" = "2048/48000";
+      }];
     };
   };
 }

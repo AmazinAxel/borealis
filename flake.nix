@@ -14,9 +14,15 @@
     };
     lanzaboote = {
       url = "github:nix-community/lanzaboote";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        pre-commit.follows = ""; # dev-only
+      };
     };
-    nix-cachyos-kernel.url = "github:xddxdd/nix-cachyos-kernel/release";
+    nix-cachyos-kernel = {
+      url = "github:xddxdd/nix-cachyos-kernel/release";
+      inputs.flake-compat.follows = ""; # non-flake shim
+    };
 
     # shell
     flurry = {

@@ -48,7 +48,7 @@
         git = {
           enableSmartCommit = true;
           confirmSync = false;
-          autofetch = true;
+          autofetch = false;
         };
         workbench = {
           startupEditor = "fish";
