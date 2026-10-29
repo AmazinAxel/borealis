@@ -1,5 +1,5 @@
 {
-  borealis.user = "me"; # password hash goes in /persist/passwords/me (mkpasswd)
+  borealis.user = "me"; # put your passwd in /persist/passwords/<user>
   networking.hostName = "nixos";
   time.timeZone = "UTC";
   programs.git.config.user = { name = "Me"; email = "me@example.com"; };

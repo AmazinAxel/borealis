@@ -29,7 +29,7 @@ function __pp_ancestor -a rel
 end
 
 function __pp_walk -a dir
-    for child in (find $dir -mindepth 1 -maxdepth 1 -print0 2>/dev/null | string split0)
+    for child in $dir/{*,.*}
         test -L "$child"; and continue # never follow or delete symlinks
         set -l rel (string replace -- $__pp_root/ '' $child)
         if __pp_kept $rel
@@ -50,9 +50,7 @@ if test (count $__pp_stale) -eq 0
 end
 
 echo
-for p in $__pp_stale
-    printf '%8s  %s\n' (du -sh $p 2>/dev/null | cut -f1) $p
-end
+du -sh $__pp_stale 2>/dev/null
 echo
 
 read -l -P "Delete "(count $__pp_stale)" path(s)? [y/N] " ans

@@ -1,5 +1,13 @@
-{ pkgs, ... }: {
-  programs.vscode = {
+{ config, pkgs, ... }: let
+  inherit (config.borealis) user;
+in {
+  environment.persistence."/persist".users.${user}.directories = [
+    ".config/Code"
+    ".vscode-shared" # logins and recents
+    ".vscode" # password store
+  ];
+
+  home-manager.users.${user}.programs.vscode = {
     enable = true;
     profiles.default = {
       extensions = with pkgs.vscode-extensions; [
@@ -37,7 +45,6 @@
           wordWrap = "on";
           fontFamily = "'Iosevka Nerd Font Mono'";
           fontLigatures = "'calt'"; # Iosevka ligatures
-          confirmPasteNative = false;
           minimap.enabled = false;
         };
         explorer = {
@@ -51,7 +58,7 @@
           autofetch = false;
         };
         workbench = {
-          startupEditor = "fish";
+          startupEditor = "none";
           colorTheme = "Nord"; # default
           preferredDarkColorTheme = "Nord";
           preferredLightColorTheme = "Nord Light";
@@ -73,8 +80,6 @@
         typescript.updateImportsOnFileMove.enabled = "always";
         diffEditor.ignoreTrimWhitespace = false; # Keep diff viewer clean
         markdownlint.focusMode = 5; # Don't show nearby Markdown warnings when typing
-
-        # fix vsc from showing settings.json
         "claudeCode.preferredLocation" = "panel"; # do not unwrap quotes
       };
     };

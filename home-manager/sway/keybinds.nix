@@ -1,9 +1,17 @@
 { pkgs, lib, config, ... }: let
   mod = "Mod4";
-  currentWorkspace = "$(swaymsg -p -t get_workspaces | grep focused | grep -oE '[0-9]+')";
-  stepWorkspace = cmd: direction: "exec sh -c 'current=${currentWorkspace}; target=$((current ${direction} 1)); [ $target -lt 1 ] && target=1; [ $target -gt 9 ] && target=9; [ $target -eq $current ] || { ${cmd}; }'";
-  workspace = stepWorkspace "swaymsg workspace number $target";
-  moveItemToWorkspace = stepWorkspace "swaymsg move container to workspace number $target, workspace number $target";
+  # step-workspace <+|-> [move]: next/prev workspace clamped to 1-9
+  stepWorkspace = pkgs.writeShellScript "step-workspace" ''
+    current=$(swaymsg -p -t get_workspaces | awk '/\(focused\)/{print $2}')
+    target=$((current $1 1))
+    ((target < 1)) && target=1
+    ((target > 9)) && target=9
+    ((target == current)) && exit
+    [ "$2" = move ] && exec swaymsg move container to workspace number $target, workspace number $target
+    exec swaymsg workspace number $target
+  '';
+  workspace = dir: "exec ${stepWorkspace} ${dir}";
+  moveItemToWorkspace = dir: "exec ${stepWorkspace} ${dir} move";
   # arrows and hjkl: focus, move window, switch workspace, move window to workspace
   directionBinds = lib.concatMapAttrs (dir: vim: let step = if dir == "left" || dir == "up" then "-" else "+"; in
     lib.mergeAttrsList (map (key: {
@@ -63,12 +71,11 @@ in {
       "XF86MonBrightnessDown" = "exec brightnessctl set 15%-";
 
       # Apps
-      "${mod}+E" = "exec zen-beta";
       "${mod}+return" = "exec ${openFoot}";
       "${mod}+N" = "exec nemo";
       "${mod}+shift+N" = "exec env SUDO_ASKPASS=${pkgs.writeShellScript "zenity-askpass" "exec ${pkgs.zenity}/bin/zenity --password"} sudo -AE ${pkgs.nemo-with-extensions}/bin/nemo"; # root nemo
 
-      # Ags
+      # Flurry
       "${mod}+space" = "exec flurry toggle launcher";
       "${mod}+P" = "exec flurry toggle pass";
       "${mod}+I" = "exec flurry randomWallpaper";
@@ -113,7 +120,7 @@ in {
       "control+${mod}+D" = ''exec "playerctl --player=spotify,%any next"''; # next track
       "control+${mod}+A" = ''exec "playerctl --player=spotify,%any previous"''; # previous track
 
-      # Ags MPD controls
+      # Flurry MPD controls
       "${mod}+control+period" = "exec flurry media next";
       "${mod}+control+comma" = "exec flurry media prev";
       "${mod}+greater" = "exec flurry media nextPlaylist";

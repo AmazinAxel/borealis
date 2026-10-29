@@ -1,13 +1,8 @@
 { pkgs, config, ... }: {
   gtk = {
     enable = true;
-    gtk3.bookmarks = [
-      "file://${config.home.homeDirectory}/Downloads"
-      "file://${config.home.homeDirectory}/Documents"
-      "file://${config.home.homeDirectory}/Music"
-      "file://${config.home.homeDirectory}/Pictures"
-      "file://${config.home.homeDirectory}/Projects"
-      "file://${config.home.homeDirectory}/Videos"
+    gtk3.bookmarks = with config.xdg.userDirs; map (d: "file://${d}") [
+      download documents music pictures extraConfig.PROJECTS videos
     ];
 
     font = {
@@ -26,11 +21,7 @@
         colorVariants = [ "light" "dark" ];
       };
     };
-    # gtk3.extraConfig.gtk-im-module = "fcitx";
-    gtk4 = {
-      theme = config.gtk.theme;
-      # extraConfig.gtk-im-module = "fcitx";
-    };
+    gtk4.theme = config.gtk.theme;
   };
 
   dconf = {
@@ -39,7 +30,6 @@
       "org/gnome/desktop/interface" = {
         color-scheme = "prefer-dark";
       };
-      "org/gnome/SoundRecorder".audio-profile = "mp3";
       "org/nemo/window-state".start-with-status-bar = false; # this info is inaccurate
       "org/nemo/preferences".desktop-is-home-dir = true; # drop the dead ~/Desktop entry from the sidebar
     };

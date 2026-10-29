@@ -1,7 +1,7 @@
-{ pkgs, ... }: let
+{ config, pkgs, ... }: let
   nord = (import ../nord.nix).hex;
 in {
-  programs.yazi = {
+  home-manager.users.${config.borealis.user}.programs.yazi = {
     enable = true;
     enableFishIntegration = true; # y wrapper, cd on quit
     extraPackages = [ pkgs.sshfs pkgs.ouch ];

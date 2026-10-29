@@ -16,12 +16,12 @@
       url = "github:nix-community/lanzaboote";
       inputs = {
         nixpkgs.follows = "nixpkgs";
-        pre-commit.follows = ""; # dev-only
+        pre-commit.follows = ""; # for development only
       };
     };
     nix-cachyos-kernel = {
       url = "github:xddxdd/nix-cachyos-kernel/release";
-      inputs.flake-compat.follows = ""; # non-flake shim
+      inputs.flake-compat.follows = "";
     };
 
     # shell
@@ -31,7 +31,7 @@
     };
 
     # apps
-    helix.url = "github:helix-editor/helix"; # no follows so helix.cachix hits
+    helix.url = "github:helix-editor/helix"; # no follows since we use cache
     spicetify-nix = {
       url = "github:Gerg-L/spicetify-nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -46,25 +46,26 @@
   };
 
   outputs = inputs: let
-    # keyed so importing several profiles pulls each in once; upstream modules live here since imports can't use module args
+    inherit (inputs.nixpkgs) lib;
     keyed = name: imports: { key = "borealis/${name}"; inherit imports; };
     base = { key = "borealis"; _module.args.borealis = inputs; imports = [ ./modules/base.nix ]; };
     hm = keyed "home-manager" [ inputs.home-manager.nixosModules.home-manager ./modules/home-manager.nix ];
     persist = keyed "impermanence" [ inputs.impermanence.nixosModules.impermanence ];
     lanzaboote = keyed "lanzaboote" [ inputs.lanzaboote.nixosModules.lanzaboote ];
-    profile = imports: { imports = [ base ] ++ imports; };
+    profile = imports: { imports = [ base hm persist ] ++ imports; };
   in {
     nixosModules = {
       default = base;
-      home-manager = profile [ hm ]; # HM without the desktop
-      desktop = profile [ hm persist lanzaboote ./modules/desktop.nix ];
-      laptop = profile [ hm persist lanzaboote ./modules/laptop.nix ];
-      pi = profile [ persist ./modules/pi.nix ];
-    };
+      desktop = profile [ lanzaboote ./modules/desktop.nix ];
+      laptop = profile [ lanzaboote ./modules/laptop.nix ];
+      pi = profile [ ./modules/pi.nix ];
+    } // lib.mapAttrs' (file: _: let app = lib.removeSuffix ".nix" file; in # opt-in apps, with a profile
+      lib.nameValuePair app (keyed app [ ./apps/${file} ])
+    ) (builtins.readDir ./apps);
 
     templates.default = {
       path = ./templates/default;
-      description = "Host flake on borealis";
+      description = "Borealis template";
     };
   };
 }

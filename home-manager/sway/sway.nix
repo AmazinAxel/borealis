@@ -72,10 +72,7 @@
           { app_id = "nemo"; } # file browser
           { app_id = "foot-float"; } # terminal
           { app_id = "org.gnome.FileRoller"; } # file extraction dialogs
-          { app_id = "org.gnome.SystemMonitor"; }
           { app_id = "org.gnome.gThumb"; } # image viewer
-          { app_id = "zen-beta"; title = ".*PassFF.*"; } # PassFF popup
-          { app_id = "PrismLauncher"; } # Minecraft launcher
           { app_id = "xdg-desktop-portal-gtk"; } # file chooser from an app
         ];
       };
@@ -85,10 +82,7 @@
         titlebar = false;
       };
 
-      startup = [
-        # { command = "fcitx5 -d"; }
-        { command = "${pkgs.wl-gammarelay-rs}/bin/wl-gammarelay-rs"; } # blue light filter, ags sets temp
-      ];
+      startup = [{ command = "${pkgs.wl-gammarelay-rs}/bin/wl-gammarelay-rs"; }]; # blue light filter, flurry sets temp
     };
     extraConfig = ''
       primary_selection disabled

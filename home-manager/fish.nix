@@ -32,16 +32,13 @@ in {
         gacm = ''git add -A && git commit -m "$argv"'';
         cdp = "cd ~/Projects/$argv[1]";
         __cdp_arg = "if set -q argv[1]; cdp $argv[1]; end";
-        h = "__cdp_arg $argv[1]; or return; hx .";
-        c = "__cdp_arg $argv[1]; or return; claude --dangerously-skip-permissions $argv[2..]";
-        cr = "__cdp_arg $argv[1]; or return; claude --dangerously-skip-permissions --resume $argv[2..]";
         fetch = builtins.readFile ../scripts/fetch.fish; # in-process, shell start even thru ssh
         __proj_dirs = "for d in ~/Projects/(commandline -ct)*/; string replace ~/Projects/ '' $d; end";
       };
       interactiveShellInit = ''
         set fish_greeting
         fetch
-        complete -c cdp -c h -c c -c cr -f -a "(__proj_dirs)"
+        complete -c cdp -f -a "(__proj_dirs)"
 
         set fish_color_normal normal
         set fish_color_command ${nord.nord9}

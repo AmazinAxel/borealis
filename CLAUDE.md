@@ -3,16 +3,17 @@
 Opinionated NixOS + home-manager base others import. Public repo: no private info, no hardcoded user/paths. Shell lives in `~/Projects/flurry`, Alec's hosts in `~/Projects/snowflake`.
 
 ## Wiring
-- `flake.nix`: `nixosModules.{default,home-manager,desktop,laptop,pi}` profiles; `base` sets `_module.args.borealis = inputs`. Upstream modules (HM, impermanence, lanzaboote) are imported in flake.nix, keyed, since `imports` can't use module args. `templates.default`.
+- `flake.nix`: `nixosModules.{default,desktop,laptop,pi}` profiles (all but default include HM + impermanence); `base` sets `_module.args.borealis = inputs`. Upstream modules (HM, impermanence, lanzaboote) are imported in flake.nix, keyed, since `imports` can't use module args. `templates.default`.
 - `modules/options.nix`: `borealis.user` (required), `borealis.flake` (default `~/Projects/flake`, used by `nx-switch`). Use `config.borealis.user`, never a literal name.
-- `modules/base.nix`: every host (sysctl, networkd/iwd, tailscale, nix settings).
+- `modules/base.nix`: every host (sysctl, networkd/iwd, nix settings).
 - `modules/desktop.nix`: cachyos kernel, lanzaboote, sway, `screenshot`; imports `tmpfs-root.nix` (HM via flake profile), HM `home-manager/home.nix`.
-- `modules/laptop.nix`: desktop + printing + bluetooth-audio, HM `home-manager/laptop.nix`.
+- `modules/laptop.nix`: desktop + bluetooth + tlp, HM `home-manager/laptop.nix`.
 - `modules/tmpfs-root.nix` → `impermanence.nix` (`/persist`); used by desktop + `pi.nix`.
+- `apps/<name>.nix`: opt-in NixOS modules, auto-exported as `nixosModules.<name>`. Each bundles package, HM config (`home-manager.users.${user}`) and persistence for one app.
 - `modules/home-manager.nix`: HM settings, `useGlobalPkgs`, passes `borealis` to HM.
 
 ## home-manager/
-One file per program, all imported in `home.nix`. `sway/{sway,keybinds}.nix`, `claude.nix`, `flurry.nix` (enables flurry). Paths via `config.home.homeDirectory` / `config.xdg.userDirs`.
+One file per program, all imported in `home.nix`. `sway/{sway,keybinds}.nix`, `flurry.nix` (enables flurry). Paths via `config.home.homeDirectory` / `config.xdg.userDirs`.
 
 ## Other
 - `nord.nix`: palette. `scripts/`: fish utils (fetch, persist-prune, nx-gc).

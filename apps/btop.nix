@@ -1,5 +1,5 @@
-{
-  programs.btop = {
+{ config, ... }: {
+  home-manager.users.${config.borealis.user}.programs.btop = {
     enable = true;
     settings = {
       color_theme = "nord";

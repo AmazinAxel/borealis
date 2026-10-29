@@ -4,28 +4,15 @@
     ./sway/sway.nix
 
     ./flurry.nix
-    ./aseprite.nix
-    ./btop.nix
-    ./claude.nix
     ./fish.nix
     ./foot.nix
     ./gtk.nix
-    ./helix.nix
-    ./iotas.nix
-    ./lazygit.nix
     ./mimeapps.nix
     ./mpd.nix
-    ./prismlauncher.nix
-    ./spicetify.nix
     ./swappy.nix
-    ./vscode.nix
-    ./yazi.nix
-    ./zen.nix
   ];
 
   home = {
-    stateVersion = "26.05";
-
     # Global cursor
     pointerCursor = {
       enable = true;
@@ -39,7 +26,7 @@
 
   services.wl-clip-persist.enable = true; # always paste instantly!
 
-  # Astal clipboard management
+  # Flurry clipboard management
   services.cliphist = {
     enable = true;
     extraOptions = [ "-preview-width" "200" "-max-items" "20" "-max-dedupe-search" "5" ];

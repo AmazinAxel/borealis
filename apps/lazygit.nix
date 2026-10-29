@@ -1,7 +1,7 @@
-let
+{ config, ... }: let
   nord = (import ../nord.nix).hex;
 in {
-  programs.lazygit = {
+  home-manager.users.${config.borealis.user}.programs.lazygit = {
     enable = true;
     enableFishIntegration = true;
     settings = {

@@ -13,9 +13,6 @@
       };
     };
 
-    # TODO REMOVE AFTER PI INSTALL
-    initrd.systemd.emergencyAccess = true; # recovery shell if systemd initrd stalls
-    kernelParams = [ "console=tty1" ]; # show it on HDMI
     supportedFilesystems = lib.mkForce [ "ext4" ]; # dont build zfs!!
     initrd.supportedFilesystems = lib.mkForce [ "ext4" ];
   };

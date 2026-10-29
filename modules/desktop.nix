@@ -45,7 +45,7 @@ in {
   environment = {
     systemPackages = with pkgs; [
       # Desktop services
-      libnotify # Astal internal notifications
+      libnotify # Flurry internal notifications
       mpc
       screenshot # Freeze-then-select region screenshot (defined above)
       brightnessctl
@@ -56,25 +56,15 @@ in {
 
       # Desktop applications
       gthumb
-      video-trimmer
       nemo-with-extensions
       nemo-fileroller
       file-roller
-      discord
-      filezilla
-      libreoffice
-      thunderbird
-      iotas
-      bun
-
-      # Scripts
-      (writeShellScriptBin "pass-sync" ''
-        pass git pull --rebase && if [ "$(pass git rev-list '@{u}..HEAD' --count)" -gt 0 ]; then pass git push; fi
-      '')
     ];
     persistence."/persist" = {
       directories = [
-        "/var/lib/systemd" # backlight
+        "/var/lib/systemd/backlight"
+        "/var/lib/systemd/rfkill" # wifi/bt soft block
+        "/var/lib/systemd/timers" # persistent timer stamps
         "/var/lib/sbctl" # secure boot keys
       ];
       users.${user} = {
@@ -93,59 +83,24 @@ in {
           ".password-store"
 
           # apps
-          ".config/discord"
-          ".config/filezilla"
-          ".config/libreoffice"
-          ".thunderbird"
-          ".bun"
-          ".config/valent"
-          ".local/share/iotas"
-          ".local/share/PrismLauncher"
-          ".claude/projects" # transcripts, memory
-          ".config/zen"
-          ".config/spotify"
-          ".cache/spotify"
+          ".local/share/fish" # shell history
           ".local/share/mpd"
-          ".config/Code"
-          ".vscode-shared" # logins and recents
-          ".vscode" # password store
           ".local/share/flurry-sideview"
-
-          # GPU cache
+        ] ++ lib.optionals (!lib.elem "nvidia" config.services.xserver.videoDrivers) [ # GPU cache
           ".cache/mesa_shader_cache"
           ".cache/mesa_shader_cache_db"
-          ".cache/radv_builtin_shaders"
-          ".cache/qtshadercache-x86_64-little_endian-lp64"
-        ];
-        files = [
-          ".claude.json" # claude login
-          ".claude/.credentials.json"
-          ".claude/history.jsonl"
         ];
       };
     };
     sessionVariables = {
       NIXOS_OZONE_WL = "1"; # Electron apps still need this
-      MOZ_DBUS_REMOTE = "1"; # fix zen screensharing
       NO_AT_BRIDGE = "1"; # suppress warnings
       GTK_A11Y = "none";
     };
-    # etc."xdg/fcitx5/addon/cloudpinyin.conf".text = ''
-    #   [Addon]
-    #   Enabled=False
-    # '';
   };
 
-
   systemd = {
-    # coredump.settings.Coredump = { # if an app crashes dont keep it open
-    #   Storage = "none";
-    #   ProcessSizeMax = "0";
-    # };
-    tmpfiles.rules = [
-      "Z /persist/home/${user}/Music - ${user} users - -" # music proper owner
-      "R! /home/${user}/*/.Trash-* - - - - -" # wipe trash in each persisted folder on boot
-    ];
+    tmpfiles.rules = [ "R! /home/${user}/*/.Trash-* - - - - -" ]; # wipe trash in each persisted folder on boot
     sleep.settings.Sleep.HibernateMode = "platform"; # ONLY POWER BUTTON FOR UNHIBERNATION
     oomd.enable = false; # earlyoom already handles OOM
     tpm2.enable = false; # no TPM unlock, faster boot!
@@ -161,18 +116,10 @@ in {
     ] (_: { enable = false; });
   };
 
-  fonts.packages = with pkgs; [
-    nerd-fonts.iosevka # Programming
-    wqy_zenhei # Chinese
-  ];
+  fonts.packages = [ pkgs.nerd-fonts.iosevka ]; # Programming
 
   programs = {
-    kdeconnect = {
-      enable = true;
-      package = pkgs.valent;
-    };
     dconf.enable = true; # For hm
-    nix-ld.enable = true; # For dynamic executables
     gpu-screen-recorder.enable = true; # Clipping & recording software
     fish.enable = true; # Managed by hm but need this for path
     gnupg.agent = {
@@ -180,35 +127,6 @@ in {
       pinentryPackage = pkgs.pinentry-gnome3;
     };
   };
-
-  # Chinese input support
-  # i18n.inputMethod = {
-  #   enable = true;
-  #   type = "fcitx5";
-  #   fcitx5 = {
-  #     addons = with pkgs; [ qt6Packages.fcitx5-chinese-addons fcitx5-nord ];
-  #     waylandFrontend = true;
-
-  #     settings = {
-  #       inputMethod = {
-  #         "Groups/0" = {
-  #           Name = "Default";
-  #           "Default Layout" = "us";
-  #           DefaultIM = "pinyin";
-  #         };
-  #         "Groups/0/Items/0".Name = "keyboard-us";
-  #         "Groups/0/Items/1".Name = "pinyin";
-  #       };
-  #       globalOptions."Hotkey/TriggerKeys"."0" = "Control+Super+space";
-
-  #       addons = {
-  #         clipboard.globalSection."TriggerKey" = ""; # Disable clipboard
-  #         classicui.globalSection."Theme" = "Nord-Dark";
-  #         pinyin.globalSection."FirstRun" = "False";
-  #       };
-  #     };
-  #   };
-  # };
 
   console.colors = with import ../nord.nix; [ # TTY
     "000000" # black (background)
@@ -263,7 +181,7 @@ in {
 
   security = {
     rtkit.enable = true; # better audio latency
-    pam.services.astal-auth.nodelay = true; # handle our own delays
+    pam.services.flurry-auth.nodelay = true; # handle our own delays
   };
 
   hardware.graphics.enable = true; # this isn't set by sway hm by default for some reason?

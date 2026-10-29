@@ -47,22 +47,6 @@ in {
     };
   };
 
-  systemd.services.tailscaled = {
-    environment = {
-      TS_DEBUG_FIREWALL_MODE = "nftables"; # skip iptables detection
-      TS_DISABLE_FEATURE = lib.concatStringsSep "," [
-        "ace" "appconnectors" "aws" "bird" "capture" "clientupdate" "connreject"
-        "debugportmapper" "doctor" "drive" "favorites" "identityfederation" "kube"
-        "netlog" "oauthkey" "portlist" "posture" "relayserver" "remoteconfig" "routecheck"
-        "runtimemetrics" "serviceclientprefs" "ssh" "syslog" "syspolicy" "taildrop"
-        "tailnetlock" "tap" "tpm" "tundevstats" "wakeonlan"
-      ];
-    };
-    serviceConfig = { # stop logs
-      StandardOutput = "null";
-      StandardError = "null";
-    };
-  };
   systemd.network = {
     networks."20-default" = {
       matchConfig.Type = "ether wlan";
@@ -86,14 +70,12 @@ in {
       config = {
         init.defaultBranch = "main";
         color.ui = true;
-        core.editor = "hx";
         credential.helper = "store --file=${config.users.users.${user}.home}/.local/share/git/credentials";
         push.autoSetupRemote = true;
       };
     };
     fish.useBabelfish = true; # env scripts translated at build, no bash spawn per shell
     command-not-found.enable = false;
-    nano.enable = false; # use Helix
   };
   security.sudo.extraConfig = "Defaults lecture=never"; # lectures are on by default
 
@@ -118,12 +100,10 @@ in {
       extra-substituters = [
         "https://cache.lantian.pub/lantian" # cachyos kernel
         "https://cache.xinux.uz" # cachyos kernel (lantian attic mirror)
-        "https://helix.cachix.org" # helix
       ];
       extra-trusted-public-keys = [
         "lantian:WVGO7vsRMSEN+h7Lp7kv6SAmrkEXgUGbbXm7jMDjBuQ="
         "cache.xinux.uz:BXCrtqejFjWzWEB9YuGB7X2MV4ttBur1N8BkwQRdH+0="
-        "helix.cachix.org-1:ejp9KQpR1FBI2onstMQ34yogDm4OgU2ru6lIwPvuCVs="
       ];
     };
   };
@@ -135,12 +115,6 @@ in {
     };
 
     journald.settings.Journal.SystemMaxUse = "20M";
-    tailscale = {
-      enable = true;
-      openFirewall = true;
-      disableUpstreamLogging = true;
-      extraSetFlags = [ "--update-check=false" "--auto-update=false" "--webclient=false" ];
-    };
 
     resolved = {
       enable = true;
