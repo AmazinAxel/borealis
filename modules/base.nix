@@ -116,10 +116,12 @@ in {
 
       # Binary caches
       extra-substituters = [
+        "https://cache.lantian.pub/lantian" # cachyos kernel
         "https://cache.xinux.uz" # cachyos kernel (lantian attic mirror)
         "https://helix.cachix.org" # helix
       ];
       extra-trusted-public-keys = [
+        "lantian:WVGO7vsRMSEN+h7Lp7kv6SAmrkEXgUGbbXm7jMDjBuQ="
         "cache.xinux.uz:BXCrtqejFjWzWEB9YuGB7X2MV4ttBur1N8BkwQRdH+0="
         "helix.cachix.org-1:ejp9KQpR1FBI2onstMQ34yogDm4OgU2ru6lIwPvuCVs="
       ];
