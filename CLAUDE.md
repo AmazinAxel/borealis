@@ -17,4 +17,4 @@ One file per program, all imported in `home.nix`. `sway/{sway,keybinds}.nix`, `f
 
 ## Other
 - `nord.nix`: palette. `scripts/`: fish utils (fetch, persist-prune, nx-gc).
-- Verify from snowflake: `nix eval --no-write-lock-file --override-input borealis git+file:///home/alec/Projects/borealis .#nixosConfigurations.<host>.config.system.build.toplevel.drvPath`. New files need `git add` first. Never `path:`, never rebuild.
+- Verify from snowflake: `nix eval --no-write-lock-file --override-input borealis git+file:///home/alec/Projects/borealis .#nixosConfigurations.<host>.config.<changed option>`; `system.build.toplevel.drvPath` only when asked. New files need `git add` first. Never `path:`, never rebuild.

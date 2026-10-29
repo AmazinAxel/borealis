@@ -115,6 +115,12 @@ in {
   home-manager.users.${user} = {
     programs.claude-code = {
       enable = true;
+      package = pkgs.symlinkJoin { # tools claude reaches for, on its PATH only
+        inherit (pkgs.claude-code) name meta;
+        paths = [ pkgs.claude-code ];
+        nativeBuildInputs = [ pkgs.makeWrapper ];
+        postBuild = "wrapProgram $out/bin/claude --suffix PATH : ${lib.makeBinPath (with pkgs; [ bun jq file unzip ])}";
+      };
       settings = {
         model = "opus";
         effortLevel = "medium";
@@ -170,8 +176,6 @@ in {
         permissions.deny = [ # never pull these into context
           "Read(**/node_modules/**)"
           "Read(**/.direnv/**)"
-          "Read(**/result/**)"
-          "Read(**/dist/**)"
           "Read(**/.git/objects/**)"
         ];
       };
@@ -247,7 +251,19 @@ in {
 
       context = ''
         - Never run nixos-rebuild or home-manager switch; I build myself.
-        - Shell is fish: no bash <(...), use psub or /dev/stdin.
+        - Bash tool runs bash: bash syntax there. Snippets I paste go to fish: no `<(...)`, use psub or /dev/stdin.
+        - NixOS, no python3/perl/node/npm/fd. Script with bun (`bun -e`, `bun x pkg`), jq or awk. One-off tool: `nix shell nixpkgs#pkg -c cmd` (cached, ~0.1s), never `nix-shell -p`.
+        - Dev shell: `nix-shell --run`/`nix develop -c` re-eval ~5s per call. Dump once `nix print-dev-env [-f shell.nix] > <scratchpad>/dev.sh`, then `. <scratchpad>/dev.sh && cargo build`; redump if shell changes.
+        - `pkill -f`/`pgrep -f` match the tool's own command line and kill it (exit 144): bracket a char, `pkill -f '[c]argo build'`.
+        - Compile-check with `cargo check`, `tsc --noEmit`, `gradlew compileJava`; release builds only to run or measure. Build in the project's own dev shell, never an ad-hoc `nix shell nixpkgs#cargo` (different toolchain rebuilds target/).
+        - Jobs over ~1 min: run_in_background and wait for its notification, don't poll with sleep.
+        - `command -v`, not `which`. Wait for servers with `until curl -sf ...; do sleep 0.2; done` under `timeout`, not fixed sleeps.
+        - Cap output (rg, head, tail) so it never persists to a file; if it does, rg that file, don't Read it whole.
+        - Verify nix by evaluating only the changed option (`nix eval .#nixosConfigurations.<host>.config.<path>`), not toplevel.drvPath (~60s) unless asked.
+        - Flakes only see git-tracked files: `git add -N` new ones. Never `path:` flake refs.
+        - /tmp is RAM: big downloads/build outputs go in ~/.cache.
+        - Prefer existing nixpkgs/home-manager options over hand-rolled systemd units, activation scripts or package overrides. All config in nix, never runtime config files.
+        - Code is event-driven: no hardcoded delays, polling or fallback timeouts.
       '';
     };
 
