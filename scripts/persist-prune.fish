@@ -1,5 +1,3 @@
-#!/usr/bin/env fish
-
 set -l persist /persist
 set -l dev (awk -v m=$persist '$5==m && $4=="/" {print $3; exit}' /proc/self/mountinfo)
 

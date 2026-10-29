@@ -48,11 +48,11 @@
   outputs = inputs: let
     inherit (inputs.nixpkgs) lib;
     keyed = name: imports: { key = "borealis/${name}"; inherit imports; };
-    base = { key = "borealis"; _module.args.borealis = inputs; imports = [ ./modules/base.nix ]; };
-    hm = keyed "home-manager" [ inputs.home-manager.nixosModules.home-manager ./modules/home-manager.nix ];
     persist = keyed "impermanence" [ inputs.impermanence.nixosModules.impermanence ];
+    base = { key = "borealis"; _module.args.borealis = inputs; imports = [ persist ./modules/base.nix ]; };
+    hm = keyed "home-manager" [ inputs.home-manager.nixosModules.home-manager ./modules/home-manager.nix ];
     lanzaboote = keyed "lanzaboote" [ inputs.lanzaboote.nixosModules.lanzaboote ];
-    profile = imports: { imports = [ base hm persist ] ++ imports; };
+    profile = imports: { imports = [ base hm ] ++ imports; };
   in {
     nixosModules = {
       default = base;

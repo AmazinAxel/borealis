@@ -150,7 +150,6 @@ in {
 
         env = {
           ENABLE_TOOL_SEARCH = "1"; # fetch tool schemas on demand, not up front
-          # CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC = "1"; # no background model calls
           BASH_MAX_OUTPUT_LENGTH = "12000"; # truncate runaway command output
           MAX_MCP_OUTPUT_TOKENS = "8000";
           DISABLE_TELEMETRY = "1";

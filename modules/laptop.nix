@@ -43,13 +43,15 @@ in {
     };
   };
 
-  systemd.sleep.settings.Sleep = { # hibernation is broken on laptops
-    AllowHibernation = "no";
-    AllowSuspendThenHibernate = "no";
-    AllowHybridSleep = "no";
+  systemd = {
+    sleep.settings.Sleep = { # hibernation is broken on laptops
+      AllowHibernation = "no";
+      AllowSuspendThenHibernate = "no";
+      AllowHybridSleep = "no";
+    };
+    network.wait-online.enable = false; # nothing here needs network-online
+    services.tlp.serviceConfig.ExecStartPost = "${tlpMode}"; # no udev event if already full at boot
   };
-  systemd.network.wait-online.enable = false; # nothing here needs network-online
-  systemd.services.tlp.serviceConfig.ExecStartPost = "${tlpMode}"; # no udev event if already full at boot
 
   services = {
     # only power button & lid can wake from sleep

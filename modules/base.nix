@@ -128,10 +128,15 @@ in {
     };
   };
   fileSystems."/".options = [ "noatime" ];
-  documentation.enable = false;
-  documentation.man.enable = false; # faster rebuilds, even if docs off
-  environment.defaultPackages = lib.mkForce [];
-  environment.systemPackages = [ (pkgs.writeShellScriptBin "nx-gc" (builtins.readFile ../scripts/nx-gc.sh)) ];
+  documentation = {
+    enable = false;
+    man.enable = false; # faster rebuilds, even if docs off
+  };
+  environment = {
+    defaultPackages = lib.mkForce [];
+    systemPackages = [ (pkgs.writeShellScriptBin "nx-gc" (builtins.readFile ../scripts/nx-gc.sh)) ];
+    persistence."/persist".enable = lib.mkDefault false; # apps add paths, tmpfs-root hosts enable it
+  };
 
   system.stateVersion = lib.mkDefault "24.05";
 }

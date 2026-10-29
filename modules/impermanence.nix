@@ -1,5 +1,6 @@
 { lib, config, ... }: {
   environment.persistence."/persist" = {
+    enable = true;
     hideMounts = true;
     allowTrash = true;
 

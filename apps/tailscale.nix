@@ -1,4 +1,4 @@
-{ lib, options, ... }: {
+{ lib, ... }: {
   services.tailscale = {
     enable = true;
     openFirewall = true;
@@ -22,7 +22,5 @@
       StandardError = "null";
     };
   };
-  environment = lib.optionalAttrs (options.environment ? persistence) {
-    persistence."/persist".directories = [ "/var/lib/tailscale" ];
-  };
+  environment.persistence."/persist".directories = [ "/var/lib/tailscale" ];
 }
