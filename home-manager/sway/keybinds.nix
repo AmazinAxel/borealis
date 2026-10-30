@@ -91,7 +91,7 @@ in {
       "control+${mod}+E" = "exec flurry sideview custom";
       "control+${mod}+R" = "exec flurry closeSideview"; # destroy
       "${mod}+A" = "exec flurry toggleSideviewFocus";
-      "control+${mod}+Tab" = "exec flurry hideSideview"; # just hides
+      "control+${mod}+Tab" = "exec flurry toggleSideview"; # hides, or reopens the last page
       "${mod}+G" = "exec flurry toggleSideviewSize";
 
       "${mod}+C" = "exec flurry hideNotif"; # Closes last notification

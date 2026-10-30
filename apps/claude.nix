@@ -147,6 +147,7 @@ in {
           type = "command";
           command = lib.getExe statusline;
           padding = 0;
+          refreshInterval = 30; # no resize event to rerun on
           hideVimModeIndicator = true; # shown in the line
         };
         preferredNotifChannel = "ghostty"; # foot notifies when unfocused
