@@ -86,6 +86,7 @@ in {
           ".local/share/fish" # shell history
           ".local/share/mpd"
           ".local/share/flurry-sideview"
+          ".local/state/flurry" # last sync time, bluetooth order
         ] ++ lib.optionals (!lib.elem "nvidia" config.services.xserver.videoDrivers) [ # GPU cache
           ".cache/mesa_shader_cache"
           ".cache/mesa_shader_cache_db"

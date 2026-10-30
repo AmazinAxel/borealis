@@ -41,11 +41,11 @@
         "nixpkgs-servo": "nixpkgs-servo"
       },
       "locked": {
-        "lastModified": 1793372336,
-        "narHash": "sha256-cpuae5v8tYtRvEaI7ajNyjZsyNAoVANExwPm4LOBq/0=",
+        "lastModified": 1793402098,
+        "narHash": "sha256-UHTPPolbOJjNokllEX/r7R5Du2jHsr0FBILK+YwNauo=",
         "owner": "AmazinAxel",
         "repo": "flurry",
-        "rev": "f50052f8e390857175343628a96425f148ab74c6",
+        "rev": "a97e78b5b3e394cba41c0f05ba0ec21d23ede453",
         "type": "github"
       },
       "original": {
@@ -225,11 +225,11 @@
     },
     "nixpkgs_3": {
       "locked": {
-        "lastModified": 1793110635,
-        "narHash": "sha256-dhoW6VgFWlaodSY5jrBn+CF2FLmaUvDVgM7+C7T2+NM=",
+        "lastModified": 1793341285,
+        "narHash": "sha256-Y1CiZ4SoBUjLQyQM/pY+rS2dXD3CHLPstF0lmOc73D4=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "31ecbaca1bdefa45dffc409f0250bd8039ea0010",
+        "rev": "1c89083e451e891152365b799595cf7790a43325",
         "type": "github"
       },
       "original": {
