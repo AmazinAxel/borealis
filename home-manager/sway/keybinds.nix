@@ -79,12 +79,11 @@ in {
       "${mod}+space" = "exec flurry toggle launcher";
       "${mod}+P" = "exec flurry toggle pass";
       "${mod}+I" = "exec flurry randomWallpaper";
-      "${mod}+X" = "exec flurry closeAsideStatusMenuWidget";
+      "${mod}+X" = "exec flurry closeMenu";
       "control+${mod}+P" = "exec flurry toggle passSave";
-      "control+${mod}+z" = "exec flurry toggleQuicksettings";
-      "control+${mod}+v" = "exec flurry toggleCalendar";
-      "control+${mod}+x" = "exec flurry toggleBluetooth";
-      "control+${mod}+c" = "exec flurry toggleWifi";
+      "control+${mod}+z" = "exec flurry toggleBluetooth";
+      "control+${mod}+x" = "exec flurry toggleWifi";
+      "control+${mod}+c" = "exec flurry toggleCalendar";
 
       "control+${mod}+Q" = "exec flurry sideview plan";
       "control+${mod}+W" = "exec flurry sideview assistant";
@@ -103,7 +102,7 @@ in {
       "${mod}+O" = "exec ${toggleDim}";
       "${mod}+T" = "exec flurry toggleFocus";
       "${mod}+Escape" = "exec flurry cancelBreak";
-      "${mod}+Z" = "exec flurry toggleInfoArea";
+      "${mod}+Z" = "exec flurry toggleStatus";
 
       "${mod}+V" = "exec flurry toggle clipboard";
       # Enter = select entry, C = copy 2nd entry, E = edit image with swappy, G = open in gthumb, M = compress video, N = show in nemo, W = wipe clipboard
