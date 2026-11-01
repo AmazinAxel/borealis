@@ -150,9 +150,9 @@ in {
           refreshInterval = 30; # no resize event to rerun on
           hideVimModeIndicator = true; # shown in the line
         };
-        preferredNotifChannel = "ghostty"; # foot notifies when unfocused
-        autoCompactEnabled = true; # cheaper than blowing the window
-        autoCompactWindow = 150000; # compact near 117k, not 967k; every call re-reads context
+        preferredNotifChannel = "ghostty"; # notifications
+        autoCompactEnabled = true;
+        autoCompactWindow = 200000;
         includeGitInstructions = false;
         skillOverrides = { # listing is resent every call
           code-review = "user-invocable-only";
@@ -237,7 +237,7 @@ in {
         Each call re-sends all context: fewest calls win.
         - All Edits and reads in one response.
         - Smallest change, no unrequested refactors/comments.
-        - rg -n, cap with head, Read offset/limit. Stop at first answer.
+        - rg -n, cap with head, Read offset/limit, no re-reads. Stop at first answer.
         - Never sed -i/heredoc/redirect to change files.
       '';
 

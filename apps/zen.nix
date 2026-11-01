@@ -25,6 +25,7 @@ in {
           "middlemouse.contentLoadURL" = false;
           "toolkit.tabbox.switchByScrolling" = true;
 
+          "zen.view.window.scheme" = 2; # follow system theme
           "zen.view.compact.hide-toolbar" = true;
           "zen.view.compact.toolbar-hide-after-hover.duration" = 500;
           "zen.watermark.enabled" = false;
