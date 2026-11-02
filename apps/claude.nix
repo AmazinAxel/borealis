@@ -226,7 +226,9 @@ in {
         - All Edits and reads in one response.
         - Smallest change, no unrequested refactors/comments.
         - Read only what task needs: known file → go straight there, no exploring, no "for context" reads.
-        - rg -n first, cap with head, Read offset/limit around match, never whole file unless edit needs it, no re-reads. Stop at first answer.
+        - rg -n -m5 first, `| cut -c1-160 | head -20`, Read offset/limit around match, never whole file unless edit needs it, no re-reads. Stop at first answer.
+        - Before any command, ask what's smallest output that answers; expect >50 lines → narrow it.
+        - rg rarest literal only; no common words in alternation.
         - Never sed -i/heredoc/redirect to change files.
       '';
 

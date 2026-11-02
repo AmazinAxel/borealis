@@ -41,11 +41,11 @@
         "nixpkgs-servo": "nixpkgs-servo"
       },
       "locked": {
-        "lastModified": 1793659815,
-        "narHash": "sha256-I/1xUlt02+PhcHoVPZ72e5SGEmiopDYVrwvYI4odNbc=",
+        "lastModified": 1793660818,
+        "narHash": "sha256-yKsKwBeVz/o+DBOtCJz8f1uRQ9UZQxpDgX3LazVNcso=",
         "owner": "AmazinAxel",
         "repo": "flurry",
-        "rev": "04c55b8a422ec693d79ad91fcb9641746ae2fdb5",
+        "rev": "b3331a6fd8fa2c78ae89ab9ca68034087abf3b30",
         "type": "github"
       },
       "original": {
