@@ -26,12 +26,6 @@
 
   services.wl-clip-persist.enable = true; # always paste instantly!
 
-  # Flurry clipboard management
-  services.cliphist = {
-    enable = true;
-    extraOptions = [ "-preview-width" "200" "-max-items" "20" "-max-dedupe-search" "5" ];
-  };
-
   xdg = {
     configFile."xdg-terminals.list".text = "footclient.desktop\n"; # open in Terminal
 

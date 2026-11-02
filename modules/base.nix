@@ -5,6 +5,7 @@ in {
 
   users.users.${user} = { # Default user
     isNormalUser = true;
+    shell = pkgs.fish;
     extraGroups = [ "wheel" "audio" "video" "dialout" ];
   };
 
@@ -74,7 +75,10 @@ in {
         push.autoSetupRemote = true;
       };
     };
-    fish.useBabelfish = true; # env scripts translated at build, no bash spawn per shell
+    fish = {
+      enable = true;
+      useBabelfish = true; # env scripts translated at build, no bash spawn per shell
+    };
     command-not-found.enable = false;
   };
   security.sudo.extraConfig = "Defaults lecture=never"; # lectures are on by default

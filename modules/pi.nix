@@ -1,5 +1,6 @@
-{ pkgs, lib, ... }: {
+{ pkgs, lib, config, ... }: {
   imports = [ ./tmpfs-root.nix ];
+  home-manager.users.${config.borealis.user}.imports = [ ../home-manager/fish.nix ];
 
   boot = {
     kernelPackages = pkgs.linuxPackages; # LTS

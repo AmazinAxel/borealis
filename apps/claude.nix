@@ -154,29 +154,13 @@ in {
         autoCompactEnabled = true;
         autoCompactWindow = 200000;
         includeGitInstructions = false;
-        skillOverrides = { # listing is resent every call
-          code-review = "user-invocable-only";
-          simplify = "user-invocable-only";
-          security-review = "user-invocable-only";
-          loop = "off";
-          run = "user-invocable-only";
-          init = "user-invocable-only";
-          dataviz = "off";
-          update-config = "off";
-          keybindings-help = "off";
-          fewer-permission-prompts = "off";
-          schedule = "off";
-          claude-api = "off";
-          plugin-authoring = "off";
-          artifact-design = "off";
-          artifact-diagramming = "off";
-          artifact-capabilities = "off";
-        };
+        disableBundledSkills = true; # listing is resent every call
         autoUpdates = false; # the store is read-only
         cleanupPeriodDays = 7; # trim old transcripts
 
         env = {
           ENABLE_TOOL_SEARCH = "1"; # fetch tool schemas on demand, not up front
+          CLAUDE_CODE_DISABLE_EXPLORE_PLAN_AGENTS = "1";
           BASH_MAX_OUTPUT_LENGTH = "12000"; # truncate runaway command output
           MAX_MCP_OUTPUT_TOKENS = "8000";
           DISABLE_TELEMETRY = "1";
@@ -191,7 +175,7 @@ in {
 
         hooks.UserPromptSubmit = [{
           # re-sent every turn, so it stays recent in long sessions where the system prompt fades
-          hooks = [{ type = "command"; command = "echo 'Caveman: \"Service gone, laptop.nix:74.\"'"; }];
+          hooks = [{ type = "command"; command = "echo 'Caveman, max 3 lines: \"Service gone, laptop.nix:74.\"'"; }];
         }];
 
         permissions.deny = [
@@ -199,6 +183,9 @@ in {
           "Read(**/node_modules/**)"
           "Read(**/.direnv/**)"
           "Read(**/.git/objects/**)"
+          "Read(**/target/**)"
+          "Read(**/dist/**)"
+          "Read(**/result/**)"
           # unused tools, their schemas cost tokens every call
           "Artifact"
           "ListAgents"
@@ -227,8 +214,9 @@ in {
         Caveman, fewest words, every reply. No articles, "I", filler, hedges.
         Not: "The flash was caused by focus being set in an idle callback, so I moved it."
         But: "Flash: focus set in idle callback. Moved before redraw, wifi.rs:40."
+        Advice: "Stay. Pi saves ~25%, risks account."
 
-        Think full, talk small: keep cause, risk, disagreement. Default 1 line, cap 3 unless detail asked.
+        Think full, talk small: keep cause, risk, disagreement. Max 3 short lines, even for research or multi-part questions; longer only if user says "explain".
         - No headers, bold, lists, recap, offers, unchosen options.
         - Question → answer, no edits. Change → what, file:line.
         - Ambiguous intent → AskUserQuestion first.
@@ -237,7 +225,8 @@ in {
         Each call re-sends all context: fewest calls win.
         - All Edits and reads in one response.
         - Smallest change, no unrequested refactors/comments.
-        - rg -n, cap with head, Read offset/limit, no re-reads. Stop at first answer.
+        - Read only what task needs: known file → go straight there, no exploring, no "for context" reads.
+        - rg -n first, cap with head, Read offset/limit around match, never whole file unless edit needs it, no re-reads. Stop at first answer.
         - Never sed -i/heredoc/redirect to change files.
       '';
 
@@ -299,8 +288,10 @@ in {
       functions = {
         c = "__cdp_arg $argv[1]; or return; claude --dangerously-skip-permissions $argv[2..]";
         cr = "__cdp_arg $argv[1]; or return; claude --dangerously-skip-permissions --resume $argv[2..]";
+        cq = "c $argv[1] --model sonnet --effort low --tools=Bash,Read,Edit,Write $argv[2..]";
+        cqr = "cr $argv[1] --model sonnet --effort low --tools=Bash,Read,Edit,Write $argv[2..]";
       };
-      interactiveShellInit = ''complete -c c -c cr -f -a "(__proj_dirs)"'';
+      interactiveShellInit = ''complete -c c -c cr -c cq -c cqr -f -a "(__proj_dirs)"'';
     };
   };
 }

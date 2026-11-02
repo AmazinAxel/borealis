@@ -32,7 +32,6 @@ in {
     users.${user}.imports = [ ../home-manager/home.nix ];
     backupFileExtension = "backup2";
   };
-  users.users.${user}.shell = pkgs.fish; # default shell for ssh and foot
 
   xdg.sounds.enable = false; # don't need
   system.tools = { # don't need
@@ -122,7 +121,6 @@ in {
   programs = {
     dconf.enable = true; # For hm
     gpu-screen-recorder.enable = true; # Clipping & recording software
-    fish.enable = true; # Managed by hm but need this for path
     gnupg.agent = {
       enable = true;
       pinentryPackage = pkgs.pinentry-gnome3;

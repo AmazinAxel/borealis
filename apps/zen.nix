@@ -11,10 +11,6 @@ in {
       enable = true;
       setAsDefaultBrowser = true;
       nativeMessagingHosts = [ pkgs.passff-host ]; # pass store integration
-      policies.ExtensionSettings."addon@darkreader.org" = {
-        install_url = "https://addons.mozilla.org/firefox/downloads/latest/darkreader/latest.xpi";
-        installation_mode = "force_installed";
-      };
 
       profiles.default = {
         settings = { # Other settings are managed by Mozilla settings sync
