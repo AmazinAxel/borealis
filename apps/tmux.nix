@@ -2,12 +2,13 @@
   nord = (import ../nord.nix).hex;
 in {
   environment.systemPackages = [ pkgs.foot.terminfo ]; # tmux refuses to start over ssh from foot without it
-  programs.fish.shellFunctions = lib.mapAttrs (_: cmd: { body = "${cmd} $argv"; modifiers.wraps = cmd; }) {
-    t = "tmux";
-    ta = "tmux new -A -s main"; # attach or create
-    tl = "tmux ls";
-    tk = "tmux kill-session -t";
+  programs.fish.shellFunctions = {
+    t.body = "if set -q argv[1]; tmux new -A -s $argv[1]; else; tmux new; end"; # attach or create
+    tk.body = "for s in $argv; tmux kill-session -t $s; end";
   };
+  programs.fish.interactiveShellInit = ''
+    complete -c t -c tk -f -a "(tmux ls -F '#S' 2>/dev/null)"
+  '';
 
   programs.tmux = {
     enable = true;
