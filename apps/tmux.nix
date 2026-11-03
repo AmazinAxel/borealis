@@ -25,8 +25,12 @@ in {
 
       set -g status-interval 0 # no periodic redraw
       set -g status-style "bg=default,fg=${nord.nord4}"
-      set -g status-left "#[bg=${nord.nord4},fg=${nord.nord3}] #S #[bg=${nord.nord10},fg=${nord.nord4}]#[bg=default,fg=${nord.nord10}]"
+      set -g status-left "#[bg=${nord.nord4},fg=${nord.nord3}] #S #[bg=${nord.nord10},fg=${nord.nord4}]#[bg=#{?#{==:#{window_index},#{base-index}},${nord.nord9},default},fg=${nord.nord10}]"
+      set -g status-left-length 50 # default 10 truncates session names
       set -g status-right ""
+      set -g window-status-current-style default
+      set -g pane-status-current-style default
+      set -g session-status-current-style default
       set -g window-status-separator ""
       set -g window-status-format " #I:#W "
       set -g window-status-current-format "#[bg=${nord.nord9},fg=${nord.nord0}] #I:#W #[bg=default,fg=${nord.nord9}]"

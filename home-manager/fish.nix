@@ -46,6 +46,7 @@ in {
         end
         test -n "$branch"; and set branch "($branch)"
 
+        echo
         if contains -- "$TERM" linux dumb
           echo -n "$hostname $dir $branch > "
           return

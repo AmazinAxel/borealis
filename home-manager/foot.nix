@@ -27,6 +27,7 @@ in {
         beam-thickness = 1;
       };
       key-bindings.clipboard-paste = "Control+Shift+v XF86Paste";
+      text-bindings."\\x1b\\x7f" = "Control+BackSpace"; # legacy ^H is indistinguishable from C-h in tmux
       tweak.delayed-render-lower = 0; # draw output immediately instead of batching
 
       colors-dark = nordColors // {

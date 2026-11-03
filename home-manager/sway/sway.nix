@@ -72,7 +72,7 @@
           { app_id = "nemo"; } # file browser
           { app_id = "foot-float"; } # terminal
           { app_id = "org.gnome.FileRoller"; } # file extraction dialogs
-          { app_id = "org.gnome.gThumb"; } # image viewer
+          { app_id = "org.gnome.gthumb"; } # image viewer
           { app_id = "xdg-desktop-portal-gtk"; } # file chooser from an app
         ];
       };
