@@ -6,7 +6,7 @@
     text = ''
       export LC_ALL=C.UTF-8
 
-      IFS=$'\t' read -r sid vim ms add del s w sr wr cache ctx < <(jq -r '[
+      IFS=$'\t' read -r sid vim ms add del s w sr wr tok < <(jq -r '[
         (.session_id // "-"),
         (.vim.mode // "-"), (.cost.total_api_duration_ms // 0 | floor),
         (.cost.total_lines_added // 0), (.cost.total_lines_removed // 0),
@@ -14,8 +14,7 @@
         (.rate_limits.seven_day.used_percentage // -1 | floor),
         (.rate_limits.five_hour.resets_at // 0 | floor),
         (.rate_limits.seven_day.resets_at // 0 | floor),
-        (.context_window.current_usage.cache_read_input_tokens // -1),
-        (.context_window.used_percentage // 0 | floor)
+        (.context_window.current_usage // {} | (.input_tokens // 0) + (.cache_creation_input_tokens // 0) + (.cache_read_input_tokens // 0))
       ] | @tsv')
 
       # limits only update on this session's replies; a change here is the freshest, so share it
@@ -59,9 +58,8 @@
         NORMAL) mode="''${frost}NOR " ;;
         *) mode="" ;;
       esac
-      # cache is -1 before the first reply
-      if (( cache == 0 )); then mode+=$'\e[1;31m[!]\e[22m '
-      elif (( ctx >= 60 )); then mode+=$'\e[1;33m[!]\e[22m '; fi
+      if (( tok >= 150000 )); then mode+=$'\e[1;33m'"[$(( tok / 1000 ))k]"$'\e[22m '
+      elif (( tok >= 50000 )); then mode+="''${fg}[$(( tok / 1000 ))k] "; fi
 
       left="''${mode}''${fg}''${dur} ''${green}+''${add}''${dim}/''${red}-''${del}"
       shopt -s extglob
