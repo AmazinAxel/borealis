@@ -61,7 +61,7 @@
       if (( tok >= 150000 )); then mode+=$'\e[1;33m'"[$(( tok / 1000 ))k]"$'\e[22m '
       elif (( tok >= 50000 )); then mode+="''${fg}[$(( tok / 1000 ))k] "; fi
 
-      left="$mode"
+      left="$r$mode" # leading escape keeps the padding from being trimmed
       (( sec > 0 )) && left+="''${fg}''${dur} "
       (( add > 0 || del > 0 )) && left+="''${green}+''${add}''${dim}/''${red}-''${del}"
       shopt -s extglob
