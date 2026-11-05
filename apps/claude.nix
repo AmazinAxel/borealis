@@ -61,7 +61,9 @@
       if (( tok >= 150000 )); then mode+=$'\e[1;33m'"[$(( tok / 1000 ))k]"$'\e[22m '
       elif (( tok >= 50000 )); then mode+="''${fg}[$(( tok / 1000 ))k] "; fi
 
-      left="''${mode}''${fg}''${dur} ''${green}+''${add}''${dim}/''${red}-''${del}"
+      left="$mode"
+      (( sec > 0 )) && left+="''${fg}''${dur} "
+      (( add > 0 || del > 0 )) && left+="''${green}+''${add}''${dim}/''${red}-''${del}"
       shopt -s extglob
       l=''${left//$'\e'\[*([0-9;])m/}
 
@@ -111,6 +113,9 @@ in {
   };
 
   home-manager.users.${user} = {
+    home.file.".claude/keybindings.json".text = builtins.toJSON { # always bypass; drops the mode hint
+      bindings = [ { context = "Chat"; bindings."shift+tab" = null; } ];
+    };
     programs.claude-code = {
       enable = true;
       package = pkgs.symlinkJoin { # tools claude reaches for, on its PATH only
@@ -194,6 +199,7 @@ in {
           "ExitWorktree"
           "NotebookEdit"
           "ScheduleWakeup"
+          "Skill"
         ];
       };
 
