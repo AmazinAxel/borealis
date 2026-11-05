@@ -150,6 +150,7 @@ in {
         };
         preferredNotifChannel = "ghostty"; # notifications
         autoCompactWindow = 234000; # 200k tokens
+        autoCompactEnabled = false; # /clear
         includeGitInstructions = false;
         disableBundledSkills = true; # listing is resent every call
         autoUpdates = false; # the store is read-only
