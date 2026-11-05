@@ -1,17 +1,8 @@
 { pkgs, lib, config, ... }: let
   mod = "Mod4";
-  # step-workspace <+|-> [move]: next/prev workspace clamped to 1-9
-  stepWorkspace = pkgs.writeShellScript "step-workspace" ''
-    current=$(swaymsg -p -t get_workspaces | awk '/\(focused\)/{print $2}')
-    target=$((current $1 1))
-    ((target < 1)) && target=1
-    ((target > 9)) && target=9
-    ((target == current)) && exit
-    [ "$2" = move ] && exec swaymsg move container to workspace number $target, workspace number $target
-    exec swaymsg workspace number $target
-  '';
-  workspace = dir: "exec ${stepWorkspace} ${dir}";
-  moveItemToWorkspace = dir: "exec ${stepWorkspace} ${dir} move";
+  # next/prev workspace clamped to 1-9
+  workspace = dir: "nop flurry workspace ${dir}";
+  moveItemToWorkspace = dir: "nop flurry workspace move${dir}";
   # arrows and hjkl: focus, move window, switch workspace, move window to workspace
   directionBinds = lib.concatMapAttrs (dir: vim: let step = if dir == "left" || dir == "up" then "-" else "+"; in
     lib.mergeAttrsList (map (key: {
@@ -20,113 +11,75 @@
       "control+${mod}+${key}" = workspace step;
       "control+${mod}+shift+${key}" = moveItemToWorkspace step;
     }) [ dir vim ])) { left = "h"; right = "l"; up = "k"; down = "j"; };
-  # Float foot if the focused workspace has apps other than foot/nemo
-  openFoot = pkgs.writeShellScript "open-foot" ''
-    swaymsg -t get_tree | ${pkgs.jq}/bin/jq -e '
-      ([.. | objects | select(.type? == "workspace" and ([.. | objects | .focused?] | any))][0] // {}) |
-      [.. | objects | select(
-        (.type? == "con" or .type? == "floating_con") and
-        (.nodes? // [] | length) == 0 and
-        (((.app_id? // "") | startswith("foot")) | not) and
-        ((.app_id? // "") != "nemo")
-      )] | length > 0
-    ' >/dev/null && exec footclient --app-id foot-float
-    exec footclient
-  '';
-  toggleTheme = pkgs.writeShellScript "toggle-theme" ''
-    gs=${pkgs.glib}/bin/gsettings
-    pk=${pkgs.procps}/bin/pkill
-    themes=${config.gtk.theme.package}/share/themes
-    gtk4css=$HOME/.config/gtk-4.0/gtk.css
-    if [ "$($gs get org.gnome.desktop.interface color-scheme)" = "'prefer-dark'" ]; then
-      $gs set org.gnome.desktop.interface color-scheme 'prefer-light'
-      $gs set org.gnome.desktop.interface gtk-theme 'Graphite-Light-nord'
-      ln -sfn "$themes/Graphite-Light-nord/gtk-4.0/gtk.css" "$gtk4css"
-      $pk -USR2 -f "foot --server" || true # SIGUSR2 = [colors-light]
-    else
-      $gs set org.gnome.desktop.interface color-scheme 'prefer-dark'
-      $gs set org.gnome.desktop.interface gtk-theme 'Graphite-Dark-nord'
-      ln -sfn "$themes/Graphite-Dark-nord/gtk-4.0/gtk.css" "$gtk4css"
-      $pk -USR1 -f "foot --server" || true # SIGUSR1 = [colors-dark]
-    fi
-  '';
-  toggleDim = pkgs.writeShellScript "toggle-dim" ''
-    set -- rs.wl-gammarelay / rs.wl.gammarelay Brightness
-    if [ "$(busctl --user get-property "$@")" = "d 1" ]; then
-      busctl --user set-property "$@" d 0.4
-    else
-      busctl --user set-property "$@" d 1
-    fi
-  '';
 in {
   wayland.windowManager.sway = {
     config.keybindings = directionBinds // {
       # Volume
-      "XF86AudioRaiseVolume" = "exec wpctl set-volume @DEFAULT_SINK@ .05+";
-      "XF86AudioLowerVolume" = "exec wpctl set-volume @DEFAULT_SINK@ .05-";
-      "XF86AudioMute" = "exec wpctl set-mute @DEFAULT_SINK@ toggle";
+      "XF86AudioRaiseVolume" = "nop flurry volume up";
+      "XF86AudioLowerVolume" = "nop flurry volume down";
+      "XF86AudioMute" = "nop flurry volume mute";
 
       # Brightness
-      "XF86MonBrightnessUp" = "exec brightnessctl set +15%";
-      "XF86MonBrightnessDown" = "exec brightnessctl set 15%-";
+      "XF86MonBrightnessUp" = "nop flurry brightness up";
+      "XF86MonBrightnessDown" = "nop flurry brightness down";
 
       # Apps
-      "${mod}+return" = "exec ${openFoot}";
+      "${mod}+return" = "nop flurry terminal";
       "${mod}+N" = "exec nemo";
       "${mod}+shift+N" = "exec env SUDO_ASKPASS=${pkgs.writeShellScript "zenity-askpass" "exec ${pkgs.zenity}/bin/zenity --password"} sudo -AE ${pkgs.nemo-with-extensions}/bin/nemo"; # root nemo
 
       # Flurry
-      "${mod}+space" = "exec flurry toggle launcher";
-      "${mod}+P" = "exec flurry toggle pass";
-      "${mod}+I" = "exec flurry randomWallpaper";
-      "${mod}+X" = "exec flurry closeMenu";
-      "control+${mod}+P" = "exec flurry toggle passSave";
-      "control+${mod}+z" = "exec flurry toggleBluetooth";
-      "control+${mod}+x" = "exec flurry toggleWifi";
-      "control+${mod}+c" = "exec flurry toggleCalendar";
+      "${mod}+space" = "nop flurry toggle launcher";
+      "${mod}+P" = "nop flurry toggle pass";
+      "${mod}+I" = "nop flurry randomWallpaper";
+      "${mod}+X" = "nop flurry closeMenu";
+      "control+${mod}+P" = "nop flurry toggle passSave";
+      "control+${mod}+z" = "nop flurry toggleBluetooth";
+      "control+${mod}+x" = "nop flurry toggleWifi";
+      "control+${mod}+c" = "nop flurry toggleCalendar";
 
-      "control+${mod}+Q" = "exec flurry sideview plan";
-      "control+${mod}+W" = "exec flurry sideview assistant";
-      "control+${mod}+E" = "exec flurry sideview custom";
-      "control+${mod}+R" = "exec flurry closeSideview"; # destroy
-      "${mod}+A" = "exec flurry toggleSideviewFocus";
-      "control+${mod}+Tab" = "exec flurry toggleSideview"; # hides, or reopens the last page
-      "${mod}+G" = "exec flurry toggleSideviewSize";
+      "control+${mod}+Q" = "nop flurry sideview plan";
+      "control+${mod}+W" = "nop flurry sideview assistant";
+      "control+${mod}+E" = "nop flurry sideview custom";
+      "control+${mod}+R" = "nop flurry closeSideview"; # destroy
+      "${mod}+A" = "nop flurry toggleSideviewFocus";
+      "control+${mod}+Tab" = "nop flurry toggleSideview"; # hides, or reopens the last page
+      "${mod}+G" = "nop flurry toggleSideviewSize";
 
-      "${mod}+C" = "exec flurry hideNotif"; # Closes last notification
-      "${mod}+M" = "exec flurry invokeOldestNotif"; # Activates first action of the oldest notification!
-      "control+${mod}+M" = "exec flurry invokeOldestNotif 1"; # 2nd action
-      "shift+${mod}+M" = "exec flurry invokeOldestNotif 2"; # 3rd action
-      "${mod}+S" = "exec flurry toggleStreamingMode";
-      "${mod}+B" = "exec ${toggleTheme}";
-      "${mod}+O" = "exec ${toggleDim}";
-      "${mod}+T" = "exec flurry toggleFocus";
-      "${mod}+Escape" = "exec flurry cancelBreak";
-      "${mod}+Z" = "exec flurry toggleStatus";
+      "${mod}+C" = "nop flurry hideNotif"; # Closes last notification
+      "${mod}+M" = "nop flurry invokeOldestNotif"; # Activates first action of the oldest notification!
+      "control+${mod}+M" = "nop flurry invokeOldestNotif 1"; # 2nd action
+      "shift+${mod}+M" = "nop flurry invokeOldestNotif 2"; # 3rd action
+      "${mod}+S" = "nop flurry toggleStreamingMode";
+      "${mod}+B" = "nop flurry theme";
+      "${mod}+O" = "nop flurry dim";
+      "${mod}+T" = "nop flurry toggleFocus";
+      "${mod}+Escape" = "nop flurry cancelBreak";
+      "${mod}+Z" = "nop flurry toggleStatus";
 
-      "${mod}+V" = "exec flurry toggle clipboard";
+      "${mod}+V" = "nop flurry toggle clipboard";
       # Enter = select entry, C = copy 2nd entry, E = edit image with swappy, G = open in gthumb, M = compress video, N = show in nemo, W = wipe clipboard
 
-      "${mod}+R" = "exec flurry record";
+      "${mod}+R" = "nop flurry record";
       # R = toggle mic, Q = toggle quality, C = clip last 30s, Space = record
 
-      "XF86PowerOff" = "exec flurry toggle powermenu";
-      "${mod}+shift+S" = "exec flurry toggle powermenu";
+      "XF86PowerOff" = "nop flurry toggle powermenu";
+      "${mod}+shift+S" = "nop flurry toggle powermenu";
       # S = sleep, Q = shutdown, L = lock, R = restart
 
       # Mpris/spotify
-      "control+${mod}+S" = ''exec "playerctl --player=spotify,%any play-pause"''; # toggle play/pause
-      "control+${mod}+D" = ''exec "playerctl --player=spotify,%any next"''; # next track
-      "control+${mod}+A" = ''exec "playerctl --player=spotify,%any previous"''; # previous track
+      "control+${mod}+S" = "nop flurry mpris toggle"; # toggle play/pause
+      "control+${mod}+D" = "nop flurry mpris next"; # next track
+      "control+${mod}+A" = "nop flurry mpris prev"; # previous track
 
       # Flurry MPD controls
-      "${mod}+control+period" = "exec flurry media next";
-      "${mod}+control+comma" = "exec flurry media prev";
-      "${mod}+greater" = "exec flurry media nextPlaylist";
-      "${mod}+less" = "exec flurry media prevPlaylist";
-      "${mod}+slash" = "exec flurry media toggle";
+      "${mod}+control+period" = "nop flurry media next";
+      "${mod}+control+comma" = "nop flurry media prev";
+      "${mod}+greater" = "nop flurry media nextPlaylist";
+      "${mod}+less" = "nop flurry media prevPlaylist";
+      "${mod}+slash" = "nop flurry media toggle";
 
-      "Print" = "exec screenshot"; # Screenshot
+      "Print" = "nop flurry screenshot"; # Screenshot
 
       "${mod}+minus" = "floating enable, resize set 1800 960, move scratchpad, move position center";
       "${mod}+equal" = "scratchpad show";

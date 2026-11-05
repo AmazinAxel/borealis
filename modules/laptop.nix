@@ -21,7 +21,6 @@ in {
 
   boot.initrd = {
     includeDefaultModules = false;
-    compressor = "zstd";
     compressorArgs = [ "-19" "-T0" ];
   };
 
@@ -59,6 +58,9 @@ in {
       ACTION=="add|change", SUBSYSTEM=="pci", ATTR{class}=="0x0c0330", ATTR{power/wakeup}="disabled"
       ACTION=="add|change", SUBSYSTEM=="pci", ATTR{class}=="0x060400", ATTR{power/wakeup}="disabled"
 
+      # flurry writes the backlight directly (video group), no logind round trip
+      ACTION=="add", SUBSYSTEM=="backlight", RUN+="${pkgs.coreutils}/bin/chgrp video /sys/class/backlight/%k/brightness", RUN+="${pkgs.coreutils}/bin/chmod g+w /sys/class/backlight/%k/brightness"
+
       # runs after tlp's own 85-tlp.rules
       ACTION=="change", SUBSYSTEM=="power_supply", KERNEL=="BAT*", RUN+="${tlpMode}"
     '';
@@ -78,11 +80,6 @@ in {
 
         PLATFORM_PROFILE_ON_BAT = "low-power";
         PCIE_ASPM_ON_BAT = "powersupersave";
-        RUNTIME_PM_ON_BAT = "auto";
-        WIFI_PWR_ON_BAT = "on";
-
-        RADEON_DPM_PERF_LEVEL_ON_BAT = "auto"; # low drops frames
-        AMDGPU_ABM_LEVEL_ON_BAT = 1;
 
         # causes crackling noises otherwise
         SOUND_POWER_SAVE_ON_AC = 0;

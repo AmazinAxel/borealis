@@ -1,13 +1,5 @@
 { borealis, pkgs, lib, config, ... }: let
   inherit (config.borealis) user;
-  screenshot = pkgs.writeShellScriptBin "screenshot" ''
-    ${pkgs.wayfreeze}/bin/wayfreeze --hide-cursor --after-freeze-cmd '
-      geom=$(${pkgs.slurp}/bin/slurp) &&
-        ${pkgs.grim}/bin/grim -g "$geom" - |
-          ${pkgs.wl-clipboard}/bin/wl-copy -t image/png
-      ${pkgs.procps}/bin/pkill wayfreeze
-    '
-  '';
 in {
   imports = [ ./tmpfs-root.nix ];
 
@@ -39,16 +31,11 @@ in {
     nixos-install.enable = false;
     nixos-enter.enable = false;
     nixos-option.enable = false;
+    nixos-build-vms.enable = false;
   };
-
   environment = {
     systemPackages = with pkgs; [
       # Desktop services
-      libnotify # Flurry internal notifications
-      mpc
-      screenshot # Freeze-then-select region screenshot (defined above)
-      brightnessctl
-      playerctl # mpris control from shell
       pass # password management
       xdg-terminal-exec # open in terminals
       wl-clipboard # wl paste for some apps
@@ -116,7 +103,14 @@ in {
     ] (_: { enable = false; });
   };
 
-  fonts.packages = [ pkgs.nerd-fonts.iosevka ]; # Programming
+  # reduce font size
+  fonts.packages = [ (pkgs.runCommand "iosevka-nerd-font-mono" {} ''
+    mkdir -p $out/share/fonts/truetype
+    cp ${pkgs.nerd-fonts.iosevka}/share/fonts/truetype/NerdFonts/Iosevka/IosevkaNerdFontMono-{Regular,Bold,Italic,BoldItalic}.ttf $out/share/fonts/truetype/
+  '') ];
+  # nx-gc trims and dedupes on demand: nothing on a timer
+  services.fstrim.enable = false;
+  nix.optimise.automatic = false;
 
   programs = {
     dconf.enable = true; # For hm
@@ -152,10 +146,7 @@ in {
     logind.settings.Login.HandlePowerKey = "ignore"; # Don't turn off computer on power key press
 
     # Prevent crashes
-    earlyoom = {
-       enable = true;
-       freeMemThreshold = 10; # 10%
-    };
+    earlyoom.enable = true;
     speechd.enable = false; # unused TTS daemon, browsers spawn it
     scx = { # sched_ext scheduler that favors interactive tasks
       enable = true;
@@ -187,7 +178,6 @@ in {
 
   # Since we dont use the sway nix module we have to set the portal explicitly for things like flatpak and screensharing to work
   xdg.portal = {
-    enable = true;
     wlr = {
       enable = true;
       settings.screencast = { # needed for now

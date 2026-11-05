@@ -5,5 +5,8 @@ sudo -Sp '' -v <<< "$pass" || exit 1
 nix-collect-garbage -d # user-collected garbage
 sudo -Sp '' nix-collect-garbage -d <<< "$pass"
 
+# Dedupe
+sudo -Sp '' nix-store --optimise <<< "$pass"
+
 # Trim
 sudo -Sp '' fstrim -av <<< "$pass"

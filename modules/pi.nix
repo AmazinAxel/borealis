@@ -3,10 +3,7 @@
   home-manager.users.${config.borealis.user}.imports = [ ../home-manager/fish.nix ];
 
   boot = {
-    kernelPackages = pkgs.linuxPackages; # LTS
-
     loader = { # Raspi boot
-      systemd-boot.enable = false;
       grub.enable = false;
       generic-extlinux-compatible = {
         enable = true;
@@ -33,10 +30,7 @@
     PowerSaveDisable = "brcmfmac"; # stops network drops
   };
 
-  hardware = {
-    enableRedistributableFirmware = lib.mkForce false; # not needed
-    firmware = [ pkgs.raspberrypiWirelessFirmware ]; # needed for wifi to work
-  };
+  hardware.firmware = [ pkgs.raspberrypiWirelessFirmware ]; # needed for wifi to work
 
   nixpkgs = {
     hostPlatform = "aarch64-linux";

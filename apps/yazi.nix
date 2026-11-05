@@ -3,7 +3,6 @@
 in {
   home-manager.users.${config.borealis.user}.programs.yazi = {
     enable = true;
-    enableFishIntegration = true; # y wrapper, cd on quit
     extraPackages = [ pkgs.sshfs pkgs.ouch ];
     plugins = {
       sshfs = { package = pkgs.yaziPlugins.sshfs; setup = true; };

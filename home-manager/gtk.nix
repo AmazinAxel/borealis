@@ -6,8 +6,12 @@
     ];
 
     font = {
-      name = "Ubuntu Nerd Font Propo Medium";
-      package = pkgs.nerd-fonts.ubuntu-sans;
+      name = "UbuntuSans Nerd Font Propo Medium"; # the family's real name ("Ubuntu Nerd Font Propo" fell back to DejaVu Sans)
+      # only the styles GTK draws with (the package is 97M of variants)
+      package = pkgs.runCommand "ubuntu-sans-nerd-font-propo" {} ''
+        mkdir -p $out/share/fonts/truetype
+        cp ${pkgs.nerd-fonts.ubuntu-sans}/share/fonts/truetype/NerdFonts/UbuntuSans/UbuntuSansNerdFontPropo-{Regular,Medium,Bold,Italic,MediumItalic,BoldItalic}.ttf $out/share/fonts/truetype/
+      '';
       size = 11;
     };
     iconTheme = {
@@ -25,7 +29,6 @@
   };
 
   dconf = {
-    enable = true;
     settings = {
       "org/gnome/desktop/interface" = {
         color-scheme = "prefer-dark";

@@ -55,7 +55,6 @@ in {
         git = {
           enableSmartCommit = true;
           confirmSync = false;
-          autofetch = false;
         };
         workbench = {
           startupEditor = "none";

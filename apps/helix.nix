@@ -41,8 +41,6 @@ in {
             middle-click-paste = false;
             scroll-lines = 10; # mouse scroll
             shell = ["fish" "-c"]; # default is bash
-            auto-info = true;
-            default-line-ending = "lf";
             trim-final-newlines = true; # only trims extra newlines
             trim-trailing-whitespace = true;
             popup-border = "all";
@@ -60,7 +58,6 @@ in {
               display-inlay-hints = true;
               inlay-hints-length-limit = 20;
             };
-            idle-timeout = 250; # delay while typing
             inline-diagnostics = {
               cursor-line = "error";
               other-lines = "error";
@@ -79,7 +76,6 @@ in {
             search.smart-case = false; # do NOT be case sensitive no matter what
 
             indent-guides.render = true;
-            gutters = [ "diagnostics" "spacer" "line-numbers" "spacer" "diff" ];
             soft-wrap.enable = true;
           };
           keys = let
@@ -127,8 +123,6 @@ in {
 
         languages = {
           language-server.harper-ls = {
-            command = "harper-ls";
-            args = [ "--stdio" ];
             config.harper-ls.linters = {
               UseTitleCase = false;
               UseEllipsisCharacter = false;

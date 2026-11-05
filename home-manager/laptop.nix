@@ -1,5 +1,5 @@
 { pkgs, ... }: {
-  wayland.windowManager.sway.config.keybindings."Mod4+D" = "exec screenshot"; # Side mouse key screenshot
+  wayland.windowManager.sway.config.keybindings."Mod4+D" = "nop flurry screenshot"; # Side mouse key screenshot
 
   services.batsignal = {
     enable = true;

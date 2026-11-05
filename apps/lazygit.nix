@@ -3,7 +3,6 @@
 in {
   home-manager.users.${config.borealis.user}.programs.lazygit = {
     enable = true;
-    enableFishIntegration = true;
     settings = {
       os.editPreset = "helix";
       gui.theme = with nord; {

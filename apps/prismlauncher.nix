@@ -15,14 +15,12 @@ in {
   home-manager.users.${user} = {
     programs.prismlauncher = {
       enable = true;
+      package = pkgs.prismlauncher.override { jdks = [ pkgs.jdk25 ]; }; # current Minecraft only (not 8/17/21 too)
       themes.Nord = "${prismThemes}/themes/Nord";
       settings = {
         CloseAfterLaunch = true;
         QuitAfterGameStop = true;
         ShowConsoleOnError = false;
-
-        UseNativeGLFW = false;
-        UseNativeOpenAL = false;
 
         StatusBarVisible = false;
 
@@ -32,7 +30,7 @@ in {
 
         ApplicationTheme = "Nord";
         IconTheme = "Ore UI";
-        ConsoleFont = "Iosevka Nerd Font";
+        ConsoleFont = "Iosevka Nerd Font Mono";
       };
     };
     home.file.".local/share/PrismLauncher/iconthemes/Ore UI".source = "${prismThemes}/icons/Ore UI";

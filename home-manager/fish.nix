@@ -64,7 +64,6 @@ in {
       set -q TMUX; or fetch
       complete -c cdp -f -a "(__proj_dirs)"
 
-      set fish_color_normal normal
       set fish_color_command ${nord.nord9}
       set fish_color_quote ${nord.nord14}
       set fish_color_redirection ${nord.nord9}

@@ -149,8 +149,7 @@ in {
           hideVimModeIndicator = true; # shown in the line
         };
         preferredNotifChannel = "ghostty"; # notifications
-        autoCompactEnabled = true;
-        autoCompactWindow = 200000;
+        autoCompactWindow = 234000; # 200k tokens
         includeGitInstructions = false;
         disableBundledSkills = true; # listing is resent every call
         autoUpdates = false; # the store is read-only
@@ -166,8 +165,6 @@ in {
           DISABLE_BUG_COMMAND = "1";
           DISABLE_FEEDBACK_COMMAND = "1";
           DISABLE_COST_WARNINGS = "1";
-          DISABLE_AUTOUPDATER = "1";
-          DISABLE_INSTALLATION_CHECKS = "1";
           CLAUDE_CODE_DISABLE_TERMINAL_TITLE = "1";
         };
 

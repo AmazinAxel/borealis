@@ -70,7 +70,6 @@ in {
       package = pkgs.gitMinimal;
       config = {
         init.defaultBranch = "main";
-        color.ui = true;
         credential.helper = "store --file=${config.users.users.${user}.home}/.local/share/git/credentials";
         push.autoSetupRemote = true;
       };
@@ -83,6 +82,8 @@ in {
   };
   security.sudo.extraConfig = "Defaults lecture=never"; # lectures are on by default
 
+  i18n.supportedLocales = [ "en_US.UTF-8/UTF-8" ]; # glibc-locales: ~3M, not 223M
+
   zramSwap = {
     enable = lib.mkDefault true;
     memoryPercent = lib.mkDefault 100;
@@ -91,7 +92,7 @@ in {
   nixpkgs.config.allowUnfree = true;
   nix = {
     channel.enable = false; # we only use flakes
-    optimise.automatic = true; # dedupe on a timer instead of slowing every build
+    optimise.automatic = lib.mkDefault true; # dedupe on a timer instead of slowing every build (desktops: nx-gc)
 
     settings = {
       experimental-features = [ "nix-command" "flakes" ];

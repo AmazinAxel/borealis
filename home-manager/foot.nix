@@ -1,4 +1,4 @@
-let
+{ pkgs, ... }: let
   nord = import ../nord.nix;
   nordColors = with nord; {
     regular0 = nord0; # Black
@@ -15,6 +15,8 @@ in {
     enable = true;
     server.enable = true;
     settings = {
+      # foot's default, with notify-send by store path (libnotify isn't on PATH)
+      desktop-notifications.command = "${pkgs.libnotify}/bin/notify-send --wait --app-name \${app-id} --icon \${app-id} --category \${category} --urgency \${urgency} --expire-time \${expire-time} --hint STRING:image-path:\${icon} --hint BOOLEAN:suppress-sound:\${muted} --hint STRING:sound-name:\${sound-name} --replace-id \${replace-id} \${action-argument} --print-id -- \${title} \${body}";
       main = {
         title = "Terminal";
         pad = "5x5";
@@ -23,10 +25,8 @@ in {
       cursor = {
         style = "beam";
         unfocused-style = "unchanged";
-        blink = false;
         beam-thickness = 1;
       };
-      key-bindings.clipboard-paste = "Control+Shift+v XF86Paste";
       text-bindings."\\x1b\\x7f" = "Control+BackSpace"; # legacy ^H is indistinguishable from C-h in tmux
       tweak.delayed-render-lower = 0; # draw output immediately instead of batching
 
