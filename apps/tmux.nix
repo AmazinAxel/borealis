@@ -23,6 +23,9 @@ in {
       set -g mouse on
       set -g focus-events on
       set -ga terminal-overrides ",foot*:Tc"
+      set -g extended-keys on # pass Shift+Enter etc. to apps
+      set -g extended-keys-format csi-u
+      set -ga terminal-features ",foot*:extkeys"
 
       set -g status-interval 0 # no periodic redraw
       set -g status-style "bg=default,fg=${nord.nord4}"
