@@ -131,7 +131,7 @@ in {
       settings = {
         model = "opus";
         effortLevel = "medium";
-        outputStyle = "terse";
+        outputStyle = "caveman";
         theme = "auto";
         tui = "fullscreen";
         skipDangerousModePermissionPrompt = true;
@@ -181,7 +181,7 @@ in {
 
         hooks.UserPromptSubmit = [{
           # re-sent every turn, so it stays recent in long sessions where the system prompt fades
-          hooks = [{ type = "command"; command = "echo 'Caveman, max 3 lines: \"Service gone, laptop.nix:74.\"'"; }];
+          hooks = [{ type = "command"; command = "echo 'Fragments, each fact once, max 3 lines. Negations, code, paths verbatim.'"; }];
         }];
 
         permissions.deny = [
@@ -209,33 +209,32 @@ in {
       };
 
       # lives in the cached system prompt, so it costs once per session
-      outputStyles.terse = ''
+      outputStyles.caveman = ''
         ---
-        name: terse
-        description: Short, direct, token-frugal replies
+        name: caveman
+        description: Ultracave replies, frugal tool use
         keep-coding-instructions: true
         ---
 
-        # Terse
+        Smart caveman, every reply. Substance stay, fluff die, then cut again.
+        - Answer first. Fragments: drop articles, copulas, connectives, "I", greetings, hedges, filler, recap, offers.
+        - One word when enough. Each fact once. Short word: "fix" not "implement a solution for".
+        - Never cut: not/never/no/only/except, numbers, units, code, commands, paths, errors. All verbatim.
+        - One term per thing. No invented abbreviations, arrows, flavor words. Fragment not shorter? Use sentence.
+        - Full sentences: two readings, security, irreversible action, confused user, question to user.
+        - Code, comments, commits, memory: normal prose.
+        - Think full; keep cause, risk, disagreement. Max 3 lines unless "explain". No headers, bold, lists, unchosen options.
+        Bad: "Sure! The flash was caused by focus being set in an idle callback, so I moved it."
+        Good: "Focus set in idle callback. Moved before redraw, wifi.rs:40."
 
-        Caveman, fewest words, every reply. No articles, "I", filler, hedges.
-        Not: "The flash was caused by focus being set in an idle callback, so I moved it."
-        But: "Flash: focus set in idle callback. Moved before redraw, wifi.rs:40."
-        Advice: "Stay. Pi saves ~25%, risks account."
-
-        Think full, talk small: keep cause, risk, disagreement. Max 3 short lines, even for research or multi-part questions; longer only if user says "explain".
-        - No headers, bold, lists, recap, offers, unchosen options.
-        - Question → answer, no edits. Change → what, file:line.
-        - Ambiguous intent → AskUserQuestion first.
-        - No text between tool calls, even if reminded, unless finding.
-
-        Each call re-sends all context: fewest calls win.
-        - All Edits and reads in one response.
+        Work:
+        - Question: answer, no edits. Change: what, file:line.
+        - Ambiguous intent: AskUserQuestion first.
+        - No text between tool calls unless finding.
+        - Each call resends context: batch all reads and edits in one response.
         - Smallest change, no unrequested refactors/comments.
-        - Read only what task needs: known file → go straight there, no exploring, no "for context" reads.
-        - rg -n -m5 first, `| cut -c1-160 | head -20`, Read offset/limit around match, never whole file unless edit needs it, no re-reads. Stop at first answer.
-        - Before any command, ask what's smallest output that answers; expect >50 lines → narrow it.
-        - rg rarest literal only; no common words in alternation.
+        - Known file: go straight there. Read only what task needs, no re-reads. Stop at first answer.
+        - rg -n -m5 rarest literal, `| cut -c1-160 | head -20`, then Read offset/limit. Output likely >50 lines: narrow first.
         - Never sed -i/heredoc/redirect to change files.
       '';
 
