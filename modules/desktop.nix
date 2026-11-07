@@ -148,9 +148,9 @@ in {
     # Prevent crashes
     earlyoom.enable = true;
     speechd.enable = false; # unused TTS daemon, browsers spawn it
-    scx = { # sched_ext scheduler that favors interactive tasks
+    scx-loader = { # sched_ext scheduler that favors interactive tasks
       enable = true;
-      scheduler = "scx_lavd";
+      config.default_sched = "scx_lavd";
     };
 
     # Sound
