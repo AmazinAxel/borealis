@@ -52,10 +52,10 @@ in {
           return
         end
         set_color -b ${nord.nord4} ${nord.nord3}; echo -n " $hostname "
-        set_color -b ${nord.nord10} ${nord.nord4}; echo -n 
-        set_color -b ${nord.nord9} ${nord.nord10}; echo -n 
+        set_color -b ${nord.nord10} ${nord.nord4}; echo -n 
+        set_color -b ${nord.nord9} ${nord.nord10}; echo -n 
         set_color ${nord.nord0}; echo -n " $dir $branch"
-        set_color normal; set_color ${nord.nord9}; echo -n " "
+        set_color normal; set_color ${nord.nord9}; echo -n " "
         set_color normal
       '';
     };
