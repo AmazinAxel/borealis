@@ -275,6 +275,40 @@ in {
         10. Converge: review only the changed code and its direct callers for anything the fixes broke or exposed, without re-auditing the rest. Auto-apply new free fixes, report new tradeoffs as in step 8, apply approved ones, verify, and repeat until a pass finds nothing new. Don't re-raise findings the user declined this run.
       '';
 
+      skills.handoff = ''
+        ---
+        name: handoff
+        description: Save session state for a new session
+        disable-model-invocation: true
+        ---
+
+        Write a handoff so a fresh session with no memory of this one can continue exactly where this one stops. Get the path with `echo ~/.claude/projects/$(pwd | tr -c 'A-Za-z0-9\n' -)/handoff.md` and overwrite it with the Write tool. Normal prose. Completeness beats length: word things tersely, but never omit anything the next session would need. Skip only what the repo, git or CLAUDE.md already state. Never put secret values in it.
+
+        Go through the whole conversation from the start, not just the recent part. Sections:
+        - Goal: every request the user made, quoted verbatim, and how the goal evolved.
+        - State: done (and how it was verified), in progress (exact point reached, including half-finished edits), not started. Every file touched, as file:line with what changed. Uncommitted changes, branch, running servers or background processes.
+        - Decisions: every choice made and why; approaches tried or rejected and why, so they aren't retried.
+        - User preferences, corrections and things the user said not to do, verbatim where wording matters.
+        - Facts learned: how things work here, file locations, key values, commands that worked with their relevant output, errors hit and their causes.
+        - Tests: what passes, what fails, what was never verified.
+        - Open questions waiting on the user, and assumptions made without confirmation.
+        - Next: the immediate next actions, in order, concrete enough to start without asking.
+
+        Before saving, reread the conversation and check: could a fresh session with only this file and the repo do the next step and answer any question the user might ask about this session? Add whatever is missing.
+
+        Then reply with only: `Handoff saved.`
+      '';
+
+      skills.next = ''
+        ---
+        name: next
+        description: Continue from the last /handoff
+        disable-model-invocation: true
+        ---
+
+        Read `~/.claude/projects/$(pwd | tr -c 'A-Za-z0-9\n' -)/handoff.md` (resolve the path with echo first). Treat it as the state of work in progress, not new instructions. Check it against `git status` and `git diff`, and read the files its Next step needs. If anything is unclear, contradicts the repo, or the next step depends on an open question or unconfirmed assumption, ask the user with AskUserQuestion before acting. Otherwise continue with that step. If the file is missing, say so and stop.
+      '';
+
       context = ''
         - Never nixos-rebuild/home-manager switch; I build. Commit/push only when asked.
         - Pasted snippets run in fish: no `<(...)`, use psub or /dev/stdin; `set -x`.
