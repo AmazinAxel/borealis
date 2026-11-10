@@ -58,6 +58,7 @@
       default = base;
       desktop = profile [ lanzaboote ./modules/desktop.nix ];
       laptop = profile [ lanzaboote ./modules/laptop.nix ];
+      arm = profile [ ./modules/arm.nix ];
       pi = profile [ ./modules/pi.nix ];
     } // lib.mapAttrs' (file: _: let app = lib.removeSuffix ".nix" file; in # opt-in apps, with a profile
       lib.nameValuePair app (keyed app [ ./apps/${file} ])
