@@ -41,11 +41,11 @@
         "nixpkgs-servo": "nixpkgs-servo"
       },
       "locked": {
-        "lastModified": 1794072853,
-        "narHash": "sha256-1tOgxPfvJtdsNgdMP8SxpNtZ8RLIhQ6tEMi8UQQaTNs=",
+        "lastModified": 1794329186,
+        "narHash": "sha256-qP1tIz3w9e/eeAnWy1LrtUGCMJcziui0tESm/Ob+Fsk=",
         "owner": "AmazinAxel",
         "repo": "flurry",
-        "rev": "f7f231b5b0032401dd6f58200eb8a51a6c6c08e3",
+        "rev": "bf86ef74ab987c902ac35a39d6995a26a1731599",
         "type": "github"
       },
       "original": {
@@ -60,11 +60,11 @@
         "rust-overlay": "rust-overlay"
       },
       "locked": {
-        "lastModified": 1790649139,
-        "narHash": "sha256-ZjMduEHRsY0H8OHJ5oiF/AcxOBhIiCBwo7D+g1yYwKc=",
+        "lastModified": 1794324597,
+        "narHash": "sha256-vD2EBNmDfhDu8NwEUtpv5K8EWvXoYJC17Mj4lpooMW8=",
         "owner": "helix-editor",
         "repo": "helix",
-        "rev": "ba40e547426b0f9896c8bdc699a4ab11f2b37dbc",
+        "rev": "57d864129eb54e1d4890a938e692ca465adaee3f",
         "type": "github"
       },
       "original": {
