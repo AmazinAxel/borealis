@@ -63,7 +63,7 @@
       esac
       box="[$(( tok / 1000 ))k/$u%]"
       if (( tok >= 150000 )); then mode+=$'\e[1;33m'"$box"$'\e[22m '
-      elif (( tok >= 50000 || u >= 1 )); then mode+="''${fg}$box "; fi
+      elif (( tok > 0 || u >= 1 )); then mode+="''${fg}$box "; fi
 
       left="$r$mode" # leading escape keeps the padding from being trimmed
       (( sec > 0 )) && left+="''${fg}''${dur} "
