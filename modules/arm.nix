@@ -1,6 +1,17 @@
 { lib, config, ... }: {
   imports = [ ./tmpfs-root.nix ];
-  home-manager.users.${config.borealis.user}.imports = [ ../home-manager/fish.nix ];
+  home-manager.users.${config.borealis.user} = {
+    imports = [ ../home-manager/fish.nix ];
+    programs.man.enable = false; # HM default-on, pulls man-db + groff
+    programs.fish.generateCompletions = false; # parses man pages via man-db
+    manual.manpages.enable = false;
+    xdg.mime.enable = false; # headless, pulls shared-mime-info
+  };
+
+  # Trim closure for slow remote deploys
+  system.disableInstallerTools = true; # nixos-generate-config pulls perl, btrfs/bcachefs tools
+  programs.nano.enable = false;
+  xdg.mime.enable = false; # headless, pulls shared-mime-info
 
   boot = {
     loader = { # u-boot extlinux boot
