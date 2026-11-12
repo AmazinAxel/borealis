@@ -4,13 +4,13 @@ Opinionated NixOS + home-manager base others import. Public repo: no private inf
 
 ## Wiring
 - `flake.nix`: `nixosModules.{default,desktop,laptop,arm,pi}` profiles (all but default include HM + impermanence); `base` sets `_module.args.borealis = inputs`. Upstream modules (HM, impermanence, lanzaboote) are imported in flake.nix, keyed, since `imports` can't use module args. `templates.default`.
-- `modules/options.nix`: `borealis.user` (required), `borealis.flake` (default `~/Projects/flake`, used by `nx-switch`). Use `config.borealis.user`, never a literal name.
-- `modules/base.nix`: every host (sysctl, networkd/iwd, nix settings).
+- `modules/options.nix`: `borealis.user` (required), `borealis.flake` (default `~/Projects/flake`, used by `nx-switch`/`nde`), `borealis.buildHost` (nde build box, null = local). Use `config.borealis.user`, never a literal name.
+- `modules/base.nix`: every host (sysctl, networkd/iwd, nix settings); imports `hardening.nix` (zero-cost hardening, sudo-rs, ssh key-only).
 - `modules/desktop.nix`: cachyos kernel, lanzaboote, sway, `screenshot`; imports `tmpfs-root.nix` (HM via flake profile), HM `home-manager/home.nix`.
 - `modules/laptop.nix`: desktop + bluetooth + tlp, HM `home-manager/laptop.nix`.
-- `modules/tmpfs-root.nix` → `impermanence.nix` (`/persist`); used by desktop + `arm.nix` (generic aarch64 extlinux device: Pi, handheld; `pi.nix` adds Pi wifi/LED bits).
+- `modules/tmpfs-root.nix`: tmpfs `/`, impermanence `/persist`; used by desktop + `arm.nix` (generic aarch64 extlinux SD device: Pi, handheld). `pi.nix` = arm + headless + Pi wifi/LED/no-bt. `headless.nix` (`nixosModules.headless`, servers): closure trims, perl forbidden, python-free fish copy, server-only hardening. `slim.nix`: remote-deploy trims shared by arm + headless (no installer tools, mime, fish completions, nixpkgs source); HM mirrors them in `home-manager.nix`.
 - `apps/<name>.nix`: opt-in NixOS modules, auto-exported as `nixosModules.<name>`. Each bundles package, HM config (`home-manager.users.${user}`) and persistence for one app.
-- `modules/home-manager.nix`: HM settings, `useGlobalPkgs`, passes `borealis` to HM.
+- `modules/home-manager.nix`: HM settings, `useGlobalPkgs`, passes `borealis` to HM, imports `fish.nix` for every HM host.
 
 ## home-manager/
 One file per program, all imported in `home.nix`. `sway/{sway,keybinds}.nix`, `flurry.nix` (enables flurry). Paths via `config.home.homeDirectory` / `config.xdg.userDirs`.

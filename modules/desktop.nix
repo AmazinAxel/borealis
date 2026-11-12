@@ -9,7 +9,6 @@ in {
   boot = {
     kernelPackages = pkgs.cachyosKernels.linuxPackages-cachyos-latest;
 
-    bcache.enable = false; # dont need
     initrd.systemd.tpm2.enable = false; # no TPM unlock! dont need
 
     loader.efi.canTouchEfiVariables = true;
@@ -25,14 +24,6 @@ in {
     backupFileExtension = "backup2";
   };
 
-  xdg.sounds.enable = false; # don't need
-  system.tools = { # don't need
-    nixos-generate-config.enable = false;
-    nixos-install.enable = false;
-    nixos-enter.enable = false;
-    nixos-option.enable = false;
-    nixos-build-vms.enable = false;
-  };
   environment = {
     systemPackages = with pkgs; [
       # Desktop services
@@ -103,22 +94,26 @@ in {
     ] (_: { enable = false; });
   };
 
-  # reduce font size
-  fonts.packages = [ (pkgs.runCommand "iosevka-nerd-font-mono" {} ''
-    mkdir -p $out/share/fonts/truetype
-    cp ${pkgs.nerd-fonts.iosevka}/share/fonts/truetype/NerdFonts/Iosevka/IosevkaNerdFontMono-{Regular,Bold,Italic,BoldItalic}.ttf $out/share/fonts/truetype/
-  '') ];
+  fonts = {
+    enableDefaultPackages = false; # drops noto cjk, unifont, freefont, gyre (~155M)
+    packages = with pkgs; [
+      # reduce font size
+      (runCommand "iosevka-nerd-font-mono" {} ''
+        mkdir -p $out/share/fonts/truetype
+        cp ${nerd-fonts.iosevka}/share/fonts/truetype/NerdFonts/Iosevka/IosevkaNerdFontMono-{Regular,Bold,Italic,BoldItalic}.ttf $out/share/fonts/truetype/
+      '')
+      dejavu_fonts # fallback sans/serif
+      liberation_ttf # metric-compatible Arial/Times for web pages
+      noto-fonts-color-emoji
+    ];
+  };
   # nx-gc trims and dedupes on demand: nothing on a timer
   services.fstrim.enable = false;
-  nix.optimise.automatic = false;
 
   programs = {
     dconf.enable = true; # For hm
     gpu-screen-recorder.enable = true; # Clipping & recording software
-    gnupg.agent = {
-      enable = true;
-      pinentryPackage = pkgs.pinentry-gnome3;
-    };
+    gnupg.agent.enable = true; # pinentry-gnome3 via graphical-desktop
   };
 
   console.colors = with import ../nord.nix; [ # TTY
@@ -142,7 +137,6 @@ in {
 
   services = {
     gvfs.enable = true; # Samba shares in nemo
-    logrotate.enable = false; # no logs
     logind.settings.Login.HandlePowerKey = "ignore"; # Don't turn off computer on power key press
 
     # Prevent crashes
@@ -153,14 +147,7 @@ in {
       config.default_sched = "scx_lavd";
     };
 
-    # Sound
-    pipewire = {
-      enable = true;
-      alsa.enable = true;
-      pulse.enable = true;
-    };
-
-    greetd = { # Autologin
+    greetd = { # Autologin; enables graphical-desktop: pipewire (alsa, pulse), graphics, default fonts
       enable = true;
       settings.default_session = {
         command = "fish -lc 'exec sway'";
@@ -173,8 +160,6 @@ in {
     rtkit.enable = true; # better audio latency
     pam.services.flurry-auth.nodelay = true; # handle our own delays
   };
-
-  hardware.graphics.enable = true; # this isn't set by sway hm by default for some reason?
 
   # Since we dont use the sway nix module we have to set the portal explicitly for things like flatpak and screensharing to work
   xdg.portal = {

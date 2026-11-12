@@ -4,7 +4,6 @@
     ./sway/sway.nix
 
     ./flurry.nix
-    ./fish.nix
     ./foot.nix
     ./gtk.nix
     ./mimeapps.nix
@@ -27,8 +26,6 @@
       sway.enable = true;
     };
   };
-
-  programs.man.enable = false; # HM default-on; system docs are off anyway
 
   xdg = {
     configFile."xdg-terminals.list".text = "footclient.desktop\n"; # open in Terminal

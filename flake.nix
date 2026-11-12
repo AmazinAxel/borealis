@@ -60,8 +60,7 @@
       laptop = profile [ lanzaboote ./modules/laptop.nix ];
       arm = profile [ ./modules/arm.nix ];
       pi = profile [ ./modules/pi.nix ];
-      hardening = keyed "hardening" [ ./modules/hardening.nix ]; # servers
-      tmpfs-root = keyed "tmpfs-root" [ ./modules/tmpfs-root.nix ];
+      headless = keyed "headless" [ ./modules/headless.nix ]; # servers: minimal closure + hardening, included in pi
     } // lib.mapAttrs' (file: _: let app = lib.removeSuffix ".nix" file; in # opt-in apps, with a profile
       lib.nameValuePair app (keyed app [ ./apps/${file} ])
     ) (builtins.readDir ./apps);

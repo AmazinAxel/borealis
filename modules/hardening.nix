@@ -7,35 +7,23 @@
     "firewire-core" "firewire-ohci" "firewire-sbp2"
   ];
 in {
-  # Server hardening with no measurable speed cost; everything is mkDefault so hosts can override.
+  # Every host: hardening that costs nothing and breaks no desktop use. Servers add more in headless.nix.
   # Left out on purpose: the hardened kernel, init_on_alloc/free and hardened malloc (slower), lockdown (blocks
   # unsigned modules, NixOS modules are unsigned) and modules_disabled (breaks on-demand nftables/veth/tun modules).
   boot = {
-    kernelParams = [
-      "slab_nomerge" # heap overflows can't spill into other caches
-      "randomize_kstack_offset=on"
-      "page_alloc.shuffle=1"
-      "debugfs=off"
-    ] ++ lib.optional pkgs.stdenv.hostPlatform.isx86_64 "vsyscall=none";
-
     extraModprobeConfig = lib.concatMapStrings (m: "install ${m} ${pkgs.coreutils}/bin/false\n") unused;
 
     kernel.sysctl = lib.mapAttrs (_: lib.mkOverride 900) { # above nixpkgs mkDefaults, below plain host values
       "kernel.kptr_restrict" = 2; # hide kernel pointers
       "kernel.dmesg_restrict" = 1;
       "kernel.unprivileged_bpf_disabled" = 1;
-      "net.core.bpf_jit_harden" = 2;
-      "kernel.yama.ptrace_scope" = 2; # only root can ptrace
-      "kernel.perf_event_paranoid" = 3;
       "kernel.sysrq" = 0;
-      "kernel.io_uring_disabled" = 2; # large attack surface, nothing here uses it
-      "vm.unprivileged_userfaultfd" = 0;
       "dev.tty.ldisc_autoload" = 0;
       "fs.suid_dumpable" = 0;
       "fs.protected_fifos" = 2;
       "fs.protected_regular" = 2;
 
-      # no ICMP redirects or source routing
+      # no ICMP redirects (source routing, syncookies, bogus ICMP already kernel defaults)
       "net.ipv4.conf.all.accept_redirects" = 0;
       "net.ipv4.conf.default.accept_redirects" = 0;
       "net.ipv4.conf.all.secure_redirects" = 0;
@@ -44,19 +32,15 @@ in {
       "net.ipv4.conf.default.send_redirects" = 0;
       "net.ipv6.conf.all.accept_redirects" = 0;
       "net.ipv6.conf.default.accept_redirects" = 0;
-      "net.ipv4.conf.all.accept_source_route" = 0;
-      "net.ipv6.conf.all.accept_source_route" = 0;
-      "net.ipv4.icmp_ignore_bogus_error_responses" = 1;
       "net.ipv4.tcp_rfc1337" = 1;
-      "net.ipv4.tcp_syncookies" = 1; # SYN floods
     };
-
-    loader.systemd-boot.editor = lib.mkDefault false; # no init=/bin/sh from the boot menu
   };
 
-  security = {
-    protectKernelImage = lib.mkDefault true; # no kexec or hibernation
-    sudo.execWheelOnly = lib.mkDefault true;
+  # memory-safe sudo, only runnable by wheel
+  security.sudo.enable = false;
+  security.sudo-rs = {
+    enable = true;
+    execWheelOnly = true;
   };
 
   # crashes leave no dumps (they can hold secrets)
@@ -68,18 +52,16 @@ in {
 
   nix.settings.allowed-users = lib.mkDefault [ "@wheel" ]; # root is always allowed
 
-  services = {
-    dbus.implementation = lib.mkDefault "broker"; # faster, smaller
-    openssh.settings = lib.mapAttrs (_: lib.mkDefault) {
-      PermitRootLogin = "no";
-      AuthenticationMethods = "publickey";
-      MaxAuthTries = 3;
-      LoginGraceTime = 20;
-      X11Forwarding = false;
-      AllowAgentForwarding = false;
-      AllowTcpForwarding = false;
-      AllowStreamLocalForwarding = false;
-    };
+  services.openssh.settings = lib.mapAttrs (_: lib.mkDefault) {
+    PasswordAuthentication = false; # key auth only
+    KbdInteractiveAuthentication = false;
+    PermitRootLogin = "no";
+    AuthenticationMethods = "publickey";
+    MaxAuthTries = 3;
+    LoginGraceTime = 20;
+    AllowAgentForwarding = false;
+    AllowTcpForwarding = false;
+    AllowStreamLocalForwarding = false;
   };
 
   networking.firewall.logRefusedConnections = lib.mkDefault false; # floods would fill the journal

@@ -1,14 +1,13 @@
 { borealis, config, pkgs, lib, ... }: let
   inherit (config.borealis) user;
   # perl grammar breaks on glibc 2.44 (bsearch _Generic clash)
-  helixPkg = borealis.helix.packages.${pkgs.stdenv.hostPlatform.system}.default.override {
-    includeGrammarIf = g: g.name != "perl";
-  };
+  # aarch64: helix.cachix has no build, so use the nixpkgs one from cache.nixos.org (no emulated rust compile)
+  helixPkg = if pkgs.stdenv.hostPlatform.isAarch64 then pkgs.helix
+    else borealis.helix.packages.${pkgs.stdenv.hostPlatform.system}.default.override {
+      includeGrammarIf = g: g.name != "perl";
+    };
 in {
-  programs = {
-    git.config.core.editor = "hx";
-    nano.enable = false; # use Helix
-  };
+  programs.git.config.core.editor = "hx";
   nix.settings = {
     extra-substituters = [ "https://helix.cachix.org" ];
     extra-trusted-public-keys = [ "helix.cachix.org-1:ejp9KQpR1FBI2onstMQ34yogDm4OgU2ru6lIwPvuCVs=" ];

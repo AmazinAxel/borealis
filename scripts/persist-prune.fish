@@ -7,7 +7,7 @@ if test (id -u) -ne 0
 end
 
 set -g __pp_keep (awk -v d=$dev '$3==d && $4!="/" {sub(/^\//,"",$4); print $4}' /proc/self/mountinfo | sort -u)
-set -a __pp_keep nix passwords swapfile lost+found
+set -a __pp_keep nix swapfile lost+found
 set -g __pp_root $persist
 set -g __pp_stale
 

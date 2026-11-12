@@ -1,17 +1,6 @@
-{ lib, config, ... }: {
-  imports = [ ./tmpfs-root.nix ];
-  home-manager.users.${config.borealis.user} = {
-    imports = [ ../home-manager/fish.nix ];
-    programs.man.enable = false; # HM default-on, pulls man-db + groff
-    programs.fish.generateCompletions = false; # parses man pages via man-db
-    manual.manpages.enable = false;
-    xdg.mime.enable = false; # headless, pulls shared-mime-info
-  };
-
-  # Trim closure for slow remote deploys
-  system.disableInstallerTools = true; # nixos-generate-config pulls perl, btrfs/bcachefs tools
-  programs.nano.enable = false;
-  xdg.mime.enable = false; # headless, pulls shared-mime-info
+{ lib, ... }: {
+  # Generic aarch64 SD-card device: u-boot extlinux, tmpfs root, /persist on the card
+  imports = [ ./tmpfs-root.nix ./slim.nix ];
 
   boot = {
     loader = { # u-boot extlinux boot
@@ -33,13 +22,7 @@
     };
   };
 
-  nixpkgs = {
-    hostPlatform = "aarch64-linux";
-    flake = { # faster rebuilds since we dont have to upload the nixpkgs source
-      setNixPath = false;
-      setFlakeRegistry = false;
-    };
-  };
+  nixpkgs.hostPlatform = "aarch64-linux";
 
   services = {
     openssh.enable = true;

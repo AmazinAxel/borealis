@@ -1,12 +1,27 @@
 { pkgs, lib, config, ... }: let
   inherit (config.borealis) user;
 in {
-  imports = [ ./options.nix ];
+  imports = [ ./options.nix ./hardening.nix ];
+
+  # Perlless (from nixpkgs profiles/perlless.nix): users and /etc without the perl activation scripts
+  system = {
+    etc.overlay.enable = lib.mkDefault true;
+    tools = lib.genAttrs [ "nixos-generate-config" "nixos-install" "nixos-enter" "nixos-option" "nixos-build-vms" ]
+      (_: { enable = lib.mkDefault false; }); # never install from here, nixos-generate-config pulls perl
+  };
+  services.userborn.enable = lib.mkDefault true;
+  boot.loader.grub.enable = lib.mkDefault false;
+  boot.kexec.enable = false; # unused, servers block kexec_load anyway
+  boot.bcache.enable = false;
+  xdg.sounds.enable = false;
+  programs.nano.enable = false; # helix on desktops
 
   users.users.${user} = { # Default user
     isNormalUser = true;
     shell = pkgs.fish;
     extraGroups = [ "wheel" "audio" "video" "dialout" ];
+    # Mutable users: shadow lives in persisted /var/lib/nixos, so set the password once with `passwd` after first login
+    initialPassword = "nixos";
   };
 
   boot = {
@@ -78,21 +93,27 @@ in {
       enable = true;
       useBabelfish = true; # env scripts translated at build, no bash spawn per shell
     };
-    command-not-found.enable = false;
   };
-  security.sudo.extraConfig = "Defaults lecture=never"; # lectures are on by default
-
   i18n.supportedLocales = [ "en_US.UTF-8/UTF-8" ]; # glibc-locales: ~3M, not 223M
 
   zramSwap = {
     enable = lib.mkDefault true;
     memoryPercent = lib.mkDefault 100;
   };
+  # nixpkgs builds it against pkgs.systemd, but the system runs a patched systemd.package: a second 68M systemd.
+  # Copy the cached build and repoint it (same-length store paths, binary safe). No recompile.
+  services.zram-generator.package = let zg = pkgs.zram-generator; in pkgs.runCommand zg.name {
+    inherit (zg) passthru meta;
+    disallowedReferences = [ pkgs.systemd ];
+  } ''
+    cp -r --no-preserve=ownership ${zg} $out
+    chmod -R u+w $out
+    find $out -type f -exec sed -i 's|${zg}|'$out'|g; s|${pkgs.systemd}|${config.systemd.package}|g' {} +
+  '';
 
   nixpkgs.config.allowUnfree = true;
   nix = {
     channel.enable = false; # we only use flakes
-    optimise.automatic = lib.mkDefault true; # dedupe on a timer instead of slowing every build (desktops: nx-gc)
 
     settings = {
       experimental-features = [ "nix-command" "flakes" ];
@@ -114,20 +135,17 @@ in {
   };
 
   services = {
-    openssh.settings = {
-      PasswordAuthentication = false; # key auth only
-      KbdInteractiveAuthentication = false;
-    };
-
     journald.settings.Journal.SystemMaxUse = "20M";
+    logrotate.enable = lib.mkDefault false; # journald only, no log files
 
     resolved = {
       enable = true;
       settings.Resolve = {
         MulticastDNS = "no"; # hosts resolve via tailscale MagicDNS
         LLMNR = "no";
-        DNS = "1.1.1.1#cloudflare-dns.com 1.0.0.1#cloudflare-dns.com";
-        DNSOverTLS = "opportunistic";
+        DNS = "1.1.1.1#cloudflare-dns.com 1.0.0.1#cloudflare-dns.com 2606:4700:4700::1111#cloudflare-dns.com 2606:4700:4700::1001#cloudflare-dns.com";
+        FallbackDNS = ""; # no plaintext fallback servers
+        DNSOverTLS = "opportunistic"; # strict breaks captive portal wifi logins
         Domains = "~."; # override DHCP-provided DNS (ISP)
       };
     };
@@ -136,6 +154,8 @@ in {
   documentation = {
     enable = false;
     man.enable = false; # faster rebuilds, even if docs off
+    info.enable = false;
+    nixos.enable = false;
   };
   environment = {
     defaultPackages = lib.mkForce [];

@@ -1,4 +1,4 @@
-{ pkgs, lib, config, ... }: let
+{ lib, config, ... }: let
   mod = "Mod4";
   # next/prev workspace clamped to 1-9
   workspace = dir: "nop flurry workspace ${dir}";
@@ -25,8 +25,8 @@ in {
 
       # Apps
       "${mod}+return" = "nop flurry terminal";
-      "${mod}+N" = "exec nemo";
-      "${mod}+shift+N" = "exec env SUDO_ASKPASS=${pkgs.writeShellScript "zenity-askpass" "exec ${pkgs.zenity}/bin/zenity --password"} sudo -AE ${pkgs.nemo-with-extensions}/bin/nemo"; # root nemo
+      "${mod}+N" = "exec foot ${lib.getExe config.programs.yazi.package}";
+      "${mod}+shift+N" = "exec foot sudo -E ${lib.getExe config.programs.yazi.package}"; # root yazi, foot asks for the password
 
       # Flurry
       "${mod}+space" = "nop flurry toggle launcher";

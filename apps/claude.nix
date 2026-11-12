@@ -126,7 +126,7 @@ in {
         inherit (pkgs.claude-code) name meta;
         paths = [ pkgs.claude-code ];
         nativeBuildInputs = [ pkgs.makeWrapper ];
-        postBuild = "wrapProgram $out/bin/claude --suffix PATH : ${lib.makeBinPath (with pkgs; [ bun jq file unzip ])}";
+        postBuild = "wrapProgram $out/bin/claude --suffix PATH : ${lib.makeBinPath (with pkgs; [ bun jq file unzip ])} --set CLAUDE_CODE_SANDBOXED 1"; # trust every folder, no trust dialog
       };
       settings = {
         model = "opus";
