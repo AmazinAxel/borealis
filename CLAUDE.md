@@ -4,7 +4,7 @@ Opinionated NixOS + home-manager base others import. Public repo: no private inf
 
 ## Wiring
 - `flake.nix`: `nixosModules.{default,desktop,laptop,arm,pi}` profiles (all but default include HM + impermanence); `base` sets `_module.args.borealis = inputs`. Upstream modules (HM, impermanence, lanzaboote) are imported in flake.nix, keyed, since `imports` can't use module args. `templates.default`.
-- `modules/options.nix`: `borealis.user` (required), `borealis.flake` (default `~/Projects/flake`, used by `nx-switch`/`nde`), `borealis.buildHost` (nde build box, null = local). Use `config.borealis.user`, never a literal name.
+- `modules/options.nix`: `borealis.user` (required), `borealis.flake` (default `~/Projects/flake`, used by `nx-switch`/`nde`). Use `config.borealis.user`, never a literal name.
 - `modules/base.nix`: every host (sysctl, networkd/iwd, nix settings); imports `hardening.nix` (zero-cost hardening, sudo-rs, ssh key-only).
 - `modules/desktop.nix`: cachyos kernel, lanzaboote, sway, `screenshot`; imports `tmpfs-root.nix` (HM via flake profile), HM `home-manager/home.nix`.
 - `modules/laptop.nix`: desktop + bluetooth + tlp, HM `home-manager/laptop.nix`.

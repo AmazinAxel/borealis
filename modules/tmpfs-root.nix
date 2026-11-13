@@ -25,7 +25,8 @@ in {
     { name = "mldsa44_ed25519"; type = "mldsa44-ed25519"; }
   ];
 
-  # tmpfs /etc: keep the password files on /persist so uids stay stable, and wait for those bind mounts
+  # tmpfs /etc: keep the password files on /persist so uids and passwords survive reboot, and wait for those bind mounts.
+  # passwd replaces the /etc/shadow symlink with a tmpfs file, so copy it back: sudo passwd $USER; sudo cp /etc/shadow /var/lib/nixos/shadow
   services.userborn.passwordFilesLocation = "/var/lib/nixos";
   systemd.services = lib.genAttrs [ "userborn" "userborn-import-legacy" ] (_: {
     unitConfig.RequiresMountsFor = [ "/var/lib/nixos" "/var/lib/userborn" ];

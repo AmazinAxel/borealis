@@ -20,7 +20,7 @@ in {
     isNormalUser = true;
     shell = pkgs.fish;
     extraGroups = [ "wheel" "audio" "video" "dialout" ];
-    # Mutable users: shadow lives in persisted /var/lib/nixos, so set the password once with `passwd` after first login
+    # Only applies when the account is first created; set the real password with `passwd` (see tmpfs-root.nix)
     initialPassword = "nixos";
   };
 

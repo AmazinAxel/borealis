@@ -31,34 +31,10 @@ in {
       cdp = "cd ~/Projects/$argv[1]";
       __cdp_arg = "if set -q argv[1]; cdp $argv[1]; end";
       fetch = builtins.readFile ../scripts/fetch.fish; # in-process, shell start even thru ssh
-      # nde <host> [switch|boot|test] [nixos-rebuild args]: deploy the flake host of that name to the machine of that name
+      # nde <host>: boot-deploy the flake host of that name to that remote machine (local: nx-switch)
       nde = ''
-        set -l host $argv[1]
-        if test -z "$host"
-          echo "usage: nde <host> [switch|boot|test] [nixos-rebuild args]"
-          return 1
-        end
-        set -l action switch
-        if set -q argv[2]; and not string match -q -- '-*' $argv[2]
-          set action $argv[2]
-          set argv $argv[3..]
-        else
-          set argv $argv[2..]
-        end
-        set -l flags $action --flake ${osConfig.borealis.flake}#$host --no-reexec
-        if test "$host" = "$hostname"
-          sudo nixos-rebuild $flags $argv
-          return
-        end
-
-        set -l target ${osConfig.borealis.user}@$host
         set -lx NIX_SSHOPTS -o ControlMaster=auto -o ControlPath=$XDG_RUNTIME_DIR/nde-%C -o ControlPersist=60 # one ssh login for the whole deploy
-        set -a flags --target-host $target --sudo
-        ssh $NIX_SSHOPTS $target sudo -n true 2>/dev/null; or set -a flags --ask-sudo-password
-      '' + lib.optionalString (osConfig.borealis.buildHost != null) ''
-        test "$hostname" = ${osConfig.borealis.buildHost}; or set -a flags --build-host ${osConfig.borealis.user}@${osConfig.borealis.buildHost}
-      '' + ''
-        nixos-rebuild $flags $argv
+        nixos-rebuild boot --flake ${osConfig.borealis.flake}#$argv[1] --target-host ${osConfig.borealis.user}@$argv[1] --sudo --no-reexec
       '';
       __proj_dirs = "for d in ~/Projects/(commandline -ct)*/; string replace ~/Projects/ '' $d; end";
       fish_prompt = ''
