@@ -41,6 +41,7 @@ in {
   security.sudo-rs = {
     enable = true;
     execWheelOnly = true;
+    extraConfig = "Defaults !pwfeedback";
   };
 
   # crashes leave no dumps (they can hold secrets)
