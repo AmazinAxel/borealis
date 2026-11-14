@@ -1,10 +1,16 @@
 { borealis, pkgs, lib, config, ... }: let
   inherit (config.borealis) user;
+  encrypted = config.boot.initrd.luks.devices != { }; # luks passphrase gates boot
+  session = "fish -lc 'exec sway'";
 in {
   imports = [ ./tmpfs-root.nix ];
 
   # Cachy kernel
   nixpkgs.overlays = [ borealis.nix-cachyos-kernel.overlays.pinned ];
+  nix.settings = { # cachyos kernel cache, desktops only
+    extra-substituters = [ "https://cache.lantian.pub/lantian" ];
+    extra-trusted-public-keys = [ "lantian:WVGO7vsRMSEN+h7Lp7kv6SAmrkEXgUGbbXm7jMDjBuQ=" ];
+  };
 
   boot = {
     kernelPackages = pkgs.cachyosKernels.linuxPackages-cachyos-latest;
@@ -56,7 +62,7 @@ in {
 
           # keys
           ".ssh"
-          ".gnupg"
+          { directory = ".gnupg"; mode = "0700"; }
           ".password-store"
 
           # apps
@@ -78,7 +84,10 @@ in {
   };
 
   systemd = {
-    tmpfiles.rules = [ "R! /home/${user}/*/.Trash-* - - - - -" ]; # wipe trash in each persisted folder on boot
+    tmpfiles.rules = [
+      "R! /home/${user}/*/.Trash-* - - - - -" # wipe trash in each persisted folder on boot
+      "z /persist${config.users.users.${user}.home}/.gnupg 0700 - - -" # impermanence mode only applies on creation
+    ];
     sleep.settings.Sleep.HibernateMode = "platform"; # ONLY POWER BUTTON FOR UNHIBERNATION
     oomd.enable = false; # earlyoom already handles OOM
     tpm2.enable = false; # no TPM unlock, faster boot!
@@ -114,6 +123,10 @@ in {
     dconf.enable = true; # For hm
     gpu-screen-recorder.enable = true; # Clipping & recording software
     gnupg.agent.enable = true; # pinentry-gnome3 via graphical-desktop
+    ssh = { # passphrase asked once per login, then cached
+      startAgent = true;
+      extraConfig = "AddKeysToAgent yes";
+    };
   };
 
   console.colors = with import ../nord.nix; [ # TTY
@@ -147,12 +160,12 @@ in {
       config.default_sched = "scx_lavd";
     };
 
-    greetd = { # Autologin; enables graphical-desktop: pipewire (alsa, pulse), graphics, default fonts
+    greetd = { # enables graphical-desktop: pipewire (alsa, pulse), graphics, default fonts
       enable = true;
-      settings.default_session = {
-        command = "fish -lc 'exec sway'";
-        inherit user;
-      };
+      useTextGreeter = !encrypted;
+      settings.default_session = if encrypted
+        then { command = session; inherit user; } # autologin
+        else { command = "${pkgs.greetd}/bin/agreety --cmd \"${session}\""; }; # unencrypted disk: password before the session
     };
   };
 

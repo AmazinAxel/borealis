@@ -3,7 +3,7 @@
     enable = true;
     systemd = {
       dbusImplementation = "broker"; # this needs to match the new nixos default
-      variables = [ "WAYLAND_DISPLAY" "SWAYSOCK" "XDG_CURRENT_DESKTOP" "XDG_DATA_DIRS" "PATH" ]; # for user services
+      variables = [ "WAYLAND_DISPLAY" "SWAYSOCK" "XDG_CURRENT_DESKTOP" "XDG_DATA_DIRS" "PATH" "SSH_AUTH_SOCK" ]; # for user services
     };
     wrapperFeatures.gtk = true;
 

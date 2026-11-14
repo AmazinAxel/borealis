@@ -121,16 +121,6 @@ in {
       download-buffer-size = 268435456; # 256 MiB
       trusted-users = [ user ]; # for remote deployments
       build-dir = "/nix/var/nix/builds"; # /tmp is tmpfs, too small for kernel builds
-
-      # Binary caches
-      extra-substituters = [
-        "https://cache.lantian.pub/lantian" # cachyos kernel
-        "https://cache.xinux.uz" # cachyos kernel (lantian attic mirror)
-      ];
-      extra-trusted-public-keys = [
-        "lantian:WVGO7vsRMSEN+h7Lp7kv6SAmrkEXgUGbbXm7jMDjBuQ="
-        "cache.xinux.uz:BXCrtqejFjWzWEB9YuGB7X2MV4ttBur1N8BkwQRdH+0="
-      ];
     };
   };
 
