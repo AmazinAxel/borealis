@@ -1,7 +1,5 @@
 { borealis, pkgs, lib, config, ... }: let
   inherit (config.borealis) user;
-  encrypted = config.boot.initrd.luks.devices != { }; # luks passphrase gates boot
-  session = "fish -lc 'exec sway'";
 in {
   imports = [ ./tmpfs-root.nix ];
 
@@ -160,12 +158,12 @@ in {
       config.default_sched = "scx_lavd";
     };
 
-    greetd = { # enables graphical-desktop: pipewire (alsa, pulse), graphics, default fonts
+    greetd = { # Autologin; enables graphical-desktop: pipewire (alsa, pulse), graphics, default fonts
       enable = true;
-      useTextGreeter = !encrypted;
-      settings.default_session = if encrypted
-        then { command = session; inherit user; } # autologin
-        else { command = "${pkgs.greetd}/bin/agreety --cmd \"${session}\""; }; # unencrypted disk: password before the session
+      settings.default_session = {
+        command = "fish -lc 'exec sway'";
+        inherit user;
+      };
     };
   };
 

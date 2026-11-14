@@ -1,4 +1,5 @@
-{
+{ config, ... }: {
+  nix.settings.trusted-users = [ config.borealis.user ]; # nde copies unsigned closures here as the user; desktops build as root
   # Trim closure for slow remote deploys (arm, headless); HM follows these (home-manager.nix)
   system.disableInstallerTools = true; # nixos-rebuild runs on the build host, nixos-generate-config pulls perl
   xdg.mime.enable = false; # pulls shared-mime-info

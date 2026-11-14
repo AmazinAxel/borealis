@@ -34,7 +34,7 @@ in {
       # nde <host>: boot-deploy the flake host of that name to that remote machine (local: nx-switch)
       nde = ''
         set -lx NIX_SSHOPTS -o ControlMaster=auto -o ControlPath=$XDG_RUNTIME_DIR/nde-%C -o ControlPersist=60 # one ssh login for the whole deploy
-        nixos-rebuild boot --flake ${osConfig.borealis.flake}#$argv[1] --target-host ${osConfig.borealis.user}@$argv[1] --sudo --no-reexec
+        nixos-rebuild boot --flake ${osConfig.borealis.flake}#$argv[1] --target-host ${osConfig.borealis.user}@$argv[1] --sudo --ask-sudo-password --no-reexec # remote sudo needs the password, no ssh tty to prompt on
       '';
       __proj_dirs = "for d in ~/Projects/(commandline -ct)*/; string replace ~/Projects/ '' $d; end";
       fish_prompt = ''

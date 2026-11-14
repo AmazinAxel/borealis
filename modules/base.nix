@@ -119,7 +119,6 @@ in {
       experimental-features = [ "nix-command" "flakes" ];
       warn-dirty = false;
       download-buffer-size = 268435456; # 256 MiB
-      trusted-users = [ user ]; # for remote deployments
       build-dir = "/nix/var/nix/builds"; # /tmp is tmpfs, too small for kernel builds
     };
   };
