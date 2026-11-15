@@ -126,7 +126,7 @@ in {
         inherit (pkgs.claude-code) name meta;
         paths = [ pkgs.claude-code ];
         nativeBuildInputs = [ pkgs.makeWrapper ];
-        postBuild = "wrapProgram $out/bin/claude --suffix PATH : ${lib.makeBinPath (with pkgs; [ bun jq file unzip ])} --set CLAUDE_CODE_SANDBOXED 1"; # trust every folder, no trust dialog
+        postBuild = "wrapProgram $out/bin/claude --suffix PATH : ${lib.makeBinPath (with pkgs; [ bun jq file unzip rtk ])} --set CLAUDE_CODE_SANDBOXED 1"; # trust every folder, no trust dialog
       };
       settings = {
         model = "opus";
@@ -182,6 +182,10 @@ in {
         hooks.UserPromptSubmit = [{
           # re-sent every turn, so it stays recent in long sessions where the system prompt fades
           hooks = [{ type = "command"; command = "echo 'Caveman: fragments, no articles/is/are/I, max 3 lines.'"; }];
+        }];
+        hooks.PreToolUse = [{
+          matcher = "Bash"; # rewrites commands to rtk's compact-output filters
+          hooks = [{ type = "command"; command = "${lib.getExe pkgs.rtk} hook claude"; }];
         }];
 
         permissions.deny = [
