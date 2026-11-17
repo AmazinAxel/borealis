@@ -61,6 +61,7 @@
       arm = profile [ ./modules/arm.nix ];
       pi = profile [ ./modules/pi.nix ];
       headless = keyed "headless" [ ./modules/headless.nix ]; # servers: minimal closure + hardening, included in pi
+      tmpfs-root = keyed "tmpfs-root" [ ./modules/tmpfs-root.nix ];
     } // lib.mapAttrs' (file: _: let app = lib.removeSuffix ".nix" file; in # opt-in apps, with a profile
       lib.nameValuePair app (keyed app [ ./apps/${file} ])
     ) (builtins.readDir ./apps);
