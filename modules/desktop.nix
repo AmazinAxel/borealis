@@ -109,6 +109,10 @@ in {
         mkdir -p $out/share/fonts/truetype
         cp ${nerd-fonts.iosevka}/share/fonts/truetype/NerdFonts/Iosevka/IosevkaNerdFontMono-{Regular,Bold,Italic,BoldItalic}.ttf $out/share/fonts/truetype/
       '')
+      # one variable ttc covers SC/TC/HK/JP/KR, drops the mono ttc
+      (runCommand "noto-sans-cjk" {} ''
+        install -Dm444 -t $out/share/fonts/opentype ${noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk/NotoSansCJK-VF.otf.ttc
+      '')
       dejavu_fonts # fallback sans/serif
       liberation_ttf # metric-compatible Arial/Times for web pages
       noto-fonts-color-emoji
