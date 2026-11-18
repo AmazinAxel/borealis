@@ -64,17 +64,29 @@ in {
   };
 
   systemd.network = {
-    networks."20-default" = {
-      matchConfig.Type = "ether wlan";
+    # ethernet and USB tethering beat wifi when both are up (DHCP/RA routes default to metric 1024 each)
+    networks."20-wired" = {
+      matchConfig.Type = "ether";
+      networkConfig = {
+        DHCP = "yes";
+        IPv6AcceptRA = true;
+      };
+      dhcpV4Config = { UseMTU = true; RouteMetric = 100; }; # MTU: avoid fragmentation
+      ipv6AcceptRAConfig.RouteMetric = 100;
+    };
+    networks."25-wireless" = {
+      matchConfig.Type = "wlan";
       networkConfig = {
         DHCP = "yes";
         IPv6AcceptRA = true;
         IgnoreCarrierLoss = "5s"; # tolerate short wifi drops
       };
-      dhcpV4Config.UseMTU = true; # avoid fragmentation
+      dhcpV4Config = { UseMTU = true; RouteMetric = 600; };
+      ipv6AcceptRAConfig.RouteMetric = 600;
     };
     wait-online = {
       timeout = 10; # Dont prolong boot for too long
+      anyInterface = true; # an unplugged ethernet port or tether must not hold boot until the timeout
       extraArgs = [ "--operational-state=routable" ];
     };
   };

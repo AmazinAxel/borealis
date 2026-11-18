@@ -80,6 +80,7 @@ in {
 
         PLATFORM_PROFILE_ON_BAT = "low-power";
         PCIE_ASPM_ON_BAT = "powersupersave";
+        USB_EXCLUDE_PHONE = 1; # a plugged-in phone is tethering, idle wakeups would add latency
 
         # causes crackling noises otherwise
         SOUND_POWER_SAVE_ON_AC = 0;
