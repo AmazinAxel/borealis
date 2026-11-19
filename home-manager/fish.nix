@@ -1,4 +1,4 @@
-{ lib, osConfig, ... }: let
+{ lib, pkgs, osConfig, ... }: let
   nord = import ../nord.nix;
   inherit (osConfig.borealis) buildHost user;
   remote = buildHost != null && buildHost != osConfig.networking.hostName;
@@ -57,8 +57,12 @@ in {
         set -lx NIX_SSHOPTS -o ControlMaster=auto -o ControlPath=$XDG_RUNTIME_DIR/nde-%C -o ControlPersist=60 # one ssh login for the whole deploy
         nixos-rebuild boot --flake ${flake}#$argv[1] --target-host ${user}@$argv[1] --use-substitutes --sudo --ask-sudo-password --no-reexec # remote sudo needs the password, no ssh tty to prompt on
       '';
-      # copy the flake (dirty tree included) and its inputs to the build host, print its store path there
-      __nx_src = ''nix flake archive --json --to ssh-ng://${ssh} ${flake} | string match -rg '"path":"([^"]+)"}$' '';
+      # copy only the flake's own source (dirty tree included) to the build host, print its store path;
+      # the build host fetches the locked inputs itself, so they're never downloaded here
+      __nx_src = ''
+        set -l src (nix flake prefetch --json ${flake} | ${lib.getExe pkgs.jq} -r .storePath); or return # metadata's path is lazy, not in the store
+        nix copy --to ssh-ng://${ssh} $src; and echo $src
+      '';
       __proj_dirs = "for d in ~/Projects/(commandline -ct)*/; string replace ~/Projects/ '' $d; end";
       fish_prompt = ''
         set -l root $PWD
