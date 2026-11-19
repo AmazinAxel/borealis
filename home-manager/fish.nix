@@ -1,4 +1,4 @@
-{ lib, pkgs, osConfig, ... }: let
+{ lib, osConfig, ... }: let
   nord = import ../nord.nix;
   inherit (osConfig.borealis) buildHost user;
   remote = buildHost != null && buildHost != osConfig.networking.hostName;
@@ -40,10 +40,10 @@ in {
       cdp = "cd ~/Projects/$argv[1]";
       __cdp_arg = "if set -q argv[1]; cdp $argv[1]; end";
       fetch = builtins.readFile ../scripts/fetch.fish; # in-process, shell start even thru ssh
-      # nx-switch: switch this host, then gc in the background
+      # nx-switch: switch this host, then gc in the background; remote: the build host's checkout of the flake is the
+      # source (dirty tree included), so this machine needs no repo
       nx-switch = (if remote then ''
-        set -l src (__nx_src); or return
-        set -l sys (ssh ${ssh} nix build --no-link --print-out-paths $src#nixosConfigurations.${osConfig.networking.hostName}.config.system.build.toplevel); or return
+        set -l sys (ssh ${ssh} nix build --no-link --print-out-paths ${flake}#nixosConfigurations.${osConfig.networking.hostName}.config.system.build.toplevel); or return
         nix copy --from ${cache} $sys; or return
         sudo nix-env -p /nix/var/nix/profiles/system --set $sys; and sudo $sys/bin/switch-to-configuration switch; or return
       '' else ''
@@ -51,17 +51,10 @@ in {
       '') + "sudo systemctl start --no-block nix-gc";
       # nde <host>: boot-deploy the flake host of that name to that remote machine (local: nx-switch)
       nde = if remote then ''
-        set -l src (__nx_src); or return
-        ssh -t ${ssh} env NIX_SSHOPTS='-i /home/${user}/.ssh/id_deploy -o IdentitiesOnly=yes' nixos-rebuild boot --flake $src#$argv[1] --target-host ${user}@$argv[1] --use-substitutes --sudo --ask-sudo-password --no-reexec # eval+build on the build host; target pulls from its substituters (harmonia first), ssh push only for the rest
+        ssh -t ${ssh} env NIX_SSHOPTS='-i /home/${user}/.ssh/id_deploy -o IdentitiesOnly=yes' nixos-rebuild boot --flake ${flake}#$argv[1] --target-host ${user}@$argv[1] --use-substitutes --sudo --ask-sudo-password --no-reexec # eval+build on the build host; target pulls from its substituters (harmonia first), ssh push only for the rest
       '' else ''
         set -lx NIX_SSHOPTS -o ControlMaster=auto -o ControlPath=$XDG_RUNTIME_DIR/nde-%C -o ControlPersist=60 # one ssh login for the whole deploy
         nixos-rebuild boot --flake ${flake}#$argv[1] --target-host ${user}@$argv[1] --use-substitutes --sudo --ask-sudo-password --no-reexec # remote sudo needs the password, no ssh tty to prompt on
-      '';
-      # copy only the flake's own source (dirty tree included) to the build host, print its store path;
-      # the build host fetches the locked inputs itself, so they're never downloaded here
-      __nx_src = ''
-        set -l src (nix flake prefetch --json ${flake} | ${lib.getExe pkgs.jq} -r .storePath); or return # metadata's path is lazy, not in the store
-        nix copy --to ssh-ng://${ssh} $src; and echo $src
       '';
       __proj_dirs = "for d in ~/Projects/(commandline -ct)*/; string replace ~/Projects/ '' $d; end";
       fish_prompt = ''

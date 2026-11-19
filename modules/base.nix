@@ -130,6 +130,7 @@ in {
     settings = {
       experimental-features = [ "nix-command" "flakes" ];
       warn-dirty = false;
+      flake-registry = ""; # no channels.nixos.org/flake-registry.json fetch; nixpkgs resolves via the system registry
       download-buffer-size = 268435456; # 256 MiB
       build-dir = "/nix/var/nix/builds"; # /tmp is tmpfs, too small for kernel builds
     };
