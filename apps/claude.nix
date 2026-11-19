@@ -71,9 +71,8 @@
       shopt -s extglob
       l=''${left//$'\e'\[*([0-9;])m/}
 
-      size=""; [[ ''${COLUMNS:-} && ''${LINES:-} ]] || size=$({ stty size </dev/tty; } 2>/dev/null) || true
-      rows=''${LINES:-''${size% *}} cols=''${COLUMNS:-''${size#* }}
-      (( ''${rows:-99} < 20 )) && exit 0
+      size=""; [[ ''${COLUMNS:-} ]] || size=$({ stty size </dev/tty; } 2>/dev/null) || true
+      cols=''${COLUMNS:-''${size#* }}
       cols=$(( ''${cols:-80} - 4 )) # room Claude keeps around the line
 
       # bars under 1% are hidden; weekly is dropped first when space runs out

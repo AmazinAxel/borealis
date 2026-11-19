@@ -1,11 +1,15 @@
 { lib, osConfig, ... }: let
   nord = import ../nord.nix;
+  inherit (osConfig.borealis) buildHost user;
+  remote = buildHost != null && buildHost != osConfig.networking.hostName;
+  inherit (osConfig.borealis) flake;
+  ssh = "${user}@${buildHost}";
+  cache = "http://${buildHost}:5000"; # harmonia (options.nix); signatures checked on copy
 in {
   programs.fish = {
     enable = true;
     # autoloaded functions instead of shellAliases, which run `alias` on every shell start
     functions = lib.mapAttrs (_: cmd: { body = "${cmd} $argv"; wraps = cmd; }) {
-      nx-switch = "sudo nixos-rebuild switch --flake ${osConfig.borealis.flake}";
       g = "git";
       ga = "git add -A";
       gl = "git pull";
@@ -28,14 +32,33 @@ in {
     } // {
       gcm = ''git commit -m "$argv"'';
       gacm = ''git add -A && git commit -m "$argv"'';
+      # nsp a b -> nix shell nixpkgs#a nixpkgs#b; remote: build there, copy only the runtime closure here
+      nsp = if remote then ''
+        set -l paths (nix build --no-link --print-out-paths --store ssh-ng://${ssh} nixpkgs#$argv); or return
+        nix copy --from ${cache} $paths; and nix shell $paths
+      '' else "nix shell nixpkgs#$argv";
       cdp = "cd ~/Projects/$argv[1]";
       __cdp_arg = "if set -q argv[1]; cdp $argv[1]; end";
       fetch = builtins.readFile ../scripts/fetch.fish; # in-process, shell start even thru ssh
+      # nx-switch: switch this host, then gc in the background
+      nx-switch = (if remote then ''
+        set -l src (__nx_src); or return
+        set -l sys (ssh ${ssh} nix build --no-link --print-out-paths $src#nixosConfigurations.${osConfig.networking.hostName}.config.system.build.toplevel); or return
+        nix copy --from ${cache} $sys; or return
+        sudo nix-env -p /nix/var/nix/profiles/system --set $sys; and sudo $sys/bin/switch-to-configuration switch; or return
+      '' else ''
+        sudo nixos-rebuild switch --flake ${flake}; or return
+      '') + "sudo systemctl start --no-block nix-gc";
       # nde <host>: boot-deploy the flake host of that name to that remote machine (local: nx-switch)
-      nde = ''
+      nde = if remote then ''
+        set -l src (__nx_src); or return
+        ssh -t ${ssh} env NIX_SSHOPTS='-i /home/${user}/.ssh/id_deploy -o IdentitiesOnly=yes' nixos-rebuild boot --flake $src#$argv[1] --target-host ${user}@$argv[1] --sudo --ask-sudo-password --no-reexec # eval+build on the build host, which pushes straight to the target
+      '' else ''
         set -lx NIX_SSHOPTS -o ControlMaster=auto -o ControlPath=$XDG_RUNTIME_DIR/nde-%C -o ControlPersist=60 # one ssh login for the whole deploy
-        nixos-rebuild boot --flake ${osConfig.borealis.flake}#$argv[1] --target-host ${osConfig.borealis.user}@$argv[1] --sudo --ask-sudo-password --no-reexec # remote sudo needs the password, no ssh tty to prompt on
+        nixos-rebuild boot --flake ${flake}#$argv[1] --target-host ${user}@$argv[1] --sudo --ask-sudo-password --no-reexec # remote sudo needs the password, no ssh tty to prompt on
       '';
+      # copy the flake (dirty tree included) and its inputs to the build host, print its store path there
+      __nx_src = ''nix flake archive --json --to ssh-ng://${ssh} ${flake} | string match -rg '"path":"([^"]+)"}$' '';
       __proj_dirs = "for d in ~/Projects/(commandline -ct)*/; string replace ~/Projects/ '' $d; end";
       fish_prompt = ''
         set -l root $PWD

@@ -1,5 +1,4 @@
-{ config, ... }: {
-  nix.settings.trusted-users = [ config.borealis.user ]; # nde copies unsigned closures here as the user; desktops build as root
+{ config, borealis, ... }: {
   # Trim closure for slow remote deploys (arm, headless); HM follows these (home-manager.nix)
   system.disableInstallerTools = true; # nixos-rebuild runs on the build host, nixos-generate-config pulls perl
   xdg.mime.enable = false; # pulls shared-mime-info
@@ -7,5 +6,12 @@
   nixpkgs.flake = { # dont ship the nixpkgs source
     setNixPath = false;
     setFlakeRegistry = false;
+  };
+  # pin `nixpkgs` (nsp, nix shell) to the system rev by URL: fetched on demand, cache hits match the system
+  nix.registry.nixpkgs.to = {
+    type = "github";
+    owner = "NixOS";
+    repo = "nixpkgs";
+    inherit (borealis.nixpkgs) rev narHash;
   };
 }
