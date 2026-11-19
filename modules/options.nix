@@ -17,5 +17,11 @@
       services.harmonia.cache.enable = true; # [::]:5000
       networking.firewall.interfaces.${config.services.tailscale.interfaceName}.allowedTCPPorts = [ 5000 ];
     })
+    (lib.mkIf (config.borealis.buildHost != config.networking.hostName) {
+      nix.settings = {
+        extra-substituters = [ "http://${config.borealis.buildHost}:5000" ]; # harmonia, priority 30 beats cache.nixos.org's 40
+        connect-timeout = 5; # build host asleep/away: give up fast instead of curl's 300s
+      };
+    })
   ]);
 }

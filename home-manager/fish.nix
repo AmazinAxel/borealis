@@ -34,7 +34,7 @@ in {
       gacm = ''git add -A && git commit -m "$argv"'';
       # nsp a b -> nix shell nixpkgs#a nixpkgs#b; remote: build there, copy only the runtime closure here
       nsp = if remote then ''
-        set -l paths (nix build --no-link --print-out-paths --store ssh-ng://${ssh} nixpkgs#$argv); or return
+        set -l paths (ssh ${ssh} nix build --no-link --print-out-paths nixpkgs#$argv); or return # eval there too: no local eval, no .drv upload
         nix copy --from ${cache} $paths; and nix shell $paths
       '' else "nix shell nixpkgs#$argv";
       cdp = "cd ~/Projects/$argv[1]";
@@ -52,10 +52,10 @@ in {
       # nde <host>: boot-deploy the flake host of that name to that remote machine (local: nx-switch)
       nde = if remote then ''
         set -l src (__nx_src); or return
-        ssh -t ${ssh} env NIX_SSHOPTS='-i /home/${user}/.ssh/id_deploy -o IdentitiesOnly=yes' nixos-rebuild boot --flake $src#$argv[1] --target-host ${user}@$argv[1] --sudo --ask-sudo-password --no-reexec # eval+build on the build host, which pushes straight to the target
+        ssh -t ${ssh} env NIX_SSHOPTS='-i /home/${user}/.ssh/id_deploy -o IdentitiesOnly=yes' nixos-rebuild boot --flake $src#$argv[1] --target-host ${user}@$argv[1] --use-substitutes --sudo --ask-sudo-password --no-reexec # eval+build on the build host; target pulls from its substituters (harmonia first), ssh push only for the rest
       '' else ''
         set -lx NIX_SSHOPTS -o ControlMaster=auto -o ControlPath=$XDG_RUNTIME_DIR/nde-%C -o ControlPersist=60 # one ssh login for the whole deploy
-        nixos-rebuild boot --flake ${flake}#$argv[1] --target-host ${user}@$argv[1] --sudo --ask-sudo-password --no-reexec # remote sudo needs the password, no ssh tty to prompt on
+        nixos-rebuild boot --flake ${flake}#$argv[1] --target-host ${user}@$argv[1] --use-substitutes --sudo --ask-sudo-password --no-reexec # remote sudo needs the password, no ssh tty to prompt on
       '';
       # copy the flake (dirty tree included) and its inputs to the build host, print its store path there
       __nx_src = ''nix flake archive --json --to ssh-ng://${ssh} ${flake} | string match -rg '"path":"([^"]+)"}$' '';
