@@ -161,7 +161,6 @@ in {
   };
   environment = {
     defaultPackages = lib.mkForce [];
-    systemPackages = [ (pkgs.writeShellScriptBin "nx-gc" (builtins.readFile ../scripts/nx-gc.sh)) ];
     persistence."/persist".enable = lib.mkDefault false; # apps add paths, tmpfs-root hosts enable it
   };
 

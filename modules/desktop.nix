@@ -118,7 +118,7 @@ in {
       noto-fonts-color-emoji
     ];
   };
-  # nx-gc trims and dedupes on demand: nothing on a timer
+  # ngc trims and dedupes on demand: nothing on a timer
   services.fstrim.enable = false;
 
   programs = {

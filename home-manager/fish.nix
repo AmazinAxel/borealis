@@ -40,16 +40,29 @@ in {
       cdp = "cd ~/Projects/$argv[1]";
       __cdp_arg = "if set -q argv[1]; cdp $argv[1]; end";
       fetch = builtins.readFile ../scripts/fetch.fish; # in-process, shell start even thru ssh
-      # nx-switch: switch this host, then gc in the background; remote: the build host's checkout of the flake is the
-      # source (dirty tree included), so this machine needs no repo
-      nx-switch = (if remote then ''
+      # ns: switch this host, then gc in the background; remote: the build host's checkout of the flake is the
+      # source (dirty tree included), so this machine needs no repo. Password asked up front: the build can outlast sudo's cache
+      ns = ''
+        read -lsP "[sudo] password for $USER: " pass; or return
+        printf '%s\n' $pass | sudo -Sp ''' -v; or return
+      '' + (if remote then ''
         set -l sys (ssh ${ssh} nix build --no-link --print-out-paths ${flake}#nixosConfigurations.${osConfig.networking.hostName}.config.system.build.toplevel); or return
         nix copy --from ${cache} $sys; or return
-        sudo nix-env -p /nix/var/nix/profiles/system --set $sys; and sudo $sys/bin/switch-to-configuration switch; or return
+        printf '%s\n' $pass | sudo -Sp ''' nix-env -p /nix/var/nix/profiles/system --set $sys; or return
+        printf '%s\n' $pass | sudo -Sp ''' $sys/bin/switch-to-configuration switch; or return
       '' else ''
-        sudo nixos-rebuild switch --flake ${flake}; or return
-      '') + "sudo systemctl start --no-block nix-gc";
-      # nde <host>: boot-deploy the flake host of that name to that remote machine (local: nx-switch)
+        printf '%s\n' $pass | sudo -Sp ''' nixos-rebuild switch --flake ${flake}; or return
+      '') + "printf '%s\\n' $pass | sudo -Sp '' systemctl start --no-block nix-gc";
+      # ngc: user + system gc, dedupe, trim, on demand
+      ngc = ''
+        read -lsP "[sudo] password for $USER: " pass; or return
+        printf '%s\n' $pass | sudo -Sp ''' -v; or return
+        nix-collect-garbage -d # user-collected garbage
+        printf '%s\n' $pass | sudo -Sp ''' nix-collect-garbage -d
+        printf '%s\n' $pass | sudo -Sp ''' nix-store --optimise
+        printf '%s\n' $pass | sudo -Sp ''' fstrim -av
+      '';
+      # nde <host>: boot-deploy the flake host of that name to that remote machine (local: ns)
       nde = if remote then ''
         ssh -t ${ssh} env NIX_SSHOPTS='-i /home/${user}/.ssh/id_deploy -o IdentitiesOnly=yes' nixos-rebuild boot --flake ${flake}#$argv[1] --target-host ${user}@$argv[1] --use-substitutes --sudo --ask-sudo-password --no-reexec # eval+build on the build host; target pulls from its substituters (harmonia first), ssh push only for the rest
       '' else ''
