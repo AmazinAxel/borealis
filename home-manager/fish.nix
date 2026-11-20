@@ -45,6 +45,7 @@ in {
       ns = ''
         read -lsP "[sudo] password for $USER: " pass; or return
         printf '%s\n' $pass | sudo -Sp ''' -v; or return
+        echo "Updating..." >&2
       '' + (if remote then ''
         set -l sys (ssh ${ssh} nix build --no-link --print-out-paths ${flake}#nixosConfigurations.${osConfig.networking.hostName}.config.system.build.toplevel); or return
         nix copy --from ${cache} $sys; or return
@@ -57,6 +58,7 @@ in {
       ngc = ''
         read -lsP "[sudo] password for $USER: " pass; or return
         printf '%s\n' $pass | sudo -Sp ''' -v; or return
+        echo "Collecting garbage..." >&2
         nix-collect-garbage -d # user-collected garbage
         printf '%s\n' $pass | sudo -Sp ''' nix-collect-garbage -d
         printf '%s\n' $pass | sudo -Sp ''' nix-store --optimise
