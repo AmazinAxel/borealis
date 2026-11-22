@@ -322,6 +322,7 @@ in {
         - Compile-check: `cargo check`, `tsc --noEmit`, `gradlew compileJava`. Release only to run/measure.
         - Wait servers: `until curl -sf`, under timeout.
         - Bash cwd persists: no repeat `cd`.
+        - Edit: Read shows no indent; check exact tabs/spaces with `rg -n -P "^\s*text" file | cat -A` before old_string, or match one line without leading whitespace.
         - Persisted output: rg it, no full Read.
         - Bash goes through rtk hook: chain with `;`/`&&`, pipe only to `head`/`tail`/`grep`. `cut`, `wc`, `sort`, `sed -n`, `for` loops, lowercase `var=` prefixes skip rtk. Use `rg -M 160`, `head -n`/`tail -n`, `rg -c`.
         - Crop screenshots before Read.
