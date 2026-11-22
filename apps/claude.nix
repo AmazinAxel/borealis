@@ -240,7 +240,7 @@ in {
         - Each call resends context: batch all reads and edits in one response.
         - Smallest change, no unrequested refactors/comments.
         - Known file: go straight there. Read only what task needs, no re-reads. Stop at first answer.
-        - rg -n -m5 rarest literal, `| cut -c1-160 | head -20`, then Read offset/limit. Output likely >50 lines: narrow first.
+        - rg -n -m5 -M 160 rarest literal, `| head -20`, then Read offset/limit. Output likely >50 lines: narrow first.
         - Never sed -i/heredoc/redirect to change files.
       '';
 
@@ -323,6 +323,7 @@ in {
         - Wait servers: `until curl -sf`, under timeout.
         - Bash cwd persists: no repeat `cd`.
         - Persisted output: rg it, no full Read.
+        - Bash goes through rtk hook: chain with `;`/`&&`, pipe only to `head`/`tail`/`grep`. `cut`, `wc`, `sort`, `sed -n`, `for` loops, lowercase `var=` prefixes skip rtk. Use `rg -M 160`, `head -n`/`tail -n`, `rg -c`.
         - Crop screenshots before Read.
         - Verify nix: `nix eval .#nixosConfigurations.<host>.config.<path>`, changed option only. Toplevel only if asked.
         - Flakes: `git add -N` new files, never `path:`.
@@ -337,8 +338,8 @@ in {
       functions = {
         c = "__cdp_arg $argv[1]; or return; claude --dangerously-skip-permissions $argv[2..]";
         cr = "__cdp_arg $argv[1]; or return; claude --dangerously-skip-permissions --resume $argv[2..]";
-        cq = "c $argv[1] --model sonnet --effort low --tools=Bash,Read,Edit,Write $argv[2..]";
-        cqr = "cr $argv[1] --model sonnet --effort low --tools=Bash,Read,Edit,Write $argv[2..]";
+        cq = "__cdp_arg $argv[1]; or return; claude --dangerously-skip-permissions --model haiku --tools=Bash,Read,Edit,Write $argv[2..]";
+        cqr = "__cdp_arg $argv[1]; or return; claude --dangerously-skip-permissions --resume --model haiku --tools=Bash,Read,Edit,Write $argv[2..]";
       };
       interactiveShellInit = ''complete -c c -c cr -c cq -c cqr -f -a "(__proj_dirs)"'';
     };
