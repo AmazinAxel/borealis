@@ -294,7 +294,7 @@ in {
         - Pasted snippets run in fish: no `<(...)`, use psub or /dev/stdin; `set -x`.
         - No python3/perl/node/npm/fd: bun -e, jq, awk. One-off tool: `nix shell nixpkgs#pkg -c cmd`, never `nix-shell -p`.
         - Dev shell: nix print-dev-env > <scratchpad>/dev.sh, source it. No nix develop, nix-shell.
-        - Edit fails: Read hides indent. Check `rg -n -P "^\s*text" file | cat -A` or use one-line old_string. Second fail: Read, then Write whole file.
+        - EDIT RULE (never skip): Read hides tabs/indent, so multi-line old_string with indentation WILL fail. Default: old_string = one line, no leading whitespace. Before any multi-line edit, run `rg -n -P "^\s*text" file | cat -A` to confirm exact tabs, then copy them. Second Edit failure: stop guessing, Read, then Write whole file.
         - Persisted output: rg, not full Read.
         - Bash via rtk hook: chain `;`/`&&`, pipe only to `head`/`tail`/`grep`. Skip rtk: `cut`, `wc`, `sort`, `sed -n`, `for`, lowercase `var=` prefix. Prefer `rg -M 160`, `head -n`/`tail -n`, `rg -c`.
         - Crop screenshots before Read.
