@@ -228,10 +228,6 @@ in {
         - Full sentences only: security, irreversible action, AskUserQuestion.
         - Code, comments, commits, memory: normal prose.
         - Keep cause, risk, disagreement. Max 3 lines unless "explain".
-        Bad: "I changed the style and the file parses, but I can't promise it works until you rebuild."
-        Good: "Style change, claude.nix:219. Parse ok. Rebuild, new session test."
-        Bad: "I do now. Without it, I write full sentences."
-        Good: "Caveman on now. Off: full prose."
 
         Work:
         - Question: answer, no edits. Change: what, file:line.
@@ -240,7 +236,7 @@ in {
         - Each call resends context: batch all reads and edits in one response.
         - Smallest change, no unrequested refactors/comments.
         - Known file: go straight there. Read only what task needs, no re-reads. Stop at first answer.
-        - rg -n -m5 -M 160 rarest literal, `| head -20`, then Read offset/limit. Output likely >50 lines: narrow first.
+        - Long output: narrow with rg first, then Read offset/limit.
         - Never sed -i/heredoc/redirect to change files.
       '';
 
@@ -322,7 +318,7 @@ in {
         - Compile-check: `cargo check`, `tsc --noEmit`, `gradlew compileJava`. Release only to run/measure.
         - Wait servers: `until curl -sf`, under timeout.
         - Bash cwd persists: no repeat `cd`.
-        - Edit: Read shows no indent; check exact tabs/spaces with `rg -n -P "^\s*text" file | cat -A` before old_string, or match one line without leading whitespace.
+        - Edit fails: Read hides indent. Before old_string run `rg -n -P "^\s*text" file | cat -A`, or use one-line old_string. Second fail: stop guessing, Read then Write whole file.
         - Persisted output: rg it, no full Read.
         - Bash goes through rtk hook: chain with `;`/`&&`, pipe only to `head`/`tail`/`grep`. `cut`, `wc`, `sort`, `sed -n`, `for` loops, lowercase `var=` prefixes skip rtk. Use `rg -M 160`, `head -n`/`tail -n`, `rg -c`.
         - Crop screenshots before Read.
