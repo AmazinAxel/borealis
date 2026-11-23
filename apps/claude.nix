@@ -143,6 +143,7 @@ in {
         promptSuggestionEnabled = false; # no model call per turn for ghost-text
         awaySummaryEnabled = false; # no recap call after idling
         autoDreamEnabled = false; # no background memory consolidation
+        autoMemoryEnabled = false; # no memory files
         precomputeCompactionEnabled = false; # summarize only when compacting
         disableAgentView = true; # no background daemon
         prefersReducedMotion = true;
@@ -179,10 +180,6 @@ in {
           # CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC = "1";
         };
 
-        hooks.UserPromptSubmit = [{
-          # re-sent every turn, so it stays recent in long sessions where the system prompt fades
-          hooks = [{ type = "command"; command = "echo 'Caveman: fragments, no articles/is/are/I, max 3 lines.'"; }];
-        }];
         hooks.PreToolUse = [{
           matcher = "Bash"; # rewrites commands to rtk's compact-output filters
           hooks = [{ type = "command"; command = "${lib.getExe pkgs.rtk} hook claude"; }];
@@ -216,28 +213,10 @@ in {
       outputStyles.caveman = ''
         ---
         name: caveman
-        description: Ultracave replies, frugal tool use
         keep-coding-instructions: true
         ---
 
-        Real caveman, every reply: code, chat, change reports, apologies, "explain".
-        - No articles, is/are/was, I/you ("me" ok), connectives, greetings, hedges, recap, offers. Bare verbs. Fragments, 1-6 words.
-        - Answer first. Each fact once. Short words.
-        - Verbatim: not/never/no/only/except, numbers, units, code, commands, paths, errors.
-        - No invented abbreviations, arrows, headers, bold, lists, unchosen options.
-        - Full sentences only: security, irreversible action, AskUserQuestion.
-        - Code, comments, commits, memory: normal prose.
-        - Keep cause, risk, disagreement. Max 3 lines unless "explain".
-
-        Work:
-        - Question: answer, no edits. Change: what, file:line.
-        - Ambiguous intent: AskUserQuestion first.
-        - No text between tool calls unless finding.
-        - Each call resends context: batch all reads and edits in one response.
-        - Smallest change, no unrequested refactors/comments.
-        - Known file: go straight there. Read only what task needs, no re-reads. Stop at first answer.
-        - Long output: narrow with rg first, then Read offset/limit.
-        - Never sed -i/heredoc/redirect to change files.
+        Caveman: fragments, no articles/is/are/I/greetings/hedges/recap/offers. Answer first. Max 3 lines unless "explain". Full sentences for security and irreversible actions.
       '';
 
       skills.optimize = ''
@@ -310,24 +289,17 @@ in {
       '';
 
       context = ''
-        - Never nixos-rebuild/home-manager switch; I build. Commit/push only when asked.
         - Pasted snippets run in fish: no `<(...)`, use psub or /dev/stdin; `set -x`.
         - No python3/perl/node/npm/fd: bun -e, jq, awk. One-off tool: `nix shell nixpkgs#pkg -c cmd`, never `nix-shell -p`.
-        - Dev shell: once `nix print-dev-env [-f shell.nix] > <scratchpad>/dev.sh`, then `. <scratchpad>/dev.sh && cargo check`. No `nix-shell --run`, `nix develop -c`, ad-hoc cargo.
-        - `pkill`/`pgrep -f` match own shell: `'[c]argo build'`.
-        - Compile-check: `cargo check`, `tsc --noEmit`, `gradlew compileJava`. Release only to run/measure.
-        - Wait servers: `until curl -sf`, under timeout.
-        - Bash cwd persists: no repeat `cd`.
-        - Edit fails: Read hides indent. Before old_string run `rg -n -P "^\s*text" file | cat -A`, or use one-line old_string. Second fail: stop guessing, Read then Write whole file.
-        - Persisted output: rg it, no full Read.
-        - Bash goes through rtk hook: chain with `;`/`&&`, pipe only to `head`/`tail`/`grep`. `cut`, `wc`, `sort`, `sed -n`, `for` loops, lowercase `var=` prefixes skip rtk. Use `rg -M 160`, `head -n`/`tail -n`, `rg -c`.
+        - Dev shell: nix print-dev-env > <scratchpad>/dev.sh, source it. No nix develop, nix-shell.
+        - Edit fails: Read hides indent. Check `rg -n -P "^\s*text" file | cat -A` or use one-line old_string. Second fail: Read, then Write whole file.
+        - Persisted output: rg, not full Read.
+        - Bash via rtk hook: chain `;`/`&&`, pipe only to `head`/`tail`/`grep`. Skip rtk: `cut`, `wc`, `sort`, `sed -n`, `for`, lowercase `var=` prefix. Prefer `rg -M 160`, `head -n`/`tail -n`, `rg -c`.
         - Crop screenshots before Read.
-        - Verify nix: `nix eval .#nixosConfigurations.<host>.config.<path>`, changed option only. Toplevel only if asked.
-        - Flakes: `git add -N` new files, never `path:`.
+        - Verify nix: `nix eval .#nixosConfigurations.<host>.config.<path>`, changed option only.
+        - Flakes: `git add -N` new files
         - Big downloads/builds: ~/.cache, not /tmp.
-        - nixpkgs/HM options over hand-rolled units/scripts. Config in nix only.
-        - Event-driven: no delays, polling, fallback timeouts. Requested visual durations ok.
-        - Memory: only facts absent from rules/repo, one line.
+        - Event-driven: no delays, polling, fallback timeouts.
       '';
     };
 
