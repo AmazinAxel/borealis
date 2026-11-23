@@ -146,6 +146,9 @@ in {
         autoMemoryEnabled = false; # no memory files
         precomputeCompactionEnabled = false; # summarize only when compacting
         disableAgentView = true; # no background daemon
+        enableArtifact = false;
+        terminalProgressBarEnabled = false;
+        timeFormat = "24-hour";
         prefersReducedMotion = true;
         showTurnDuration = false;
         emojiCompletionEnabled = false;
@@ -194,7 +197,6 @@ in {
           "Read(**/dist/**)"
           "Read(**/result/**)"
           # unused tools, their schemas cost tokens every call
-          "Artifact"
           "ListAgents"
           "RemoteTrigger"
           "CronCreate"
