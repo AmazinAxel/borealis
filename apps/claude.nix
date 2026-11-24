@@ -117,8 +117,12 @@ in {
   };
 
   home-manager.users.${user} = {
-    home.file.".claude/keybindings.json".text = builtins.toJSON { # always bypass; drops the mode hint
-      bindings = [ { context = "Chat"; bindings."shift+tab" = null; } ];
+    home.file.".claude/keybindings.json".text = builtins.toJSON { # no alt binds (tmux owns alt); ctrl+m is reserved as Enter, so ctrl+q cycles modes, ctrl+p picks model
+      bindings = [
+        { context = "Chat"; bindings = { "shift+tab" = null; "meta+p" = null; "meta+o" = null; "meta+t" = null; "ctrl+q" = "chat:cycleMode"; "ctrl+p" = "chat:modelPicker"; }; }
+        { context = "Global"; bindings = { "meta+up" = null; "meta+down" = null; }; }
+        { context = "Agents"; bindings = { "meta+up" = null; "meta+down" = null; }; }
+      ];
     };
     programs.claude-code = {
       enable = true;
@@ -188,6 +192,7 @@ in {
         env = {
           ENABLE_TOOL_SEARCH = "1"; # fetch tool schemas on demand, not up front
           CLAUDE_CODE_DISABLE_EXPLORE_PLAN_AGENTS = "1";
+          CLAUDE_CODE_DISABLE_DANGEROUS_RM_TIMEOUT = "1"; # dangerous-rm prompt waits forever, no 2m auto-deny
           BASH_MAX_OUTPUT_LENGTH = "12000"; # truncate runaway command output
           MAX_MCP_OUTPUT_TOKENS = "8000";
           DISABLE_TELEMETRY = "1";
