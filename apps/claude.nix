@@ -309,8 +309,8 @@ in {
       functions = {
         c = "__cdp_arg $argv[1]; or return; claude --dangerously-skip-permissions $argv[2..]";
         cr = "__cdp_arg $argv[1]; or return; claude --dangerously-skip-permissions --resume $argv[2..]";
-        cq = "__cdp_arg $argv[1]; or return; MAX_THINKING_TOKENS=0 claude --dangerously-skip-permissions --model haiku --effort low --tools=Bash,Read,Edit,Write $argv[2..]";
-        cqr = "__cdp_arg $argv[1]; or return; MAX_THINKING_TOKENS=0 claude --dangerously-skip-permissions --resume --model haiku --effort low --tools=Bash,Read,Edit,Write $argv[2..]";
+        cq = "__cdp_arg $argv[1]; or return; claude --dangerously-skip-permissions --model haiku --effort low --tools=Bash,Read,Edit,Write $argv[2..]";
+        cqr = "__cdp_arg $argv[1]; or return; claude --dangerously-skip-permissions --resume --model haiku --effort low --tools=Bash,Read,Edit,Write $argv[2..]";
       };
       interactiveShellInit = ''complete -c c -c cr -c cq -c cqr -f -a "(__proj_dirs)"'';
     };
