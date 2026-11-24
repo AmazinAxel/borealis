@@ -130,15 +130,24 @@ in {
       };
       settings = {
         model = "opus";
+        advisorModel = "opus";
+        modelPicker.options = map (model: { inherit model; description = ""; }) [ "opus" "sonnet" "haiku" "fable" ];
         effortLevel = "medium";
         outputStyle = "caveman";
         theme = "auto";
         tui = "fullscreen";
         skipDangerousModePermissionPrompt = true;
         disableClaudeAiConnectors = true;
+        bashEditDiffEnabled = true;
+        dialogExpiry = "never";
+        defaultShell = "bash"; # to stop the check, this is a default setting
+
+        inputNeededNotifEnabled = true;
 
         todoFeatureEnabled = false;
         spinnerTipsEnabled = false;
+        spinnerVerbs = { mode = "replace"; verbs = [ "vibing" ]; };
+        syncClaudeAiSkills = false;
         copyOnSelect = true; # set explicitly, drops the "disable auto-copy" hint
         promptSuggestionEnabled = false; # no model call per turn for ghost-text
         awaySummaryEnabled = false; # no recap call after idling
@@ -150,9 +159,13 @@ in {
         terminalProgressBarEnabled = false;
         timeFormat = "24-hour";
         prefersReducedMotion = true;
-        showTurnDuration = false;
+        # showTurnDuration = false;
+        feedbackDrafts = false; # just in case. i know this isnt called but save tokens maybe
+        showThinkingSummaries = true; # readable thinking in ctrl+o
+        voice = { enabled = true; mode = "tap"; }; # tap to start, tap again to stop + submit
         emojiCompletionEnabled = false;
         feedbackSurveyRate = 0;
+        skipAutoPermissionPrompt = true;
         attribution = { commit = ""; pr = ""; sessionUrl = false; };
         statusLine = {
           type = "command";
@@ -218,7 +231,7 @@ in {
         keep-coding-instructions: true
         ---
 
-        Caveman: fragments, no articles/is/are/I/greetings/hedges/recap/offers. Answer first. Max 3 lines unless "explain". Full sentences for security and irreversible actions.
+        Caveman: fragments, no articles/is/are/I/greetings/hedges/recap/offers. Answer first. Max 3 lines unless "explain". Full sentences for security and irreversible actions. American english.
       '';
 
       skills.optimize = ''
