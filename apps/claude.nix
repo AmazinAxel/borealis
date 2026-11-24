@@ -131,7 +131,10 @@ in {
       settings = {
         model = "opus";
         advisorModel = "opus";
-        modelPicker.options = map (model: { inherit model; description = ""; }) [ "opus" "sonnet" "haiku" "fable" ];
+        modelPicker = { # Default row is hardcoded; "" falls back to "Custom model (x)", zero-width space blanks it
+          replaceBuiltInOptions = true;
+          options = map (model: { inherit model; description = builtins.fromJSON ''"\u200b"''; }) [ "opus" "sonnet" "haiku" "fable" ];
+        };
         effortLevel = "medium";
         outputStyle = "caveman";
         theme = "auto";
@@ -146,7 +149,7 @@ in {
 
         todoFeatureEnabled = false;
         spinnerTipsEnabled = false;
-        spinnerVerbs = { mode = "replace"; verbs = [ "vibing" ]; };
+        spinnerVerbs = { mode = "replace"; verbs = [ "Vibing" ]; };
         syncClaudeAiSkills = false;
         copyOnSelect = true; # set explicitly, drops the "disable auto-copy" hint
         promptSuggestionEnabled = false; # no model call per turn for ghost-text
@@ -160,7 +163,7 @@ in {
         timeFormat = "24-hour";
         prefersReducedMotion = true;
         # showTurnDuration = false;
-        feedbackDrafts = "off"; # just in case. i know this isnt called but save tokens maybe
+        feedbackDrafts = false; # just in case. i know this isnt called but save tokens maybe
         showThinkingSummaries = true; # readable thinking in ctrl+o
         voice = { enabled = true; mode = "tap"; }; # tap to start, tap again to stop + submit
         emojiCompletionEnabled = false;
