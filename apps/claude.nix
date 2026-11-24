@@ -131,9 +131,9 @@ in {
       settings = {
         model = "opus";
         advisorModel = "opus";
-        modelPicker = { # Default row is hardcoded; "" falls back to "Custom model (x)", zero-width space blanks it
+        modelPicker = {
           replaceBuiltInOptions = true;
-          options = map (model: { inherit model; description = builtins.fromJSON ''"\u200b"''; }) [ "opus" "sonnet" "haiku" "fable" ];
+          options = map (model: { inherit model; description = builtins.fromJSON ''"\u200b"''; }) [ "Sonnet" "Haiku" "Fable" ];
         };
         effortLevel = "medium";
         outputStyle = "caveman";
