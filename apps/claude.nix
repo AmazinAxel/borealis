@@ -163,7 +163,7 @@ in {
         timeFormat = "24-hour";
         prefersReducedMotion = true;
         # showTurnDuration = false;
-        feedbackDrafts = false; # just in case. i know this isnt called but save tokens maybe
+        feedbackDrafts = "off"; # just in case. i know this isnt called but save tokens maybe
         showThinkingSummaries = true; # readable thinking in ctrl+o
         voice = { enabled = true; mode = "tap"; }; # tap to start, tap again to stop + submit
         emojiCompletionEnabled = false;
