@@ -1,4 +1,4 @@
-{ lib, osConfig, ... }: let
+{ lib, pkgs, osConfig, ... }: let
   nord = import ../nord.nix;
   inherit (osConfig.borealis) buildHost user;
   remote = buildHost != null && buildHost != osConfig.networking.hostName;
@@ -6,6 +6,31 @@
   ssh = "${user}@${buildHost}";
   cache = "http://${buildHost}:5000"; # harmonia (options.nix); signatures checked on copy
 in {
+  home.packages = [ (pkgs.writeShellApplication {
+    # nsp a b [-c cmd args] -> nix shell nixpkgs#a nixpkgs#b [-c cmd args]; a real binary so every shell (and claude) can run it
+    # remote: build on the build host (eval there too: no local eval, no .drv upload), copy only the runtime closure here
+    name = "nsp";
+    runtimeInputs = lib.optional remote pkgs.openssh;
+    text = ''
+      refs=()
+      while (( $# )); do
+        case $1 in
+          -c) shift; break ;;
+          *) refs+=("nixpkgs#$1"); shift ;;
+        esac
+      done
+      (( ''${#refs[@]} )) || { echo "usage: nsp pkg... [-c cmd args...]" >&2; exit 2; }
+      run=(); (( $# )) && run=(-c "$@")
+    '' + (if remote then ''
+      out=$(ssh -o BatchMode=yes ${ssh} nix build --no-link --print-out-paths "''${refs[@]}")
+      mapfile -t paths <<<"$out"
+      nix copy --from ${cache} "''${paths[@]}"
+      exec nix shell "''${paths[@]}" "''${run[@]}"
+    '' else ''
+      exec nix shell "''${refs[@]}" "''${run[@]}"
+    '');
+  }) ];
+
   programs.fish = {
     enable = true;
     # autoloaded functions instead of shellAliases, which run `alias` on every shell start
@@ -32,11 +57,6 @@ in {
     } // {
       gcm = ''git commit -m "$argv"'';
       gacm = ''git add -A && git commit -m "$argv"'';
-      # nsp a b -> nix shell nixpkgs#a nixpkgs#b; remote: build there, copy only the runtime closure here
-      nsp = if remote then ''
-        set -l paths (ssh ${ssh} nix build --no-link --print-out-paths nixpkgs#$argv); or return # eval there too: no local eval, no .drv upload
-        nix copy --from ${cache} $paths; and nix shell $paths
-      '' else "nix shell nixpkgs#$argv";
       cdp = "cd ~/Projects/$argv[1]";
       __cdp_arg = "if set -q argv[1]; cdp $argv[1]; end";
       fetch = builtins.readFile ../scripts/fetch.fish; # in-process, shell start even thru ssh

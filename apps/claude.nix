@@ -292,7 +292,7 @@ in {
 
       context = ''
         - Pasted snippets run in fish: no `<(...)`, use psub or /dev/stdin; `set -x`.
-        - No python3/perl/node/npm/fd: bun -e, jq, awk. One-off tool: `nix shell nixpkgs#pkg -c cmd`, never `nix-shell -p`.
+        - No python3/perl/node/npm/fd: bun -e, jq, awk. One-off tool: `nsp pkg... -c cmd args` (package names, not binaries; always pass `-c` or it hangs), never `nix-shell -p`.
         - Dev shell: nix print-dev-env > <scratchpad>/dev.sh, source it. No nix develop, nix-shell.
         - EDIT RULE (never skip): Read hides tabs/indent, so multi-line old_string with indentation WILL fail. Default: old_string = one line, no leading whitespace. Before any multi-line edit, run `rg -n -P "^\s*text" file | cat -A` to confirm exact tabs, then copy them. Second Edit failure: stop guessing, Read, then Write whole file.
         - Persisted output: rg, not full Read.
