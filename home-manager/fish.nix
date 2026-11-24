@@ -58,6 +58,7 @@ in {
     } // {
       gcm = ''git commit -m "$argv"'';
       gacm = ''git add -A && git commit -m "$argv"'';
+      gsy = "git pull --rebase; and git push"; # sync: pull, then push
       cdp = "cd ~/Projects/$argv[1]";
       __cdp_arg = "if set -q argv[1]; cdp $argv[1]; end";
       fetch = builtins.readFile ../scripts/fetch.fish; # in-process, shell start even thru ssh
