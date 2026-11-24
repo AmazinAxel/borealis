@@ -22,7 +22,8 @@ in {
       (( ''${#refs[@]} )) || { echo "usage: nsp pkg... [-c cmd args...]" >&2; exit 2; }
       run=(); (( $# )) && run=(-c "$@")
     '' + (if remote then ''
-      out=$(ssh -o BatchMode=yes ${ssh} nix build --no-link --print-out-paths "''${refs[@]}")
+      # reuse one ssh connection: handshake + login is ~1s, the warm remote eval ~0.1s
+      out=$(ssh -o BatchMode=yes -o ControlMaster=auto -o "ControlPath=''${XDG_RUNTIME_DIR:-/tmp}/nsp-%C" -o ControlPersist=30m ${ssh} nix build --no-link --print-out-paths "''${refs[@]}")
       mapfile -t paths <<<"$out"
       nix copy --from ${cache} "''${paths[@]}"
       exec nix shell "''${paths[@]}" "''${run[@]}"
