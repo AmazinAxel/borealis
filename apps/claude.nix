@@ -8,7 +8,7 @@
 
       IFS=$'\t' read -r sid vim ms dir s w sr wr tok < <(jq -r '[
         (.session_id // "-"),
-        (.vim.mode // "-"), (.cost.total_api_duration_ms // 0 | floor),
+        (.vim.mode // "-"), (.cost.total_duration_ms // 0 | floor),
         (.workspace.current_dir // .cwd // "."),
         (.rate_limits.five_hour.used_percentage // -1 | floor),
         (.rate_limits.seven_day.used_percentage // -1 | floor),
