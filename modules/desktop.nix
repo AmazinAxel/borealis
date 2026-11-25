@@ -36,7 +36,10 @@ in {
       wl-clipboard # wl paste for some apps
 
       # Desktop applications
-      gthumb
+      # gtk4paintablesink embeds video, else autovideosink opens a separate window
+      (gthumb.overrideAttrs (old: {
+        buildInputs = old.buildInputs ++ [ (gst_all_1.gst-plugins-rs.override { plugins = [ "gtk4" ]; }) ];
+      }))
       nemo-with-extensions
       nemo-fileroller
       file-roller

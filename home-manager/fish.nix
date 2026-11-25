@@ -63,28 +63,26 @@ in {
       __cdp_arg = "if set -q argv[1]; cdp $argv[1]; end";
       fetch = builtins.readFile ../scripts/fetch.fish; # in-process, shell start even thru ssh
       # ns: switch this host, then gc in the background; remote: the build host's checkout of the flake is the
-      # source (dirty tree included), so this machine needs no repo. Password asked up front: the build can outlast sudo's cache
+      # source (dirty tree included), so this machine needs no repo. One sudo up front holds a root shell that waits on
+      # the pipe for the system path: a re-auth after a long build would stop at pam_fprintd, which ignores piped passwords
       ns = ''
-        read -lsP "[sudo] password for $USER: " pass; or return
-        printf '%s\n' $pass | sudo -Sp ''' -v; or return
+        sudo -v; or return
         echo "Updating..." >&2
       '' + (if remote then ''
-        set -l sys (ssh ${ssh} nix build --no-link --print-out-paths ${flake}#nixosConfigurations.${osConfig.networking.hostName}.config.system.build.toplevel); or return
-        nix copy --from ${cache} $sys; or return
-        printf '%s\n' $pass | sudo -Sp ''' nix-env -p /nix/var/nix/profiles/system --set $sys; or return
-        printf '%s\n' $pass | sudo -Sp ''' $sys/bin/switch-to-configuration switch; or return
+        begin
+          set -l sys (ssh ${ssh} nix build --no-link --print-out-paths ${flake}#nixosConfigurations.${osConfig.networking.hostName}.config.system.build.toplevel)
+          and nix copy --from ${cache} $sys
+          and echo $sys
+        end | sudo sh -c 'read -r sys && nix-env -p /nix/var/nix/profiles/system --set "$sys" && "$sys"/bin/switch-to-configuration switch && systemctl start --no-block nix-gc'
       '' else ''
-        printf '%s\n' $pass | sudo -Sp ''' nixos-rebuild switch --flake ${flake}; or return
-      '') + "printf '%s\\n' $pass | sudo -Sp '' systemctl start --no-block nix-gc";
-      # ngc: user + system gc, dedupe, trim, on demand
+        sudo sh -c 'nixos-rebuild switch --flake ${flake} && systemctl start --no-block nix-gc'
+      '');
+      # ngc: user + system gc, dedupe, trim, on demand; one sudo so a slow gc can't expire the cache mid-run
       ngc = ''
-        read -lsP "[sudo] password for $USER: " pass; or return
-        printf '%s\n' $pass | sudo -Sp ''' -v; or return
+        sudo -v; or return
         echo "Collecting garbage..." >&2
         nix-collect-garbage -d # user-collected garbage
-        printf '%s\n' $pass | sudo -Sp ''' nix-collect-garbage -d
-        printf '%s\n' $pass | sudo -Sp ''' nix-store --optimise
-        printf '%s\n' $pass | sudo -Sp ''' fstrim -av
+        sudo sh -c 'nix-collect-garbage -d; nix-store --optimise; fstrim -av'
       '';
       # nde <host>: boot-deploy the flake host of that name to that remote machine (local: ns)
       nde = if remote then ''
