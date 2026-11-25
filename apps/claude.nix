@@ -6,9 +6,9 @@
     text = ''
       export LC_ALL=C.UTF-8
 
-      IFS=$'\t' read -r sid vim ms dir s w sr wr tok < <(jq -r '[
+      IFS=$'\t' read -r sid vim dir s w sr wr tok < <(jq -r '[
         (.session_id // "-"),
-        (.vim.mode // "-"), (.cost.total_duration_ms // 0 | floor),
+        (.vim.mode // "-"),
         (.workspace.current_dir // .cwd // "."),
         (.rate_limits.five_hour.used_percentage // -1 | floor),
         (.rate_limits.seven_day.used_percentage // -1 | floor),
@@ -52,11 +52,6 @@
         (( rw += w + 3 + ''${#p} ))
       }
 
-      sec=$(( ms / 1000 ))
-      if (( sec >= 3600 )); then printf -v dur '%dh%02dm' $(( sec / 3600 )) $(( sec % 3600 / 60 ))
-      elif (( sec >= 60 )); then dur="$(( sec / 60 ))m$(( sec % 60 ))s"
-      else dur="''${sec}s"; fi
-
       case $vim in
         INSERT) mode="''${green}INS " ;;
         NORMAL) mode="''${frost}NOR " ;;
@@ -67,7 +62,6 @@
       elif (( tok > 0 || u >= 1 )); then mode+="''${fg}$box "; fi
 
       left="$r$mode" # leading escape keeps the padding from being trimmed
-      (( sec > 0 )) && left+="''${fg}''${dur} "
       (( add > 0 || del > 0 )) && left+="''${green}+''${add}''${dim}/''${red}-''${del}"
       shopt -s extglob
       l=''${left//$'\e'\[*([0-9;])m/}
@@ -178,7 +172,6 @@ in {
           type = "command";
           command = lib.getExe statusline;
           padding = 0;
-          refreshInterval = 1; # no resize event to rerun on
           hideVimModeIndicator = true; # shown in the line
         };
         preferredNotifChannel = "ghostty"; # notifications
