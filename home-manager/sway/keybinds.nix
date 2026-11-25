@@ -13,7 +13,19 @@
     }) [ dir vim ])) { left = "h"; right = "l"; up = "k"; down = "j"; };
 in {
   wayland.windowManager.sway = {
-    config.keybindings = directionBinds // {
+    config.modes.resize = {
+  h = "resize shrink width 10px";
+  j = "resize grow height 10px";
+  k = "resize shrink height 10px";
+  l = "resize grow width 10px";
+  Left = "resize shrink width 10px";
+  Down = "resize grow height 10px";
+  Up = "resize shrink height 10px";
+  Right = "resize grow width 10px";
+  Escape = "mode default";
+  Return = "mode default";
+};
+config.keybindings = directionBinds // {
       # Volume
       "XF86AudioRaiseVolume" = "nop flurry volume up";
       "XF86AudioLowerVolume" = "nop flurry volume down";
@@ -60,7 +72,8 @@ in {
       "${mod}+V" = "nop flurry toggle clipboard";
       # Enter = select entry, C = copy 2nd entry, E = edit image with swappy, G = open in gthumb, M = compress video, N = show in nemo, W = wipe clipboard
 
-      "${mod}+R" = "nop flurry record";
+      "${mod}+r" = "mode resize";
+      "${mod}+shift+R" = "nop flurry record";
       # R = toggle mic, Q = toggle quality, C = clip last 30s, Space = record
 
       "XF86PowerOff" = "nop flurry toggle powermenu";
