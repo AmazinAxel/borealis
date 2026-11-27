@@ -24,6 +24,14 @@
         # setting fonts replaces flurry's default list
         nerd-fonts.iosevka
         noto-fonts-color-emoji
+        # same derivation as desktop.nix's (same store path): variable ttc, SC/TC/HK/JP/KR
+        (runCommand "noto-sans-cjk" {} ''
+          install -Dm444 -t $out/share/fonts/opentype ${noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk/NotoSansCJK-VF.otf.ttc
+        '')
+        # fancy-letter names (math alphanumerics), dingbats, misc symbols: ~1.2M of the 50M package
+        (runCommand "noto-symbols" {} ''
+          install -Dm444 -t $out/share/fonts/opentype ${noto-fonts}/share/fonts/noto/{NotoSansMath-Regular.otf,NotoSansSymbols2-Regular.otf,NotoSansSymbols.ttf}
+        '')
         dejavu_fonts
       ];
     };
